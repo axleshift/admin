@@ -5,15 +5,15 @@ import { useSelector } from 'react-redux';
 
 const DefaultLayout = () => {
   const userId = useSelector((state) => state.changeState.userId);
-  const { data, isLoading, error } = useGetUserQuery(userId);
+  const { data, isLoading, error } = userId ? useGetUserQuery(userId) : { data: null, isLoading: false, error: null };
 
   if (isLoading) {
-    return <div>Loading...</div>;  // Corrected return statement
+    return <div>Loading...</div>;
   }
-  
+
   if (error) {
-    console.error('error fetching user:', error);
-    return <div>An error occurred: {error.message}</div>; // Optional: display the error message
+    console.error('Error fetching user:', error);
+    return <div>An error occurred: {error.status}: {JSON.stringify(error.data)}</div>; // Show status and error data
   }
 
   return (

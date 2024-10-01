@@ -51,5 +51,4 @@ export const {
   useGetWorkersQuery,
   useChangeRoleMutation,
   useFireUserMutation,
-  useRegisterUserMutation,
 } = api;

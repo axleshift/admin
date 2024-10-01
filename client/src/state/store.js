@@ -6,7 +6,7 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 const initialState = {
     sidebarShow: true,
     theme: 'light',
-    userId: "63701cc1f03239b7f700000e"
+    userId: ""
 };
 
 // Your existing reducer for handling sidebar and theme state

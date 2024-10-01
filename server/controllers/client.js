@@ -79,3 +79,72 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+//register a user
+export const registerUser = async (req, res) => {
+  const { name, email, password, phoneNumber, role } = req.body;
+  console.log('Received registration data:', req.body); // Add this line for logging
+
+  // Validate required fields
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      role,
+    });
+
+    // Save the user to the database
+    const savedUser = await newUser.save();
+
+    // Exclude the password from the response
+    const userResponse = savedUser.toObject();
+    delete userResponse.password;
+
+    res.status(201).json(userResponse);
+  } catch (error) {
+    console.error('Registration error:', error.message); // Log the error
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Login endpoint
+
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    // Check if password is correct
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Create a JWT token
+    const token = jwt.sign({ id: user._id, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+
+    res.status(200).json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

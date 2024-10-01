@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Import axios for making API requests
 import {
   CButton,
   CCard,
@@ -17,34 +18,35 @@ import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilUser } from '@coreui/icons';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [data, setData] = useState({
+    email: '',
+    password: '',
+  });
+  const [errorMessage, setErrorMessage] = useState(null); // For displaying login error
+  const navigate = useNavigate(); // Use navigate hook
 
-  // Function to handle form submission
-  const loginuser = (e) => {
+  const loginUser = async (e) => {
     e.preventDefault();
-    loginUser({ email, password });
-  };
 
-  // loginUser function to handle authentication
-  const loginUser = async (userData) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        console.log('Login successful:', data);
-        // Handle successful login (e.g., redirect or save token)
-      } else {
-        console.log('Login failed:', data.message);
-      }
+      // Send a POST request to your backend's login endpoint
+      const response = await axios.post('http://localhost:5001/client/login', data);
+
+      // Assuming the backend returns a token on successful login
+      const { token } = response.data;
+
+      // Store the token in local storage (or handle it as needed)
+      localStorage.setItem('authToken', token);
+
+      // Navigate to the dashboard after successful login
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Error logging in:', error);
+      // Handle login failure (e.g., wrong credentials)
+      if (error.response) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage('An error occurred. Please try again.');
+      }
     }
   };
 
@@ -56,9 +58,12 @@ const Login = () => {
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
-                  <CForm onSubmit={loginuser}>
+                  <CForm onSubmit={loginUser}>
                     <h1>Login</h1>
                     <p className="text-body-secondary">Sign In to your account</p>
+
+                    {/* Display error message if login fails */}
+                    {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
                     {/* Email Input */}
                     <CInputGroup className="mb-3">
@@ -69,8 +74,8 @@ const Login = () => {
                         type="email"
                         placeholder="Email"
                         autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)} // Update email state
+                        value={data.email}
+                        onChange={(e) => setData({ ...data, email: e.target.value })}
                         required
                       />
                     </CInputGroup>
@@ -84,8 +89,8 @@ const Login = () => {
                         type="password"
                         placeholder="Password"
                         autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)} // Update password state
+                        value={data.password}
+                        onChange={(e) => setData({ ...data, password: e.target.value })}
                         required
                       />
                     </CInputGroup>
@@ -98,9 +103,11 @@ const Login = () => {
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
-                        <CButton color="link" className="px-0">
-                          Forgot password?
-                        </CButton>
+                        <Link to="/home">
+                          <CButton color="link" className="px-0">
+                            Forgot password?
+                          </CButton>
+                        </Link>
                       </CCol>
                     </CRow>
                   </CForm>

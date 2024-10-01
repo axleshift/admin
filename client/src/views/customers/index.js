@@ -53,7 +53,7 @@ const Index = () => {
                   <CTableDataCell>{item.name}</CTableDataCell>
                   <CTableDataCell>{item.email}</CTableDataCell>
                   <CTableDataCell>
-                    {item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, "($1)$2-$3")}
+                    {item.phoneNumber ? item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, "($1)$2-$3") : 'N/A'}
                   </CTableDataCell>
                   <CTableDataCell>{item.country}</CTableDataCell>
                   <CTableDataCell>{item.occupation}</CTableDataCell>
