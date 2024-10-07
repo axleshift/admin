@@ -33,7 +33,7 @@ const AppHeader = () => {
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
   const dispatch = useDispatch()
-  const sidebarShow = useSelector((state) => state.sidebarShow)
+  const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -48,7 +48,7 @@ const AppHeader = () => {
         <CHeaderToggler
           onClick={() => {
             console.log('Toggling sidebar:', !sidebarShow) // Debugging log
-            dispatch({ type: 'set', sidebarShow: !sidebarShow }) // Dispatch toggle action
+            dispatch({ type: 'set', payload: { sidebarShow: !sidebarShow } }) // Dispatch toggle action
           }}
           style={{ marginInlineStart: '-14px' }}
         >
@@ -132,6 +132,7 @@ const AppHeader = () => {
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
           <AppHeaderDropdown />
+         
         </CHeaderNav>
       </CContainer>
       <CContainer className="px-4" fluid>

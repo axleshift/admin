@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Import axios for making API requests
+import axios from 'axios';
 import {
   CButton,
   CCard,
@@ -19,37 +19,57 @@ import { cilLockLocked, cilUser } from '@coreui/icons';
 
 const Login = () => {
   const [data, setData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   });
-  const [errorMessage, setErrorMessage] = useState(null); // For displaying login error
-  const navigate = useNavigate(); // Use navigate hook
+  const [errorMessage, setErrorMessage] = useState(null);
+  const navigate = useNavigate();
 
   const loginUser = async (e) => {
     e.preventDefault();
-
+  
+    // Validate data before sending request
+    if (!data.identifier || !data.password) {
+      setErrorMessage('Both fields are required.');
+      return;
+    }
+  
     try {
       // Send a POST request to your backend's login endpoint
-      const response = await axios.post('http://localhost:5001/client/login', data);
-
-      // Assuming the backend returns a token on successful login
-      const { token } = response.data;
-
-      // Store the token in local storage (or handle it as needed)
-      localStorage.setItem('authToken', token);
-
-      // Navigate to the dashboard after successful login
-      navigate('/dashboard');
+      const response = await axios.post('http://localhost:5053/client/login', data, { withCredentials: true });
+  
+      // Check if login was successful
+      if (response.data.token) {
+        // Fetch the user data if login is successful
+        const userResponse = await axios.get('http://localhost:5053/client/user', { withCredentials: true });
+  
+        // Debugging: log full user response
+        console.log("User response after login:", userResponse.data);
+  
+        if (userResponse.data.user) {
+          const userName = userResponse.data.user.name || ''; // Default to empty if name is missing
+          const userRole = userResponse.data.user.role || 'guest'; // Default role as 'guest' if role is missing
+  
+          // Save the user's name and role in session storage
+          sessionStorage.setItem('userName', userName);
+          sessionStorage.setItem('userRole', userRole);
+  
+          // Debugging: log saved role
+          console.log("Saved User Role in session:", sessionStorage.getItem('userRole'));
+  
+          // Navigate to dashboard
+          navigate('/dashboard');
+        }
+      }
     } catch (error) {
-      // Handle login failure (e.g., wrong credentials)
+      console.error('Login error:', error);
       if (error.response) {
-        setErrorMessage(error.response.data.message);
+        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
       } else {
-        setErrorMessage('An error occurred. Please try again.');
+        setErrorMessage('An error occurred. Please try again later.');
       }
     }
   };
-
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -65,17 +85,17 @@ const Login = () => {
                     {/* Display error message if login fails */}
                     {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
-                    {/* Email Input */}
+                    {/* Input for Email or Username */}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
-                        type="email"
-                        placeholder="Email"
+                        type="text"
+                        placeholder="Email or Username"
                         autoComplete="email"
-                        value={data.email}
-                        onChange={(e) => setData({ ...data, email: e.target.value })}
+                        value={data.identifier}
+                        onChange={(e) => setData({ ...data, identifier: e.target.value })}
                         required
                       />
                     </CInputGroup>

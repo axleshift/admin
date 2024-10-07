@@ -16,18 +16,18 @@ const UserSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: false,
+    required: true,
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'manager', 'employee'],
-    default: 'user',
     required: true,
   },
-
-});
-
-
+  username: { // Add this line
+    type: String,
+    unique: true,
+  },
+  
+}, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
-export default User; // Use export default
+export default User;

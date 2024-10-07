@@ -1,32 +1,40 @@
-// src/state/store.js
-import { configureStore } from '@reduxjs/toolkit'; // Import configureStore
-import { api } from './api'; // Import the API slice you defined earlier
+import { configureStore } from '@reduxjs/toolkit';
+import { api } from './api';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 const initialState = {
     sidebarShow: true,
     theme: 'light',
-    userId: ""
+    userId: "",
+    auth: {
+        role: null,
+    }
 };
 
-// Your existing reducer for handling sidebar and theme state
-const changeState = (state = initialState, { type, ...rest }) => {
+const changeState = (state = initialState, { type, payload }) => {
     switch (type) {
         case 'set':
-            return { ...state, ...rest };
+            return { ...state, ...payload };
+        case 'SET_USER_ROLE':
+            return {
+                ...state,
+                auth: {
+                    ...state.auth,
+                    role: payload.role,
+                },
+            };
         default:
             return state;
     }
 };
 
-// Create the store using configureStore
 const store = configureStore({
     reducer: {
-        changeState, // Add your existing reducer
-        [api.reducerPath]: api.reducer, // Add the API slice reducer
+        changeState,
+        [api.reducerPath]: api.reducer,
     },
     middleware: (getDefault) =>
-        getDefault().concat(api.middleware), // Add the API middleware
+        getDefault().concat(api.middleware),
 }); 
 setupListeners(store.dispatch)
 

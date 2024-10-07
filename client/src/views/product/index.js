@@ -9,7 +9,9 @@ import {
   CRow,
   CContainer,
   CButton,
-  CCollapse
+  CCollapse,
+  CInputGroup,
+  CFormInput,
 } from '@coreui/react';
 import CustomHeader from '../../components/header/customhead';
 import { useGetProductsQuery } from '../../state/api'; 
@@ -18,25 +20,26 @@ import useMediaQuery from '../../components/useMediaQuery';
 import Typography from '../../views/theme/typography/Typography';
 import StarRating from '../../components/StarRating';
 
-// Define the Product component
 const Product = ({
-    _id,
-    name,
-    description,
-    price,
-    rating,
-    category,
-    supply,
-    stat
-  }) => {
-    const theme = useTheme();
-    const [isExpanded, setIsExpanded] = useState(false);
-      if(!name || !category || !price){
-        return <p> MIssing Product Data</p>
-      }
+  _id,
+  name,
+  description,
+  price,
+  rating,
+  category,
+  supply,
+  stat
+}) => {
+  const theme = useTheme();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    return (
-      <CCard
+  // Check for essential product properties
+  if (!name || !category || !price) {
+    return <p>Missing Product Data</p>;
+  }
+
+  return (
+    <CCard
       style={{
         backgroundImage: 'none',
         borderRadius: '0.55rem',
@@ -66,39 +69,52 @@ const Product = ({
         </CButton>
       </CCardFooter>
     
-      {/* Keep CCollapse rendered but control its visibility with the `in` prop */}
-      <CCollapse in={isExpanded ? true : undefined} timeout={300} unmountOnExit>
-  <CCardBody>
-    <Typography>id: {_id || 'N/A'}</Typography>
-    <Typography>Supply left: {supply || 'N/A'}</Typography>
-
-    {stat && stat.length > 0 ? (
-      <>
-        <Typography>Yearly Sales This Year: {stat[0].yearlySalesTotal}</Typography>
-        <Typography>Yearly Units Sold This Year: {stat[0].yearlyTotalSoldUnits}</Typography>
-      </>
-    ) : (
-      <Typography>No statistics available for this product.</Typography>
-    )}
-  </CCardBody>
-
-</CCollapse>
-
+      {/* Only render CCollapse if isExpanded is true */}
+      {isExpanded && (
+        <CCollapse in={isExpanded} timeout={300}>
+          <CCardBody>
+            <Typography>id: {_id || 'N/A'}</Typography>
+            <Typography>Supply left: {supply || 'N/A'}</Typography>
+            {stat && stat.length > 0 ? (
+              <>
+                <Typography>Yearly Sales This Year: {stat[0].yearlySalesTotal}</Typography>
+                <Typography>Yearly Units Sold This Year: {stat[0].yearlyTotalSoldUnits}</Typography>
+              </>
+            ) : (
+              <Typography>No statistics available for this product.</Typography>
+            )}
+          </CCardBody>
+        </CCollapse>
+      )}
     </CCard>
-    
   );
 };
 
-// Define the Index component
+// Index component remains unchanged
 const Index = () => {
   const { data, isLoading } = useGetProductsQuery();
+  const [searchTerm, setSearchTerm] = useState('');
   const isNonMobile = useMediaQuery("(min-width:1000px)");
+
+  const filteredProducts = data?.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="PRODUCT" subtitle="List of products" />
-        {data && !isLoading ? ( // Check if data exists and is not loading
+        
+        <CInputGroup className="mb-3">
+          <CFormInput
+            placeholder="Search by Name or Category"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </CInputGroup>
+        
+        {data && !isLoading ? (
           <CRow 
             className="mt-3 d-grid"
             style={{ 
@@ -108,7 +124,7 @@ const Index = () => {
               columnGap: "1.33%",
             }}
           >
-            {data.map(({
+            {(filteredProducts.length > 0 ? filteredProducts : data).map(({
               _id,
               name,
               description,
@@ -119,7 +135,7 @@ const Index = () => {
               stat
             }) => (
               <Product 
-                key={_id} // Use key for each element
+                key={_id} 
                 _id={_id}
                 name={name}
                 description={description}
@@ -137,6 +153,7 @@ const Index = () => {
       </CRow>
     </CContainer>
   );
-}
+};
 
 export default Index;
+                                                                                                                                                                                                                                                             

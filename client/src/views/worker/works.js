@@ -12,6 +12,8 @@ import {
   CTableDataCell,
   CButton,
   CFormSelect,
+  CInputGroup,
+  CFormInput,
 } from '@coreui/react';
 import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation } from '../../state/api';
 import CustomHeader from '../../components/header/customhead';
@@ -20,7 +22,7 @@ const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery(); // Fetch workers data
   const [changeRole] = useChangeRoleMutation(); // Mutation to change role
   const [fireUser] = useFireUserMutation(); // Mutation to delete user
-
+  const [searchTerm, setSearchTerm] = useState(''); // Search term state
   const [selectedRole, setSelectedRole] = useState({}); // Store role changes
 
   // Check for loading state
@@ -60,15 +62,32 @@ const Works = () => {
     }
   };
 
+  // Filter the workers data based on the search term (searching by username or email)
+  const filteredData = data.filter(
+    (item) =>
+      item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="Employees" subtitle="List of Employees" />
+        
+        {/* Search Bar */}
+        <CInputGroup className="mb-3">
+          <CFormInput
+            placeholder="Search by Username or Email"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </CInputGroup>
+        
         <CCard mt="40px" height="75vh">
           <CTable striped bordered>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell>ID</CTableHeaderCell>
+                <CTableHeaderCell>Username</CTableHeaderCell>
                 <CTableHeaderCell>Name</CTableHeaderCell>
                 <CTableHeaderCell>Email</CTableHeaderCell>
                 <CTableHeaderCell>Phone Number</CTableHeaderCell>
@@ -79,22 +98,22 @@ const Works = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {data.map((item) => (
+              {filteredData.map((item) => (
                 <CTableRow key={item._id}>
-                  <CTableDataCell>{item._id}</CTableDataCell>
+                  <CTableDataCell>{item.username}</CTableDataCell>
                   <CTableDataCell>{item.name}</CTableDataCell>
                   <CTableDataCell>{item.email}</CTableDataCell>
                   <CTableDataCell>
-                  {item.phoneNumber ? (
-                    item.phoneNumber.length === 10 ? (
-                      item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, '($1)$2-$3')
+                    {item.phoneNumber ? (
+                      item.phoneNumber.length === 10 ? (
+                        item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, '($1)$2-$3')
+                      ) : (
+                        item.phoneNumber // Fallback to original number if it's not 10 digits
+                      )
                     ) : (
-                      item.phoneNumber // Fallback to original number if it's not 10 digits
-                    )
-                  ) : (
-                    'N/A'
-                  )}
-                </CTableDataCell>
+                      'N/A'
+                    )}
+                  </CTableDataCell>
                   <CTableDataCell>{item.country}</CTableDataCell>
                   <CTableDataCell>{item.occupation}</CTableDataCell>
                   <CTableDataCell>
@@ -109,16 +128,10 @@ const Works = () => {
                     <CBadge color="primary">{item.role}</CBadge>
                   </CTableDataCell>
                   <CTableDataCell>
-                    <CButton
-                      color="warning"
-                      onClick={() => handleRoleChange(item._id)}
-                    >
+                    <CButton color="warning" onClick={() => handleRoleChange(item._id)}>
                       Update Role
                     </CButton>
-                    <CButton
-                      color="danger"
-                      onClick={() => handleDeleteUser(item._id)}
-                    >
+                    <CButton color="danger" onClick={() => handleDeleteUser(item._id)}>
                       Delete
                     </CButton>
                   </CTableDataCell>

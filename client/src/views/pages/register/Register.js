@@ -25,14 +25,15 @@ const Register = () => {
     password: '',
     repeatPassword: '',
     role: '',
+    adminUsername: '',  // New field for admin's username
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const registerUser = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
     // Validate password match
     if (data.password !== data.repeatPassword) {
@@ -46,13 +47,19 @@ const Register = () => {
       return;
     }
 
+    // If role is admin, employee, or manager, check for admin username
+    if (['admin', 'manager', 'employee'].includes(data.role) && !data.adminUsername) {
+      setError('Admin username is required for the selected role');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5001/client/register', data);
+      const response = await axios.post('http://localhost:5053/client/register', data);
       console.log(response.data);
       navigate('/login');
     } catch (err) {
-      console.error('Registration error:', err); // Log the full error
+      console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
@@ -66,7 +73,7 @@ const Register = () => {
           <CCol md={9} lg={7} xl={6}>
             <CCard className="mx-4" style={{ padding: '20px', marginBottom: '20px' }}>
               <CCardBody className="p-4">
-                <CForm onSubmit={registerUser}>
+                <CForm onSubmit={handleRegister}>
                   <h1>Register</h1>
                   <p className="text-body-secondary">Create your account</p>
                   {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -135,14 +142,30 @@ const Register = () => {
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                       <option value="manager">Manager</option>
+                      <option value="employee">Employee</option>
                     </CFormSelect>
                   </CInputGroup>
+
+                  {/* Conditionally display admin username input */}
+                  {['admin', 'manager', 'employee'].includes(data.role) && (
+                    <CInputGroup className="mb-4">
+                      <CInputGroupText>
+                        <CIcon icon={cilUser} />
+                      </CInputGroupText>
+                      <CFormInput
+                        placeholder="Admin Username"
+                        value={data.adminUsername}
+                        onChange={(e) => setData({ ...data, adminUsername: e.target.value })}
+                      />
+                    </CInputGroup>
+                  )}
+
                   <div className="d-grid">
                     <CButton 
                       color="success" 
                       type="submit" 
                       disabled={loading} 
-                      style={{ padding: '10px', marginTop: '10px' }} // Add padding and margin to the button
+                      style={{ padding: '10px', marginTop: '10px' }}
                     >
                       {loading ? 'Creating Account...' : 'Create Account'}
                     </CButton>
