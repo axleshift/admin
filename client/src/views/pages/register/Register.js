@@ -25,12 +25,26 @@ const Register = () => {
     password: '',
     repeatPassword: '',
     role: '',
-    adminUsername: '',  // New field for admin's username
+    adminUsername: '', // New field for admin's username
   });
 
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState(''); // New state for password errors
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const validatePassword = (password) => {
+    // Add your custom password validation logic here
+    const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+
+    if (!passwordRequirements.test(password)) {
+      setPasswordError(
+        'Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      );
+    } else {
+      setPasswordError('');
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -50,6 +64,12 @@ const Register = () => {
     // If role is admin, employee, or manager, check for admin username
     if (['admin', 'manager', 'employee'].includes(data.role) && !data.adminUsername) {
       setError('Admin username is required for the selected role');
+      return;
+    }
+
+    // If password error exists, don't proceed
+    if (passwordError) {
+      setError('Please fix the password requirements before submitting.');
       return;
     }
 
@@ -117,9 +137,18 @@ const Register = () => {
                       placeholder="Password"
                       autoComplete="new-password"
                       value={data.password}
-                      onChange={(e) => setData({ ...data, password: e.target.value })}
+                      onChange={(e) => {
+                        setData({ ...data, password: e.target.value });
+                        validatePassword(e.target.value); // Validate as user types
+                      }}
                     />
                   </CInputGroup>
+
+                  {/* Conditionally show password requirements if password exists */}
+                  {data.password && passwordError && (
+                    <p style={{ color: 'red' }}>{passwordError}</p>
+                  )}
+
                   <CInputGroup className="mb-4">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -138,7 +167,6 @@ const Register = () => {
                       value={data.role}
                       onChange={(e) => setData({ ...data, role: e.target.value })}
                     >
-                      <option value="">Role</option>
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                       <option value="manager">Manager</option>
@@ -161,14 +189,11 @@ const Register = () => {
                   )}
 
                   <div className="d-grid">
-                    <CButton 
-                      color="success" 
-                      type="submit" 
-                      disabled={loading} 
-                      style={{ padding: '10px', marginTop: '10px' }}
-                    >
-                      {loading ? 'Creating Account...' : 'Create Account'}
-                    </CButton>
+                  <CCol xs={6}>
+                        <CButton type="submit" color="primary" className="px-4">
+                          Create Account
+                        </CButton>
+                      </CCol>
                   </div>
                 </CForm>
               </CCardBody>

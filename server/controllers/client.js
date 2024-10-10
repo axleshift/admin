@@ -1,9 +1,21 @@
 import Product from '../model/Product.js';
-import ProductStat from '../model/ProductStat.js';
 import User from '../model/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { generateUsername } from '../UTIL/generateCode.js';
+import Joi from 'joi'
+import PasswordComplexity from 'joi-password-complexity'
+
+const passwordComplexityOptions = {
+  min: 8,                     
+  max: 30,                     
+  lowerCase: 1,                
+  upperCase: 1,                
+  numeric: 1,                  
+  symbol: 1,                   
+  requirementCount: 4,         
+};
+
 
 export const getProducts = async (req, res) => {
   try {
@@ -85,130 +97,131 @@ export const deleteUser = async (req, res) => {
 // Register User
 export const registerUser = async (req, res) => {
   const { name, email, password, phoneNumber, role, adminUsername } = req.body;
-  console.log('Received registration data:', req.body); // Log the received data
+  console.log('Received registration data:', req.body); 
 
-  // Validate required fields
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
+  // Validate input
+  const schema = Joi.object({
+    name: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: new PasswordComplexity(passwordComplexityOptions).required(),
+    phoneNumber: Joi.string().optional(),
+    role: Joi.string().valid('admin', 'manager', 'employee', 'user').required(),
+    adminUsername: Joi.string().when('role', { is: Joi.valid('admin', 'manager', 'employee'), then: Joi.required() }),
+  });
 
-  // If role is admin, manager, or employee, validate adminUsername
-  if (['admin', 'manager', 'employee'].includes(role)) {
-    if (!adminUsername) {
-      return res.status(400).json({ error: 'Admin username is required for this role' });
-    }
-
-    // Check if the adminUsername exists in the database and has the admin role
-    const existingAdmin = await User.findOne({ username: adminUsername, role: 'admin' });
-    if (!existingAdmin) {
-      return res.status(400).json({ error: 'Invalid admin username' });
-    }
+  const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername });
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
   }
 
   try {
-    // Check if user already exists
+    // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    // Generate the username based on the role
-    const username = generateUsername(role); // Call the function to generate username
+    // Check for admin username if applicable
+    if (['admin', 'manager', 'employee'].includes(role)) {
+      const existingAdmin = await User.findOne({ username: adminUsername, role: 'admin' });
+      if (!existingAdmin) {
+        return res.status(400).json({ error: 'Invalid admin username' });
+      }
+    }
 
-    // Hash the password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user
+    // Save user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       phoneNumber,
       role,
-      username, // Add the generated username here
+      username: generateUsername(role), // Example username generation
     });
 
-    // Save the user to the database
     const savedUser = await newUser.save();
-
-    // Exclude the password from the response
     const userResponse = savedUser.toObject();
-    delete userResponse.password;
+    delete userResponse.password; // Don't send password back to client
 
     res.status(201).json(userResponse);
   } catch (error) {
-    console.error('Registration error:', error.message); // Log the error message
+    console.error('Registration error:', error.message);
     res.status(500).json({ message: 'Server error. Please try again later.', error: error.message });
   }
 };
+
+
 // Login endpoint
 export const loginUser = async (req, res) => {
-    const { identifier, password } = req.body;
+  const { identifier, password } = req.body;
 
-    if (!identifier || !password) {
-        return res.status(400).json({ message: 'Identifier and password are required' });
-    }
+  if (!identifier || !password) {
+      return res.status(400).json({ message: 'Identifier and password are required' });
+  }
 
-    console.log('Request body:', req.body); // Log the request body
+  console.log('Request body:', req.body); 
 
-    try {
-        const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
+  try {
+      const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
 
-        if (!user) {
-            console.error('User not found for identifier:', identifier);
-            return res.status(400).json({ message: 'User not found' });
-        }
+      if (!user) {
+          console.error('User not found for identifier:', identifier);
+          return res.status(400).json({ message: 'User not found' });
+      }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+          return res.status(400).json({ message: 'Invalid credentials' });
+      }
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        
-        // Ensure req.session exists
-        if (!req.session) {
-            return res.status(500).json({ message: 'Session is not initialized' });
-        }
+     
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      
+    
+      if (!req.session) {
+          return res.status(500).json({ message: 'Session is not initialized' });
+      }
 
-        req.session.user = { id: user._id, name: user.name, email: user.email, role: user.role};
+      req.session.user = { id: user._id,username:user.username, name: user.name, email: user.email,phoneNumber:user.phoneNumber, role: user.role};
 
-        res.status(200).json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-            },
-        });
-    } catch (error) {
-        console.error('Login error:', error.message);
-        console.error('Full error object:', error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
-    }
+      res.status(200).json({
+          token,
+          user: {
+              id: user._id,
+              name: user.name,
+              email: user.email,
+          },
+      });
+  } catch (error) {
+      console.error('Login error:', error.message);
+      console.error('Full error object:', error);
+      res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
 };
 // Register Customer
 export const registerCustomer = async (req, res) => {
   const { name, email, password, phoneNumber, country, occupation } = req.body;
-  console.log('Received customer registration data:', req.body); // Log the received data
+  console.log('Received customer registration data:', req.body); 
 
-  // Validate required fields
+  
   if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
   }
 
   try {
-      // Check if the customer already exists
+      
       const existingCustomer = await Customer.findOne({ email });
       if (existingCustomer) {
           return res.status(400).json({ error: 'Email already exists' });
       }
 
-      // Hash the password
+     
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create a new customer
+     
       const newCustomer = new Customer({
           name,
           email,
@@ -218,7 +231,7 @@ export const registerCustomer = async (req, res) => {
           occupation,
       });
 
-      // Save the customer to the database
+      
       await newCustomer.save();
 
       res.status(201).json({ message: 'Customer registered successfully' });
@@ -227,3 +240,35 @@ export const registerCustomer = async (req, res) => {
       res.status(500).json({ message: 'Server error. Please try again later.', error: error.message });
   }
 };
+
+
+export const changePassword = async (req, res) => {
+  const { email, currentPassword, newPassword } = req.body;
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check if the current password is correct
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

@@ -11,6 +11,8 @@ const AddCustomer = React.lazy(() => import('./views/customers/add'));
 const Land = React.lazy(() => import('./views/pages/freight/land'));
 const transaction = React.lazy(() => import('./views/pages/freight/transaction'));
 const shipping = React.lazy(() => import('./views/pages/freight/shipping'));
+const Settings = React.lazy(()=> import('./views/pages/profile/Settings'))
+const changepass = React.lazy(()=> import('./views/pages/profile/changepass'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
@@ -22,6 +24,8 @@ const routes = [
   { path: '/freight/land', name: 'Freight Land', element: Land },
   { path: '/freight/transaction', name: 'Freight transaction', element: transaction },
   { path: '/freight/shipping', name: 'Freight shipping', element: shipping },
+  { path: '/Settings', name:'Settings', element: Settings },
+  { path: '/changepass', name:'ChangePassword', element: changepass},
 ];
 
 export default routes;

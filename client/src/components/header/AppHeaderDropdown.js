@@ -24,13 +24,13 @@ import avatar8 from './../../assets/images/avatars/8.jpg';
 
 const AppHeaderDropdown = () => {
   // Retrieve the user's name from session storage
-  const userName = sessionStorage.getItem('userName');
+  const name = sessionStorage.getItem('name');
 
   return (
     <CDropdown variant="nav-item">
       <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
         <CAvatar src={avatar8} size="md" />
-        <span className="ms-2">{userName ? `Welcome, ${userName}` : 'Welcome, Guest'}</span>
+        <span className="ms-2">{name ? `Welcome, ${name}` : 'Welcome, Guest'}</span>
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
@@ -55,7 +55,7 @@ const AppHeaderDropdown = () => {
           <CIcon icon={cilUser} className="me-2" />
           Profile
         </CDropdownItem>
-        <CDropdownItem href="#">
+        <CDropdownItem href="/settings">
           <CIcon icon={cilSettings} className="me-2" />
           Settings
         </CDropdownItem>

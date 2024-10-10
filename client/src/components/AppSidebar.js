@@ -29,9 +29,9 @@ const AppSidebar = () => {
     // Check if the Redux user role is available, if not, fallback to sessionStorage
     if (reduxUserRole) {
       setUserRole(reduxUserRole); // Update state if Redux role changes
-      sessionStorage.setItem('userRole', reduxUserRole); // Sync with sessionStorage for later use
+      sessionStorage.setItem('role', reduxUserRole); // Sync with sessionStorage for later use
     } else {
-      const sessionRole = sessionStorage.getItem('userRole'); // Fallback to sessionStorage if Redux is empty
+      const sessionRole = sessionStorage.getItem('role'); // Fallback to sessionStorage if Redux is empty
       if (sessionRole) {
         setUserRole(sessionRole); // Set from sessionStorage
       }

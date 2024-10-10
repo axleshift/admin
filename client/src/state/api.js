@@ -89,7 +89,17 @@ export const api = createApi({
       }),
       invalidatesTags: ["User"], 
     }),
-  }),
+
+    // Update user details
+    updateUser: build.mutation({
+      query: ({ id, ...userDetails }) => ({
+        url: `general/user/${id}`, // Adjust the endpoint as needed
+        method: "PUT", // Or PATCH, depending on your API
+        body: userDetails,
+      }),
+      invalidatesTags: ["User"], // Adjust if you need to refetch user data
+    }),
+      }),
 });
 
 // Export hooks for each query and mutation
@@ -105,4 +115,5 @@ export const {
   useUpdateShippingMutation, 
   useDeleteShippingMutation,
   useLogUserActivityMutation, 
+  useUpdateUserMutation,
 } = api;

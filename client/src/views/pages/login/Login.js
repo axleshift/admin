@@ -47,15 +47,19 @@ const Login = () => {
         console.log("User response after login:", userResponse.data);
   
         if (userResponse.data.user) {
-          const userName = userResponse.data.user.name || ''; // Default to empty if name is missing
-          const userRole = userResponse.data.user.role || 'guest'; // Default role as 'guest' if role is missing
+          const name = userResponse.data.user.name || ''; 
+          const role = userResponse.data.user.role || ''; 
+          const email = userResponse.data.user.email || ''; 
+          const username = userResponse.data.user.username || ''; 
   
           // Save the user's name and role in session storage
-          sessionStorage.setItem('userName', userName);
-          sessionStorage.setItem('userRole', userRole);
+          sessionStorage.setItem('name', name);
+          sessionStorage.setItem('role', role);
+          sessionStorage.setItem('email', email);
+          sessionStorage.setItem('username', username);
   
           // Debugging: log saved role
-          console.log("Saved User Role in session:", sessionStorage.getItem('userRole'));
+          console.log("Saved User Role in session:", sessionStorage.getItem('role'));
   
           // Navigate to dashboard
           navigate('/dashboard');
@@ -85,14 +89,14 @@ const Login = () => {
                     {/* Display error message if login fails */}
                     {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
-                    {/* Input for Email or Username */}
+                    {/* Input for Email or Name */}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
                         type="text"
-                        placeholder="Email or Username"
+                        placeholder="Email or Name"
                         autoComplete="email"
                         value={data.identifier}
                         onChange={(e) => setData({ ...data, identifier: e.target.value })}
@@ -123,7 +127,7 @@ const Login = () => {
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
-                        <Link to="/home">
+                        <Link to="/forgotpass">
                           <CButton color="link" className="px-0">
                             Forgot password?
                           </CButton>
