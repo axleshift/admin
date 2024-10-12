@@ -4,68 +4,62 @@ import {
   CRow,
   CCol,
   CCard,
-  CCardText,
   CCardBody,
   CCardTitle,
   CCardFooter,
   CButton,
-  CCollapse,
+  CTable,
+  CTableHead,
+  CTableBody,
+  CTableRow,
+  CTableHeaderCell,
+  CTableDataCell,
   CFormSelect,
 } from "@coreui/react";
 import CustomHeader from '../../../components/header/customhead';
 import { useGetShippingQuery, useUpdateShippingMutation, useDeleteShippingMutation } from "../../../state/api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
 
-const ShippingCard = ({ shipping }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [updateShipping, { isLoading: isUpdating }] = useUpdateShippingMutation();
-  const [deleteShipping, { isLoading: isDeleting }] = useDeleteShippingMutation();
+const ShippingCard = ({ shipping, onUpdate, onDelete }) => {
   const [newStatus, setNewStatus] = useState(shipping.status);
   const [deliveryDate, setDeliveryDate] = useState(shipping.deliveryDate);
 
   const handleUpdate = async () => {
-    if (newStatus) {
+    try {
       if (newStatus === "Delivered") {
         setDeliveryDate(new Date()); // Set the delivery date to now
       }
 
-      await updateShipping({ id: shipping._id, status: newStatus, deliveryDate: newStatus === "Delivered" ? new Date() : null });
-
+      await onUpdate({ 
+        id: shipping._id, 
+        status: newStatus, 
+        deliveryDate: newStatus === "Delivered" ? new Date() : null 
+      });
       alert("Shipping status updated successfully!");
-    }
-  };
-
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this shipping entry?");
-    if (confirmDelete) {
-      await deleteShipping(shipping._id);
-      alert("Shipping entry deleted successfully!");
+    } catch (error) {
+      alert("Failed to update shipping status: " + error.message);
     }
   };
 
   return (
-    <CCard style={{ margin: '10px' }}>
-      <CCardBody>
-        <CCardTitle>Customer Name: {shipping.customerName}</CCardTitle>
-        <CCardText>
-          Order Volume: {shipping.orderVolume} kg
-        </CCardText>
-        <CCardText>
-          Shipping Type: {shipping.shippingType}
-        </CCardText>
-        <CCardText>
-          Order Date: {new Date(shipping.orderDate).toLocaleDateString()}
-        </CCardText>
-
-        <CCardText>
-          Current Status: <strong>{newStatus}</strong>
-        </CCardText>
-
+    <CTableRow>
+      <CTableDataCell>{shipping.customerId?.name || 'N/A'}</CTableDataCell>
+      <CTableDataCell>{shipping.product?.name || 'N/A'}</CTableDataCell>
+      <CTableDataCell>{shipping.orderVolume} kg</CTableDataCell>
+      <CTableDataCell>{shipping.shippingType}</CTableDataCell>
+      <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
+      <CTableDataCell>{shipping.dropOffLocation || 'N/A'}</CTableDataCell>
+      <CTableDataCell>{shipping.destinationCountry || 'N/A'}</CTableDataCell>
+      <CTableDataCell>
+        <strong>{newStatus}</strong>
         {newStatus === "Delivered" && deliveryDate && (
-          <CCardText>
+          <div>
             Delivery Date: <strong>{new Date(deliveryDate).toLocaleString()}</strong>
-          </CCardText>
+          </div>
         )}
-
+      </CTableDataCell>
+      <CTableDataCell>
         <CFormSelect
           aria-label="Select Shipping Status"
           value={newStatus}
@@ -76,34 +70,49 @@ const ShippingCard = ({ shipping }) => {
           <option value="Delivered">Delivered</option>
           <option value="Cancelled">Cancelled</option>
         </CFormSelect>
-      </CCardBody>
-      <CCardFooter>
-        <CButton color="primary" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? 'See less' : 'See more'}
+      </CTableDataCell>
+      <CTableDataCell>
+        <CButton color="warning" size="sm" onClick={handleUpdate}>
+          Update Status
         </CButton>
-        <CButton color="warning" size="sm" onClick={handleUpdate} disabled={isUpdating}>
-          {isUpdating ? 'Updating...' : 'Update Status'}
+        <CButton color="danger" size="sm" onClick={() => onDelete(shipping._id)}>
+          Delete
         </CButton>
-        <CButton color="danger" size="sm" onClick={handleDelete} disabled={isDeleting}>
-          {isDeleting ? 'Deleting...' : 'Delete'}
-        </CButton>
-      </CCardFooter>
-
-      {isExpanded && (
-        <CCollapse in={isExpanded} timeout={300}>
-          <CCardBody>
-            <CCardText>
-              Additional details could go here.
-            </CCardText>
-          </CCardBody>
-        </CCollapse>
-      )}
-    </CCard>
+      </CTableDataCell>
+    </CTableRow>
   );
 };
 
 const Transaction = () => {
   const { data: shippingData, error, isLoading } = useGetShippingQuery();
+  const [updateShipping] = useUpdateShippingMutation();
+  const [deleteShipping] = useDeleteShippingMutation();
+
+  const handleExport = () => {
+    const csvData = [
+      ["Customer Name", "Order Volume", "Shipping Type", "Order Date", "Drop Off Location", "Destination Country", "Status", "Delivery Date"],
+      ...(shippingData || []).map((shipping) => [
+        shipping.customerId?.name || 'N/A',
+        shipping.orderVolume,
+        shipping.shippingType,
+        new Date(shipping.orderDate).toLocaleDateString(),
+        shipping.dropOffLocation || 'N/A',
+        shipping.destinationCountry || 'N/A',
+        shipping.status,
+        shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : "N/A",
+      ]),
+    ];
+
+    const csvContent = csvData.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "shipping_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error loading shipping data: {error.message}</p>;
@@ -111,18 +120,41 @@ const Transaction = () => {
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
-        <CustomHeader title="TRANSACTIONS" subtitle="List of Transactions" />
-      </CRow>
-      <CRow>
-        {shippingData && shippingData.length > 0 ? (
-          shippingData.map((shipping) => (
-            <CCol key={shipping._id} xs="12" md="6" lg="4">
-              <ShippingCard shipping={shipping} />
-            </CCol>
-          ))
-        ) : (
-          <p>No shipping data available.</p>
-        )}
+        <CCol>
+          <CCard>
+            <CCardBody>
+              <CCardTitle>Shipping Transactions</CCardTitle>
+              <CButton color="gray" onClick={handleExport}>
+               <FontAwesomeIcon icon ={faDownload}/>
+              </CButton>
+              <CTable striped>
+                <CTableHead>
+                  <CTableRow>
+                    <CTableHeaderCell>Customer Name</CTableHeaderCell>
+                    <CTableHeaderCell>Order Volume</CTableHeaderCell>
+                    <CTableHeaderCell>Shipping Type</CTableHeaderCell>
+                    <CTableHeaderCell>Order Date</CTableHeaderCell>
+                    <CTableHeaderCell>Drop Off Location</CTableHeaderCell>
+                    <CTableHeaderCell>Destination Country</CTableHeaderCell>
+                    <CTableHeaderCell>Status</CTableHeaderCell>
+                    <CTableHeaderCell>Action</CTableHeaderCell>
+                  </CTableRow>
+                </CTableHead>
+                <CTableBody>
+                  {shippingData.map((shipping) => (
+                    <ShippingCard
+                      key={shipping._id}
+                      shipping={shipping}
+                      onUpdate={updateShipping}
+                      onDelete={deleteShipping}
+                    />
+                  ))}
+                </CTableBody>
+              </CTable>
+            </CCardBody>
+            <CCardFooter>End of Transactions</CCardFooter>
+          </CCard>
+        </CCol>
       </CRow>
     </CContainer>
   );

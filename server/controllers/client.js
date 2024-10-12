@@ -95,6 +95,7 @@ export const deleteUser = async (req, res) => {
 };
 
 // Register User
+
 export const registerUser = async (req, res) => {
   const { name, email, password, phoneNumber, role, adminUsername } = req.body;
   console.log('Received registration data:', req.body); 
@@ -103,7 +104,13 @@ export const registerUser = async (req, res) => {
   const schema = Joi.object({
     name: Joi.string().required(),
     email: Joi.string().email().required(),
-    password: new PasswordComplexity(passwordComplexityOptions).required(),
+    password: Joi.string()
+      .min(8)
+      .pattern(/[a-z]/, 'lowercase')
+      .pattern(/[A-Z]/, 'uppercase')
+      .pattern(/[0-9]/, 'numbers')
+      .pattern(/[@$!%*?&#]/, 'special characters')
+      .required(),
     phoneNumber: Joi.string().optional(),
     role: Joi.string().valid('admin', 'manager', 'employee', 'user').required(),
     adminUsername: Joi.string().when('role', { is: Joi.valid('admin', 'manager', 'employee'), then: Joi.required() }),
@@ -152,7 +159,6 @@ export const registerUser = async (req, res) => {
     res.status(500).json({ message: 'Server error. Please try again later.', error: error.message });
   }
 };
-
 
 // Login endpoint
 export const loginUser = async (req, res) => {

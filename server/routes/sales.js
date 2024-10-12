@@ -1,10 +1,10 @@
 import express from 'express';
-const router= express.Router()
-import { getshipping, createShipping } from '../controllers/sales.js';
+const router = express.Router();
+import { getshipping, createShipping, updateShipping } from '../controllers/sales.js';
 
-router.get('/shipping', getshipping)
+router.get('/shipping', getshipping);
+router.post('/shipping', createShipping);
 
-router.post('/shipping', createShipping); 
+router.patch('/shipping/:id', updateShipping); 
 
-
-export default router
+export default router;

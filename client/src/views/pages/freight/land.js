@@ -1,112 +1,195 @@
 import React, { useState } from 'react';
-import { useCreateShippingMutation } from './../../../state/api'; // Adjust import based on your API setup
-
-const landCargoOptions = [
-  { id: 1, name: 'Dry Van', volume: 4000, image: '/img/dryvan.jpeg' },
-  { id: 2, name: 'Box Truck', volume: 6000, image: '/img/box truck.png' },
-  { id: 3, name: 'Flatbed Truck', volume: 4800, image: '/img/flatbed.jpeg' },
-
-];
+import {
+  CButton,
+  CCard,
+  CCardBody,
+  CCol,
+  CContainer,
+  CForm,
+  CFormInput,
+  CInputGroup,
+  CInputGroupText,
+  CRow,
+  CFormSelect,
+} from '@coreui/react';
+import { faBox, faCalendar, faUser, faWeightHanging } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useCreateShippingMutation } from './../../../state/api';
 
 const LandCargo = () => {
+  const landCargoOptions = [
+    { id: 1, name: 'Dry Van', volume: 4000, image: '/img/dryvan.jpeg' },
+    { id: 2, name: 'Box Truck', volume: 6000, image: '/img/boxtruck.jpeg' },
+    { id: 3, name: 'Flatbed Truck', volume: 4800, image: '/img/flatbed.jpeg' },
+  ];
+
+  const seaCargoOptions = [
+    { id: 1, name: 'Container Ship', volume: 100000, image: '/img/containership.jpeg' },
+    { id: 2, name: 'Bulk Carrier', volume: 400000, image: '/img/bulkcarrier.jpeg' },
+    { id: 3, name: 'Roro Vessel', volume: 6000, image: '/img/rorovessel.jpeg' },
+  ];
+
+  const airCargoOptions = [
+    { id: 1, name: 'Boeing 747-400F', volume: 100000, image: '/img/boeing747.jpeg' },
+    { id: 2, name: 'Airbus A300-600F', volume: 40000, image: '/img/airbusa300.jpeg' },
+    { id: 3, name: 'McDonnell Douglas MD-11F', volume: 90000, image: '/img/mcdonnel.jpeg' },
+  ];
+
   const [customerName, setCustomerName] = useState('');
   const [orderVolume, setOrderVolume] = useState('');
   const [orderDate, setOrderDate] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [shippingType, setShippingType] = useState('land');
+  const [selectedCargo, setSelectedCargo] = useState(landCargoOptions[0]);
   const [status, setStatus] = useState('pending');
-  const [selectedLandCargo, setSelectedLandCargo] = useState(landCargoOptions[0]); // Default selection
+  const [error, setError] = useState('');
 
-  const [createShipping, { isLoading, error }] = useCreateShippingMutation();
+  const [createShipping, { isLoading }] = useCreateShippingMutation();
 
-  const getWeightClass = (volume) => {
-    if (volume <= 5) return 'Class 50 (0 - 5 kg)';
-    if (volume <= 10) return 'Class 55 (6 - 10 kg)';
-    if (volume <= 15) return 'Class 60 (11 - 15 kg)';
-    if (volume <= 20) return 'Class 65 (16 - 20 kg)';
-    if (volume <= 30) return 'Class 70 (21 - 30 kg)';
-    if (volume <= 50) return 'Class 77.5 (31 - 50 kg)';
-    if (volume <= 70) return 'Class 85 (51 - 70 kg)';
-    if (volume <= 100) return 'Class 100 (71 - 100 kg)';
-    if (volume <= 125) return 'Class 110 (101 - 125 kg)';
-    return 'Class 125 (125 kg and above)';
+  const handleCargoChange = (e) => {
+    const cargoId = parseInt(e.target.value);
+    const cargoOptions = getCargoOptions();
+    const cargo = cargoOptions.find(option => option.id === cargoId);
+    setSelectedCargo(cargo);
+  };
+
+  const getCargoOptions = () => {
+    switch (shippingType) {
+      case 'sea':
+        return seaCargoOptions;
+      case 'air':
+        return airCargoOptions;
+      case 'land':
+      default:
+        return landCargoOptions;
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!customerName || !orderVolume || !orderDate) {
-      alert("Please fill in all fields.");
+    if (!customerName || !orderVolume || !orderDate || !shippingType) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    const weightClass = getWeightClass(Number(orderVolume));
     try {
-      await createShipping({ customerName, orderVolume, orderDate, weightClass, status });
+      await createShipping({ customerName, orderVolume, orderDate, deliveryDate, shippingType, status });
       alert("Shipping details submitted successfully!");
       setCustomerName('');
       setOrderVolume('');
       setOrderDate('');
+      setDeliveryDate('');
+      setShippingType('land');
+      setSelectedCargo(landCargoOptions[0]);
       setStatus('pending');
     } catch (error) {
       console.error("Failed to submit shipping details:", error);
-      alert("An error occurred while submitting shipping details.");
+      setError("An error occurred while submitting shipping details.");
     }
   };
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Customer Name"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Order Volume (kg)"
-          value={orderVolume}
-          onChange={(e) => setOrderVolume(e.target.value)}
-          required
-        />
-        <select
-          value={selectedLandCargo.id}
-          onChange={(e) => {
-            const cargo = landCargoOptions.find(c => c.id === Number(e.target.value));
-            setSelectedLandCargo(cargo);
-            setOrderVolume(cargo.volume); // Auto-set volume based on selected land cargo
-          }}
-        >
-          {landCargoOptions.map(cargo => (
-            <option key={cargo.id} value={cargo.id}>{cargo.name}</option>
-          ))}
-        </select>
-        <input
-          type="date"
-          value={orderDate}
-          onChange={(e) => setOrderDate(e.target.value)}
-          required
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
-          <option value="in transit">In Transit</option>
-          <option value="processing">Processing</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="failed">Failed</option>
-        </select>
-        <div>
-          <img src={selectedLandCargo.image} alt={selectedLandCargo.name} style={{ width: '100px' }} />
-          <p>{`${selectedLandCargo.name} can carry up to ${selectedLandCargo.volume} kg.`}</p>
-        </div>
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Submitting..." : "Submit Shipping Details"}
-        </button>
-      </form>
-      {error && <p>Error submitting shipping details: {error.message}</p>}
-      {orderVolume && <p>Weight Class: {getWeightClass(Number(orderVolume))}</p>}
+      <CContainer>
+        <CRow className="justify-content-center">
+          <CCol md={9} lg={7} xl={6}>
+            <CCard className="mx-4">
+              <CCardBody className="p-4">
+                <CForm onSubmit={handleSubmit}>
+                  <h1>Shipment Request</h1>
+                  {error && <p style={{ color: 'red' }}>{error}</p>}
+                  
+                  <CInputGroup className="mb-3">
+                    <CInputGroupText>
+                      <FontAwesomeIcon icon={faUser} />
+                    </CInputGroupText>
+                    <CFormInput
+                      placeholder="Customer Name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                    />
+                  </CInputGroup>
+
+                  <CInputGroup className="mb-3">
+                    <CInputGroupText>
+                      <FontAwesomeIcon icon={faWeightHanging} />
+                    </CInputGroupText>
+                    <CFormInput
+                      type="number"
+                      placeholder="Order Volume (kg)"
+                      value={orderVolume}
+                      onChange={(e) => setOrderVolume(e.target.value)}
+                    />
+                  </CInputGroup>
+
+                  <CInputGroup className="mb-3">
+                    <CInputGroupText>
+                      <FontAwesomeIcon icon={faCalendar} />
+                    </CInputGroupText>
+                    <CFormInput
+                      type="date"
+                      value={orderDate}
+                      onChange={(e) => setOrderDate(e.target.value)}
+                    />
+                    <span style={{ marginLeft: '10px', alignSelf: 'center' }}>Order Date</span>
+                  </CInputGroup>
+
+                  <CInputGroup className="mb-3">
+                    <CInputGroupText>
+                      <FontAwesomeIcon icon={faBox} />
+                    </CInputGroupText>
+                    <CFormInput
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                    />
+                    <span style={{ marginLeft: '10px', alignSelf: 'center' }}>Delivery Date</span>
+                  </CInputGroup>
+
+                  <p>Note: The delivery date can be adjusted due to unforeseen circumstances.</p>
+
+                  <CInputGroup className="mb-3">
+                    <CFormSelect
+                      value={shippingType}
+                      onChange={(e) => {
+                        setShippingType(e.target.value);
+                        setSelectedCargo(getCargoOptions()[0]); // Reset to first cargo option on type change
+                      }}
+                    >
+                      <option value="land">Land Freight</option>
+                      <option value="sea">Sea Freight</option>
+                      <option value="air">Air Freight</option>
+                    </CFormSelect>
+                  </CInputGroup>
+
+                  <CInputGroup className="mb-3">
+                    <CFormSelect onChange={handleCargoChange}>
+                      {getCargoOptions().map(option => (
+                        <option key={option.id} value={option.id}>{option.name}</option>
+                      ))}
+                    </CFormSelect>
+                  </CInputGroup>
+
+                  <div className="mb-3">
+                    <img
+                      src={selectedCargo.image}
+                      alt={selectedCargo.name}
+                      style={{ width: '150px', marginTop: '10px' }}
+                    />
+                    <p>{`${selectedCargo.name} can carry up to ${selectedCargo.volume} kg.`}</p>
+                  </div>
+
+                  <div className="d-grid">
+                    <CButton type="submit" color="primary" className="px-4" disabled={isLoading}>
+                      {isLoading ? "Submitting..." : "Submit Shipment Request"}
+                    </CButton>
+                  </div>
+                </CForm>
+              </CCardBody>
+            </CCard>
+          </CCol>
+        </CRow>
+      </CContainer>
     </div>
   );
 };
