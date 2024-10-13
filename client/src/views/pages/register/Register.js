@@ -25,63 +25,42 @@ const Register = () => {
     password: '',
     repeatPassword: '',
     role: '',
-    adminUsername: '',
+    adminUsername: '',  // New field for admin's username
   });
 
   const [error, setError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const validatePassword = (password) => {
-    const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-
-    if (!passwordRequirements.test(password)) {
-      setPasswordError(
-        'Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.'
-      );
-    } else {
-      setPasswordError('');
-    }
-  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Validate password match
     if (data.password !== data.repeatPassword) {
       setError('Passwords do not match');
       return;
     }
 
+    // Check for empty fields
     if (!data.name || !data.email || !data.password || !data.role) {
       setError('All fields are required');
       return;
     }
 
+    // If role is admin, employee, or manager, check for admin username
     if (['admin', 'manager', 'employee'].includes(data.role) && !data.adminUsername) {
       setError('Admin username is required for the selected role');
       return;
     }
 
-    if (passwordError) {
-      setError('Please fix the password requirements before submitting.');
-      return;
-    }
-
     setLoading(true);
-    setError(''); // Reset error message before the request
     try {
       const response = await axios.post('http://localhost:5053/client/register', data);
       console.log(response.data);
       navigate('/login');
     } catch (err) {
       console.error('Registration error:', err);
-      if (err.response) {
-        console.error('Full error object:', err.response);
-        setError(err.response.data.error || 'Registration failed');
-      } else {
-        setError('Network error: Unable to connect to server');
-      }
+      setError(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -138,15 +117,9 @@ const Register = () => {
                       placeholder="Password"
                       autoComplete="new-password"
                       value={data.password}
-                      onChange={(e) => {
-                        setData({ ...data, password: e.target.value });
-                        validatePassword(e.target.value);
-                      }}
+                      onChange={(e) => setData({ ...data, password: e.target.value })}
                     />
                   </CInputGroup>
-                  {data.password && passwordError && (
-                    <p style={{ color: 'red' }}>{passwordError}</p>
-                  )}
                   <CInputGroup className="mb-4">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -165,12 +138,14 @@ const Register = () => {
                       value={data.role}
                       onChange={(e) => setData({ ...data, role: e.target.value })}
                     >
-                      <option value="">Select Role</option>
+                      <option value="user">User</option>
                       <option value="admin">Admin</option>
                       <option value="manager">Manager</option>
                       <option value="employee">Employee</option>
                     </CFormSelect>
                   </CInputGroup>
+
+                  {/* Conditionally display admin username input */}
                   {['admin', 'manager', 'employee'].includes(data.role) && (
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
@@ -183,12 +158,16 @@ const Register = () => {
                       />
                     </CInputGroup>
                   )}
+
                   <div className="d-grid">
-                    <CCol xs={6}>
-                      <CButton type="submit" color="primary" className="px-4" disabled={loading}>
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                      </CButton>
-                    </CCol>
+                    <CButton 
+                      color="success" 
+                      type="submit" 
+                      disabled={loading} 
+                      style={{ padding: '10px', marginTop: '10px' }}
+                    >
+                      {loading ? 'Creating Account...' : 'Create Account'}
+                    </CButton>
                   </div>
                 </CForm>
               </CCardBody>

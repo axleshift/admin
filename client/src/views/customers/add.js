@@ -13,7 +13,7 @@ import {
 import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilUser, cilPhone } from '@coreui/icons';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom'; 
 
 const Add = () => { 
   const [data, setData] = useState({
@@ -21,7 +21,6 @@ const Add = () => {
     email: '',
     phoneNumber: '',
     country: '',
-    role: 'user',
     occupation: '',
     password: '',
     repeatPassword: ''
@@ -30,11 +29,14 @@ const Add = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate(); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setData((prevData) => ({ ...prevData, [name]: value }));
+    setData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
   };
 
   const handleRegister = async (e) => {
@@ -53,11 +55,19 @@ const Add = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:5053/client/register', data);
+      // Send data to the server
+      const response = await axios.post('http://localhost:9000/client/register', {
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        country: data.country,
+        occupation: data.occupation,
+        password: data.password
+      });
       console.log(response.data);
       
-      
-      navigate('/customer'); // Adjust this path based on your routing setup
+      // Redirect upon success
+      navigate('/customer');
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Registration failed');

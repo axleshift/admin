@@ -1,9 +1,10 @@
 import Shipping from "../model/Shipping.js";
 
-// Controller for fetching shipping data
-export const getshipping = async (req, res) => {
+// Fetch shipping data based on customerId and product
+export const getShipping = async (req, res) => {
   try {
     const { customerId, product } = req.query;
+
     const shippingData = await Shipping.find({ customerId, product });
 
     if (!shippingData.length) {
@@ -16,7 +17,7 @@ export const getshipping = async (req, res) => {
   }
 };
 
-// Controller for creating new shipping
+// Controller for creating shipping
 export const createShipping = async (req, res) => {
   try {
     const newShipping = new Shipping(req.body);
@@ -27,18 +28,16 @@ export const createShipping = async (req, res) => {
   }
 };
 
-// Controller for updating shipping (PATCH)
+// Controller for updating shipping
 export const updateShipping = async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;  // Get ID from URL params
     const updatedShipping = await Shipping.findByIdAndUpdate(id, req.body, { new: true });
-
     if (!updatedShipping) {
-      return res.status(404).json({ message: "Shipping entry not found" });
+      return res.status(404).json({ message: 'Shipping record not found' });
     }
-
     res.status(200).json(updatedShipping);
   } catch (error) {
-    res.status(500).json({ message: "Error updating shipping entry", error });
+    res.status(500).json({ message: 'Error updating shipping record', error });
   }
 };

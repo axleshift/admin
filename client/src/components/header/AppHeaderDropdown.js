@@ -21,8 +21,6 @@ import {
   cilUser,
 } from '@coreui/icons';
 import avatar8 from './../../assets/images/avatars/8.jpg';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faGear, faMoneyBill, faRightFromBracket, faTurnUp, faUser } from '@fortawesome/free-solid-svg-icons';
 
 const AppHeaderDropdown = () => {
   // Retrieve the user's name from session storage
@@ -37,29 +35,41 @@ const AppHeaderDropdown = () => {
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
         <CDropdownItem href="#">
-          <FontAwesomeIcon icon={faTurnUp}/>
+          <CIcon icon={cilBell} className="me-2" />
           Updates
         </CDropdownItem>
         <CDropdownItem href="#">
-          <FontAwesomeIcon icon={faEnvelope}/>
+          <CIcon icon={cilEnvelopeOpen} className="me-2" />
           Messages
+        </CDropdownItem>
+        <CDropdownItem href="#">
+          <CIcon icon={cilTask} className="me-2" />
+          Tasks
+        </CDropdownItem>
+        <CDropdownItem href="#">
+          <CIcon icon={cilCommentSquare} className="me-2" />
+          Comments
         </CDropdownItem>
         <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>
         <CDropdownItem href="/profile">
-        <FontAwesomeIcon icon={faUser}/>
+          <CIcon icon={cilUser} className="me-2" />
           Profile
         </CDropdownItem>
         <CDropdownItem href="/settings">
-        <FontAwesomeIcon icon={faGear}/>
+          <CIcon icon={cilSettings} className="me-2" />
           Settings
         </CDropdownItem>
         <CDropdownItem href="#">
-        <FontAwesomeIcon icon={faMoneyBill}/>
+          <CIcon icon={cilCreditCard} className="me-2" />
           Payments
         </CDropdownItem>
+        <CDropdownItem href="#">
+          <CIcon icon={cilFile} className="me-2" />
+          Projects
+        </CDropdownItem>
         <CDropdownDivider />
-        <CDropdownItem href="/login">
-        <FontAwesomeIcon icon={faRightFromBracket}/>
+        <CDropdownItem href="#">
+          <CIcon icon={cilLockLocked} className="me-2" />
           Lock Account
         </CDropdownItem>
       </CDropdownMenu>

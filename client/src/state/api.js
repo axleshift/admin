@@ -47,8 +47,9 @@ export const api = createApi({
     getShipping: build.query({
       query: (params) => {
         const { customerId, product } = params || {};
-        // Build query string dynamically based on available parameters
-        return `sales/shipping${customerId || product ? `?customerId=${customerId}&product=${product}` : ''}`;
+        return `sales/shipping${
+          customerId || product ? `?customerId=${customerId}&product=${product}` : ''
+        }`;
       },
       providesTags: ["Shipping"],
     }),
@@ -80,7 +81,7 @@ export const api = createApi({
       invalidatesTags: ["Shipping"], // Invalidate shipping tag to refetch data
     }),
 
-    //tracker
+    // Log user activity
     logUserActivity: build.mutation({
       query: (activityData) => ({
         url: 'user-activity', // Adjust to your endpoint
@@ -99,7 +100,7 @@ export const api = createApi({
       }),
       invalidatesTags: ["User"], // Adjust if you need to refetch user data
     }),
-      }),
+  }),
 });
 
 // Export hooks for each query and mutation

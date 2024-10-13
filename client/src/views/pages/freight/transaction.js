@@ -3,115 +3,77 @@ import {
   CContainer,
   CRow,
   CCol,
-  CCard,
-  CCardBody,
-  CCardTitle,
-  CCardFooter,
   CButton,
   CTable,
-  CTableHead,
   CTableBody,
-  CTableRow,
-  CTableHeaderCell,
   CTableDataCell,
+  CTableHead,
+  CTableHeaderCell,
+  CTableRow,
   CFormSelect,
+  CBadge
 } from "@coreui/react";
 import CustomHeader from '../../../components/header/customhead';
 import { useGetShippingQuery, useUpdateShippingMutation, useDeleteShippingMutation } from "../../../state/api";
+import * as XLSX from 'xlsx';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDownload } from "@fortawesome/free-solid-svg-icons";
-
-const ShippingCard = ({ shipping, onUpdate, onDelete }) => {
-  const [newStatus, setNewStatus] = useState(shipping.status);
-  const [deliveryDate, setDeliveryDate] = useState(shipping.deliveryDate);
-
-  const handleUpdate = async () => {
-    try {
-      if (newStatus === "Delivered") {
-        setDeliveryDate(new Date()); // Set the delivery date to now
-      }
-
-      await onUpdate({ 
-        id: shipping._id, 
-        status: newStatus, 
-        deliveryDate: newStatus === "Delivered" ? new Date() : null 
-      });
-      alert("Shipping status updated successfully!");
-    } catch (error) {
-      alert("Failed to update shipping status: " + error.message);
-    }
-  };
-
-  return (
-    <CTableRow>
-      <CTableDataCell>{shipping.customerId?.name || 'N/A'}</CTableDataCell>
-      <CTableDataCell>{shipping.product?.name || 'N/A'}</CTableDataCell>
-      <CTableDataCell>{shipping.orderVolume} kg</CTableDataCell>
-      <CTableDataCell>{shipping.shippingType}</CTableDataCell>
-      <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
-      <CTableDataCell>{shipping.dropOffLocation || 'N/A'}</CTableDataCell>
-      <CTableDataCell>{shipping.destinationCountry || 'N/A'}</CTableDataCell>
-      <CTableDataCell>
-        <strong>{newStatus}</strong>
-        {newStatus === "Delivered" && deliveryDate && (
-          <div>
-            Delivery Date: <strong>{new Date(deliveryDate).toLocaleString()}</strong>
-          </div>
-        )}
-      </CTableDataCell>
-      <CTableDataCell>
-        <CFormSelect
-          aria-label="Select Shipping Status"
-          value={newStatus}
-          onChange={(e) => setNewStatus(e.target.value)}
-        >
-          <option value="Pending">Pending</option>
-          <option value="In Transit">In Transit</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
-        </CFormSelect>
-      </CTableDataCell>
-      <CTableDataCell>
-        <CButton color="warning" size="sm" onClick={handleUpdate}>
-          Update Status
-        </CButton>
-        <CButton color="danger" size="sm" onClick={() => onDelete(shipping._id)}>
-          Delete
-        </CButton>
-      </CTableDataCell>
-    </CTableRow>
-  );
-};
 
 const Transaction = () => {
   const { data: shippingData, error, isLoading } = useGetShippingQuery();
   const [updateShipping] = useUpdateShippingMutation();
   const [deleteShipping] = useDeleteShippingMutation();
+  const [newStatusMap, setNewStatusMap] = useState({});
+  const [isUpdating, setIsUpdating] = useState(false); // New state to manage global updating
+  const [isDeleting, setIsDeleting] = useState(false); // New state to manage global deleting
 
-  const handleExport = () => {
-    const csvData = [
-      ["Customer Name", "Order Volume", "Shipping Type", "Order Date", "Drop Off Location", "Destination Country", "Status", "Delivery Date"],
-      ...(shippingData || []).map((shipping) => [
-        shipping.customerId?.name || 'N/A',
-        shipping.orderVolume,
-        shipping.shippingType,
-        new Date(shipping.orderDate).toLocaleDateString(),
-        shipping.dropOffLocation || 'N/A',
-        shipping.destinationCountry || 'N/A',
-        shipping.status,
-        shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : "N/A",
-      ]),
-    ];
+  // Handle status update for each shipping entry
+  const handleUpdate = async (shippingId) => {
+    setIsUpdating(true);
+    try {
+      const newStatus = newStatusMap[shippingId] || "Pending";  // Fallback to "Pending" if not set
+      const deliveryDate = newStatus === "Delivered" ? new Date() : null;
 
-    const csvContent = csvData.map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "shipping_data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      await updateShipping({ id: shippingId, status: newStatus, deliveryDate });
+      alert("Shipping status updated successfully!");
+    } catch (err) {
+      alert("Error updating shipping status.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async (shippingId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this shipping entry?");
+    if (confirmDelete) {
+      setIsDeleting(true);
+      try {
+        await deleteShipping(shippingId);
+        alert("Shipping entry deleted successfully!");
+      } catch (err) {
+        alert("Error deleting shipping entry.");
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  const handleDownload = () => {
+    if (!shippingData) return;
+
+    const formattedData = shippingData.map((shipping) => ({
+      CustomerName: shipping.customerName,
+      OrderVolume: `${shipping.orderVolume} kg`,
+      ShippingType: shipping.shippingType,
+      OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
+      Status: shipping.status,
+      DeliveryDate: shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+    XLSX.writeFile(workbook, "shipping_transactions.xlsx");
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -120,42 +82,79 @@ const Transaction = () => {
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
-        <CCol>
-          <CCard>
-            <CCardBody>
-              <CCardTitle>Shipping Transactions</CCardTitle>
-              <CButton color="gray" onClick={handleExport}>
-               <FontAwesomeIcon icon ={faDownload}/>
-              </CButton>
-              <CTable striped>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell>Customer Name</CTableHeaderCell>
-                    <CTableHeaderCell>Order Volume</CTableHeaderCell>
-                    <CTableHeaderCell>Shipping Type</CTableHeaderCell>
-                    <CTableHeaderCell>Order Date</CTableHeaderCell>
-                    <CTableHeaderCell>Drop Off Location</CTableHeaderCell>
-                    <CTableHeaderCell>Destination Country</CTableHeaderCell>
-                    <CTableHeaderCell>Status</CTableHeaderCell>
-                    <CTableHeaderCell>Action</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {shippingData.map((shipping) => (
-                    <ShippingCard
-                      key={shipping._id}
-                      shipping={shipping}
-                      onUpdate={updateShipping}
-                      onDelete={deleteShipping}
-                    />
-                  ))}
-                </CTableBody>
-              </CTable>
-            </CCardBody>
-            <CCardFooter>End of Transactions</CCardFooter>
-          </CCard>
+        <CustomHeader title="TRANSACTIONS" subtitle="List of Transactions" />
+      </CRow>
+      <CRow className="p-2">
+        <CCol xs="auto">
+        <CButton color="Gray" onClick={handleDownload}>
+          <FontAwesomeIcon icon={faDownload}/>
+        </CButton>
         </CCol>
       </CRow>
+      <CTable striped bordered hover responsive>
+        <CTableHead>
+          <CTableRow>
+            <CTableHeaderCell>Customer Name</CTableHeaderCell>
+            <CTableHeaderCell>Order Volume (kg)</CTableHeaderCell>
+            <CTableHeaderCell>Shipping Type</CTableHeaderCell>
+            <CTableHeaderCell>Order Date</CTableHeaderCell>
+            <CTableHeaderCell>Status</CTableHeaderCell>
+            <CTableHeaderCell>Delivery Date</CTableHeaderCell>
+            <CTableHeaderCell>Update Status</CTableHeaderCell>
+            <CTableHeaderCell>Actions</CTableHeaderCell>
+          </CTableRow>
+        </CTableHead>
+        <CTableBody>
+          {shippingData && shippingData.map((shipping) => (
+            <CTableRow key={shipping._id}>
+              <CTableDataCell>{shipping.customerName}</CTableDataCell>
+              <CTableDataCell>{shipping.orderVolume}</CTableDataCell>
+              <CTableDataCell>{shipping.shippingType}</CTableDataCell>
+              <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
+              <CTableDataCell>
+                <CBadge color={shipping.status === "Delivered" ? "success" : "warning"}>
+                  {shipping.status}
+                </CBadge>
+              </CTableDataCell>
+              <CTableDataCell>
+                {shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleDateString() : "N/A"}
+              </CTableDataCell>
+              <CTableDataCell>
+                <CFormSelect
+                  aria-label="Select Shipping Status"
+                  value={newStatusMap[shipping._id] || shipping.status}
+                  onChange={(e) =>
+                    setNewStatusMap((prev) => ({ ...prev, [shipping._id]: e.target.value }))
+                  }
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </CFormSelect>
+              </CTableDataCell>
+              <CTableDataCell>
+                <CButton
+                  color="warning"
+                  size="sm"
+                  onClick={() => handleUpdate(shipping._id)}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? 'Updating...' : 'Update'}
+                </CButton>
+                <CButton
+                  color="danger"
+                  size="sm"
+                  onClick={() => handleDelete(shipping._id)}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </CButton>
+              </CTableDataCell>
+            </CTableRow>
+          ))}
+        </CTableBody>
+      </CTable>
     </CContainer>
   );
 };

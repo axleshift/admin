@@ -1,8 +1,8 @@
 import express from 'express';
 const router = express.Router();
-import { getshipping, createShipping, updateShipping } from '../controllers/sales.js';
+import { getShipping, createShipping, updateShipping } from '../controllers/sales.js';
 
-router.get('/shipping', getshipping);
+router.get('/shipping', getShipping);
 router.post('/shipping', createShipping);
 
 router.patch('/shipping/:id', updateShipping); 
