@@ -32,6 +32,7 @@ const App = () => {
 
   return (
     <BrowserRouter>
+     
       <Suspense
         fallback={
           <div className="pt-3 text-center">

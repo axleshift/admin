@@ -9,6 +9,8 @@ import {
   cilSpeedometer,
 } from '@coreui/icons';
 import { CNavGroup, CNavItem } from '@coreui/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 // Define the navigation items based on the user role
 const _nav = (userRole) => [
@@ -16,6 +18,15 @@ const _nav = (userRole) => [
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
+    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    badge: {
+      color: 'info',
+      text: 'NEW',
+    },
+  },{
+    component: CNavItem,
+    name: 'Employee',
+    to: '/employeedash',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
     badge: {
       color: 'info',
@@ -52,6 +63,29 @@ const _nav = (userRole) => [
             },
           ] 
         : []),
+    ],
+  },
+  {
+    component: CNavGroup,
+    name: 'Employees',
+    to: '',
+    icon: <FontAwesomeIcon icon ={faUser}/>,
+    items: [
+      {
+        component: CNavItem,
+        name: 'Attendance',
+        to: 'hr1/AttendanceTracking',
+      },
+      {
+        component: CNavItem,
+        name: 'Employee',
+        to: 'hr1/EmployeeManagement',
+      },
+      {
+        component: CNavItem,
+        name: 'Performance',
+        to: 'hr1/PerformanceManagement',
+      },
     ],
   },
   {

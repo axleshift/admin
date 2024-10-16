@@ -9,15 +9,15 @@
     import generalRoutes from "./routes/general.js";
     import managementRoutes from "./routes/management.js";
     import salesRoutes from "./routes/sales.js";
+    import hr1Routes from './routes/hr1.js'
     import session from 'express-session';
     import MongoStore from 'connect-mongo';
 
-    //connection to teams
-    import hrRoutes from "./routes/hr.js";
-    import coreRoutes from "./routes/core.js";
-    import financeRoutes from "./routes/finance.js";
+    import Employee from './model/hr1.js'
+    import { employee } from "./data/index.js";
 
-    // Configuration
+
+// Configuration
     dotenv.config();
     const app = express();
     app.use(express.json());
@@ -52,11 +52,11 @@
     app.use("/general", generalRoutes);
     app.use("/management", managementRoutes);
     app.use("/sales", salesRoutes);
+    app.use('/hr1',hr1Routes);
 
-    //routes connect with other
-    app.use('/hr/',hrRoutes)
-    app.use('/core/',coreRoutes)
-    app.use('/finance/',financeRoutes)
+
+    
+  
 
     // Mongoose connection
     const PORT = process.env.PORT || 9000;
@@ -65,5 +65,8 @@
         .connect(process.env.MONGO_URL)
         .then(() => {
             app.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
+
+               // Employee.insertMany(employee)
+     
         })
         .catch((err) => console.log(`${err} did not connect`));
