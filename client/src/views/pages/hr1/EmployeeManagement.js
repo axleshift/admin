@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { CContainer, CRow, CCard, CCardBody, CCardHeader, CListGroup, CListGroupItem } from '@coreui/react';
+import { CContainer, CRow, CCard, CCardBody, CCardHeader, CListGroup, CListGroupItem, CButton } from '@coreui/react';
 import { useGetEmployeesQuery } from '../../../state/api'; // Adjust based on your API hook
 import CustomHeader from '../../../components/header/customhead';
+import * as XLSX from 'xlsx'; // Import the XLSX library
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDownload } from '@fortawesome/free-solid-svg-icons';
 
 const EmployeeManagement = () => {
   const { data: employees, error, isLoading } = useGetEmployeesQuery(); // Fetch all employee data
@@ -15,11 +18,45 @@ const EmployeeManagement = () => {
     setSelectedEmployeeId(prevId => (prevId === id ? null : id));
   };
 
+  const handleDownloadAllAttendance = () => {
+    // Create an array to store the consolidated attendance data for all employees
+    const allAttendanceData = [];
+
+    employees.forEach((employee) => {
+      employee.attendance.forEach((entry) => {
+        allAttendanceData.push({
+          EmployeeName: `${employee.firstName} ${employee.lastName}`,
+          Email: employee.email,
+          Date: new Date(entry.date).toLocaleDateString(),
+          Status: entry.status,
+        });
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(allAttendanceData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "All Employees Attendance");
+
+    // Trigger the file download
+    XLSX.writeFile(workbook, 'All_Employees_Attendance.xlsx');
+  };
+
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="Employee List" subtitle="Details of all employees" />
-        {/* Render employee details here */}
+
+        {/* Download All Attendance Button */}
+        <CButton 
+          color="info" 
+          onClick={handleDownloadAllAttendance} 
+          className="mb-3"
+          size="sm"
+          style={{ width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <FontAwesomeIcon icon={faDownload} />
+        </CButton>
+
         {employees.map(employee => (
           <CCard key={employee._id} className="mb-3" style={{ cursor: 'pointer' }} onClick={() => handleEmployeeClick(employee._id)}>
             <CCardHeader>

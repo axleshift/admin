@@ -10,7 +10,7 @@ import {
 } from '@coreui/icons';
 import { CNavGroup, CNavItem } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { faTruckFast, faUser } from '@fortawesome/free-solid-svg-icons';
 
 // Define the navigation items based on the user role
 const _nav = (userRole) => [
@@ -35,7 +35,7 @@ const _nav = (userRole) => [
   },
   {
     component: CNavGroup,
-    name: 'SERVICES',
+    name: 'Administration',
     to: '',
     icon: <CIcon icon={cilBeachAccess} customClassName="nav-icon" />,
     items: [
@@ -66,28 +66,20 @@ const _nav = (userRole) => [
     ],
   },
   {
-    component: CNavGroup,
-    name: 'Employees',
-    to: '',
-    icon: <FontAwesomeIcon icon ={faUser}/>,
-    items: [
-      {
-        component: CNavItem,
-        name: 'Attendance',
-        to: 'hr1/AttendanceTracking',
-      },
-      {
-        component: CNavItem,
-        name: 'Employee',
-        to: 'hr1/EmployeeManagement',
-      },
-      {
-        component: CNavItem,
-        name: 'Performance',
-        to: 'hr1/PerformanceManagement',
-      },
-    ],
+    component: CNavItem,
+    name: ' Employees',
+    to: 'hr1/EmployeeManagement',
+    icon: <FontAwesomeIcon icon ={faUser }/>,
+
   },
+  {
+    component: CNavItem,
+    name: 'Logistics',
+    to: 'logistic1/index',
+    icon: <FontAwesomeIcon icon ={faTruckFast }/>,
+
+  },
+  
   {
     component: CNavGroup,
     name: 'FREIGHT',

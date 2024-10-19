@@ -10,11 +10,13 @@
     import managementRoutes from "./routes/management.js";
     import salesRoutes from "./routes/sales.js";
     import hr1Routes from './routes/hr1.js'
+    import logixRoutes from './routes/logix.js'
     import session from 'express-session';
     import MongoStore from 'connect-mongo';
 
     import Employee from './model/hr1.js'
-    import { employee } from "./data/index.js";
+    import Logistics from "./model/logix.js";
+    import { employee, mockLogisticsData } from "./data/index.js";
 
 
 // Configuration
@@ -53,7 +55,7 @@
     app.use("/management", managementRoutes);
     app.use("/sales", salesRoutes);
     app.use('/hr1',hr1Routes);
-
+    app.use('/logix',logixRoutes)
 
     
   
@@ -67,6 +69,7 @@
             app.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
 
                // Employee.insertMany(employee)
+            // Logistics.insertMany(mockLogisticsData)
      
         })
         .catch((err) => console.log(`${err} did not connect`));
