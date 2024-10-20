@@ -47,7 +47,7 @@ const _nav = (userRole) => [
       },
       ...(userRole === 'admin' || userRole === 'manager'
         ? [
-          {
+          ...      {
             component: CNavItem,
             name: 'Customers',
             to: '/customer',
