@@ -14,7 +14,6 @@
   "author": "The Freight Capsone Team (https://github.com/orgs/freight-capstone/people) && The CoreUI Team (https://github.com/orgs/coreui/people)",
   "scripts": {
     "build": "vite build",
-    "lint": "eslint \"src/**/*.js\"",
     "serve": "vite preview",
     "start": "vite"
   },
@@ -59,7 +58,6 @@
     "@eslint/js": "^9.13.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
-    "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.37.1",
