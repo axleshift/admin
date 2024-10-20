@@ -1,4 +1,5 @@
 module.exports = {
+  
   // parser: '@typescript-eslint/parser', // Specifies the ESLint parser
   parserOptions: {
     ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
@@ -7,6 +8,13 @@ module.exports = {
       jsx: true, // Allows for the parsing of JSX
     },
   },
+
+    env: {
+      browser: true, // If you're using browser globals
+      es2021: true, // If you're using ECMAScript 2021 features
+      node: true, // Enable Node.js global variables
+    },
+    
   settings: {
     react: {
       version: 'detect', // Tells eslint-plugin-react to automatically detect the version of React to use
