@@ -1,13 +1,13 @@
 name: Lint
 
 on:
-    push:
-        branches: ["main"]
-    workflow_dispatch:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
           npm i
           npm run lint
           npm run build
-          
+
       - name: Lint Server
         run: |
           cd server

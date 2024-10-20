@@ -19,7 +19,7 @@ const DefaultLayout = () => {
       <div>
         An error occurred: {error.status}: {JSON.stringify(error.data)}
       </div>
-    )
+    ) // Show status and error data
   }
 
   return (

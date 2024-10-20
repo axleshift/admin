@@ -1,8 +1,8 @@
 import User from "../model/User.js";
-import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import bcrypt from 'bcryptjs'; 
-import dotenv from 'dotenv';
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -27,13 +27,13 @@ export const forgotPassword = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '1d' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
         console.log(`Generated token for user: ${user._id}`); // Log token generation
 
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            service: "gmail",
             auth: {
-                user:"ryansangasina1@gmail.com", 
+                user: "ryansangasina1@gmail.com",
                 pass: "dytd rorh jqdv wynb",
             },
         });
@@ -41,13 +41,13 @@ export const forgotPassword = async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user.email,
-            subject: 'Reset your password',
+            subject: "Reset your password",
             text: `Reset link: http://localhost:3000/resetpass/${user._id}/${token}`, // Fix string template
         };
 
         await transporter.sendMail(mailOptions);
         console.log(`Email sent to: ${user.email}`); // Log successful email sending
-        res.status(200).json({ message: 'Reset link sent to your email' });
+        res.status(200).json({ message: "Reset link sent to your email" });
     } catch (err) {
         console.error("Error in forgotPassword:", err); // Log the error
         res.status(500).json({ message: "Server error", error: err.message });
@@ -81,10 +81,10 @@ export const resetPassword = async (req, res) => {
 
         res.json({ Status: "Success" });
     } catch (err) {
-        if (err.name === 'JsonWebTokenError') {
+        if (err.name === "JsonWebTokenError") {
             console.error("Invalid token:", err);
             return res.status(400).json({ Status: "Error with token" });
-        } else if (err.name === 'TokenExpiredError') {
+        } else if (err.name === "TokenExpiredError") {
             console.error("Token expired:", err);
             return res.status(400).json({ Status: "Token has expired" });
         }

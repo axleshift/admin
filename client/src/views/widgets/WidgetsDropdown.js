@@ -262,7 +262,7 @@ const calculateCargoCounts = (data) => {
 // Implement this function to calculate the attrition rate
 const calculateAttritionRate = (employees) => {
   // Logic to calculate attrition rate based on your criteria
-  return 10 // Placeholder value replace with actual calculation
+  return 10 // Placeholder value; replace with actual calculation
 }
 
 WidgetsDropdown.propTypes = {

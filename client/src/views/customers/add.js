@@ -56,7 +56,7 @@ const Add = () => {
     setError('')
     try {
       // Send data to the server
-      const response = await axios.post('http://localhost:9000/client/register', {
+      const response = await axios.post('http://localhost:5053/client/registerCustomer', {
         name: data.name,
         email: data.email,
         phoneNumber: data.phoneNumber,

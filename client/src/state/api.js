@@ -47,7 +47,9 @@ export const api = createApi({
     getShipping: build.query({
       query: (params) => {
         const { customerId, product } = params || {}
-        return `sales/shipping${customerId || product ? `?customerId=${customerId}&product=${product}` : ''}`
+        return `sales/shipping${
+          customerId || product ? `?customerId=${customerId}&product=${product}` : ''
+        }`
       },
       providesTags: ['Shipping'],
     }),
@@ -63,19 +65,19 @@ export const api = createApi({
     // Update a shipping entry
     updateShipping: build.mutation({
       query: ({ id, ...shipping }) => ({
-        url: `sales/shipping/${id}`,
+        url: `sales/shipping/${id}`, // Correct endpoint for updating
         method: 'PATCH',
         body: shipping,
       }),
-      invalidatesTags: ['Shipping'],
+      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
     }),
     // Delete a shipping entry
     deleteShipping: build.mutation({
       query: (id) => ({
-        url: `sales/shipping/${id}`,
+        url: `sales/shipping/${id}`, // Correct endpoint for deleting
         method: 'DELETE',
       }),
-      invalidatesTags: ['Shipping'],
+      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
     }),
     // Log user activity
     logUserActivity: build.mutation({
@@ -102,13 +104,14 @@ export const api = createApi({
     }),
     // Logistics queries and mutations
     getLogistics: build.query({
-      query: () => 'logix/logistic',
+      query: () => 'logix/logistic', // This should call your API correctly
       providesTags: ['Logistics'],
     }),
     getLogisticsById: build.query({
       query: (id) => `logistics/${id}`,
       providesTags: ['Logistics'],
     }),
+
     deleteLogistics: build.mutation({
       query: (id) => ({
         url: `logistics/${id}`,

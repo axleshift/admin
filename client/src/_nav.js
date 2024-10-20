@@ -47,7 +47,7 @@ const _nav = (userRole) => [
       },
       ...(userRole === 'admin' || userRole === 'manager'
         ? [
-            ...{
+            {
               component: CNavItem,
               name: 'Customers',
               to: '/customer',
@@ -68,7 +68,7 @@ const _nav = (userRole) => [
   },
   {
     component: CNavItem,
-    name: 'Employees',
+    name: ' Employees',
     to: 'hr1/EmployeeManagement',
     icon: <FontAwesomeIcon icon={faUser} />,
   },
@@ -78,6 +78,7 @@ const _nav = (userRole) => [
     to: 'logistic1/index',
     icon: <FontAwesomeIcon icon={faTruckFast} />,
   },
+
   {
     component: CNavGroup,
     name: 'FREIGHT',
@@ -144,4 +145,4 @@ const _nav = (userRole) => [
   },
 ]
 
-export default _nav
+export default _nav // Ensure this line is included

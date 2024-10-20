@@ -35,7 +35,6 @@ const store = configureStore({
   },
   middleware: (getDefault) => getDefault().concat(api.middleware),
 })
-
 setupListeners(store.dispatch)
 
 export default store

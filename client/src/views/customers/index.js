@@ -31,6 +31,7 @@ const Index = () => {
     return <div>Error: {error.message}</div>
   }
 
+  // Filter data based on search input (name or email)
   const filteredData = data.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

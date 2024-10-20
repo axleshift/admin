@@ -1,7 +1,6 @@
 import React from 'react'
-import CIcon from '@coreui/icons-react' // CoreUI icons
+import { CIcon } from '@coreui/icons-react' // CoreUI icons
 import { cilStar, cilStarHalf } from '@coreui/icons' // CoreUI star icons
-import PropTypes from 'prop-types' // Import prop-types for validation
 
 const StarRating = ({ value }) => {
   const stars = []
@@ -38,11 +37,6 @@ const StarRating = ({ value }) => {
   }
 
   return <div>{stars}</div>
-}
-
-// PropTypes validation for 'value' prop
-StarRating.propTypes = {
-  value: PropTypes.number.isRequired,
 }
 
 export default StarRating
