@@ -66,7 +66,7 @@ const Works = () => {
   const filteredData = data.filter(
     (item) =>
       item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchTerm.toLowerCase())
+      item.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   return (
@@ -104,22 +104,20 @@ const Works = () => {
                   <CTableDataCell>{item.name}</CTableDataCell>
                   <CTableDataCell>{item.email}</CTableDataCell>
                   <CTableDataCell>
-                    {item.phoneNumber ? (
-                      item.phoneNumber.length === 10 ? (
-                        item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, '($1)$2-$3')
-                      ) : (
-                        item.phoneNumber // Fallback to original number if it's not 10 digits
-                      )
-                    ) : (
-                      'N/A'
-                    )}
+                    {item.phoneNumber
+                      ? item.phoneNumber.length === 10
+                        ? item.phoneNumber.replace(/^(\d{3})(\d{3})(\d{4})/, '($1)$2-$3')
+                        : item.phoneNumber // Fallback to original number if it's not 10 digits
+                      : 'N/A'}
                   </CTableDataCell>
                   <CTableDataCell>{item.country}</CTableDataCell>
                   <CTableDataCell>{item.occupation}</CTableDataCell>
                   <CTableDataCell>
                     <CFormSelect
                       value={selectedRole[item._id] || item.role}
-                      onChange={(e) => setSelectedRole({ ...selectedRole, [item._id]: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedRole({ ...selectedRole, [item._id]: e.target.value })
+                      }
                     >
                       <option value="admin">Admin</option>
                       <option value="manager">Manager</option>

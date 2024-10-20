@@ -20,7 +20,7 @@ const Settings = () => {
   const role = sessionStorage.getItem('role')
 
   return (
-    <div >
+    <div>
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={9} lg={7} xl={6}>
@@ -50,9 +50,7 @@ const Settings = () => {
                     <FontAwesomeIcon icon={faLock} />
                   </CInputGroupText>
                   <Link to="/changepass">
-                    <CButton color="primary">
-                      Change Password
-                    </CButton>
+                    <CButton color="primary">Change Password</CButton>
                   </Link>
                 </CInputGroup>
               </CCardBody>

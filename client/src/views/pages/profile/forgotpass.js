@@ -15,8 +15,9 @@ const ForgotPass = () => {
     e.preventDefault()
 
     // Update the URL to match the backend port
-    axios.post('http://localhost:5053/general/forgot-password', { email })
-      .then(res => {
+    axios
+      .post('http://localhost:5053/general/forgot-password', { email })
+      .then((res) => {
         if (res.data.message === 'Reset link sent to your email') {
           setMessage('Reset link sent successfully! Check your email.')
           setTimeout(() => {
@@ -26,7 +27,7 @@ const ForgotPass = () => {
           setMessage('Failed to send reset link. Please try again.')
         }
       })
-      .catch(err => {
+      .catch((err) => {
         setMessage('An error occurred. Please try again.')
         console.error(err) // Use console.error for better error visibility
       })
@@ -45,7 +46,9 @@ const ForgotPass = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <CButton type="submit" color="primary" className="mt-3">Send Reset Link</CButton>
+          <CButton type="submit" color="primary" className="mt-3">
+            Send Reset Link
+          </CButton>
         </CForm>
       </CCardBody>
     </CCard>

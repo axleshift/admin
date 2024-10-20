@@ -36,15 +36,19 @@ const Login = () => {
 
     try {
       // Send a POST request to your backend's login endpoint
-      const response = await axios.post('http://localhost:5053/client/login', data, { withCredentials: true })
+      const response = await axios.post('http://localhost:5053/client/login', data, {
+        withCredentials: true,
+      })
 
       // Check if login was successful
       if (response.data.token) {
         // Fetch the user data if login is successful
-        const userResponse = await axios.get('http://localhost:5053/client/user', { withCredentials: true })
+        const userResponse = await axios.get('http://localhost:5053/client/user', {
+          withCredentials: true,
+        })
 
         // Debugging: log full user response
-        console.log("User response after login:", userResponse.data)
+        console.log('User response after login:', userResponse.data)
 
         if (userResponse.data.user) {
           const name = userResponse.data.user.name || ''
@@ -59,7 +63,7 @@ const Login = () => {
           sessionStorage.setItem('username', username)
 
           // Debugging: log saved role
-          console.log("Saved User Role in session:", sessionStorage.getItem('role'))
+          console.log('Saved User Role in session:', sessionStorage.getItem('role'))
 
           // Navigate to dashboard
           navigate('/dashboard')

@@ -18,11 +18,21 @@ import { useGetLogisticsQuery, useGetEmployeesQuery } from '../../state/api' // 
 const WidgetsDropdown = (props) => {
   const widgetChartRef1 = useRef(null)
   const widgetChartRef2 = useRef(null)
-  const { data: logistics, isLoading: loadingLogistics, isError: errorLogistics } = useGetLogisticsQuery()
-  const { data: employees, isLoading: loadingEmployees, isError: errorEmployees } = useGetEmployeesQuery()
+  const {
+    data: logistics,
+    isLoading: loadingLogistics,
+    isError: errorLogistics,
+  } = useGetLogisticsQuery()
+  const {
+    data: employees,
+    isLoading: loadingEmployees,
+    isError: errorEmployees,
+  } = useGetEmployeesQuery()
 
   // Calculating key metrics for cargo
-  const cargoCounts = logistics ? calculateCargoCounts(logistics) : { delivered: 0, inTransit: 0, pending: 0 }
+  const cargoCounts = logistics
+    ? calculateCargoCounts(logistics)
+    : { delivered: 0, inTransit: 0, pending: 0 }
   const totalEmployees = employees ? employees.length : 0
   const attritionRate = calculateAttritionRate(employees) // Implement this function based on your logic
 
@@ -70,7 +80,11 @@ const WidgetsDropdown = (props) => {
       <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
           color="warning" // Changed to warning color
-          value={loadingLogistics ? 'Loading...' : `${((cargoCounts.pending / logistics.length) * 100).toFixed(2)}%`}
+          value={
+            loadingLogistics
+              ? 'Loading...'
+              : `${((cargoCounts.pending / logistics.length) * 100).toFixed(2)}%`
+          }
           title="Pending Cargo"
           action={renderDropdown()}
           chart={renderPendingCargoChart(widgetChartRef2, cargoCounts)}

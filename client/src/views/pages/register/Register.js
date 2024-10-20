@@ -25,7 +25,7 @@ const Register = () => {
     password: '',
     repeatPassword: '',
     role: '',
-    adminUsername: '',  // New field for admin's username
+    adminUsername: '', // New field for admin's username
   })
 
   const [error, setError] = useState('')

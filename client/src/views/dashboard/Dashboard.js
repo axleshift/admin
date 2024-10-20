@@ -184,7 +184,9 @@ const Dashboard = () => {
         <CCardBody>
           <CRow>
             <CCol sm={5}>
-              <h4 id="traffic" className="card-title mb-0">Traffic</h4>
+              <h4 id="traffic" className="card-title mb-0">
+                Traffic
+              </h4>
               <div className="small text-body-secondary">January - July 2023</div>
             </CCol>
             <CCol sm={7} className="d-none d-md-block">
@@ -263,11 +265,7 @@ const Dashboard = () => {
                 {progressGroupExample1.map((item, index) => (
                   <CCol xs={12} key={index}>
                     <div>{item.title}</div>
-                    <CProgress
-                      value={item.value1}
-                      className="mb-2"
-                      color="info"
-                    />
+                    <CProgress value={item.value1} className="mb-2" color="info" />
                     <div>{item.value2}</div>
                   </CCol>
                 ))}
@@ -284,11 +282,7 @@ const Dashboard = () => {
                   <CCol xs={12} key={index}>
                     <CIcon icon={item.icon} />
                     <div>{item.title}</div>
-                    <CProgress
-                      value={item.percent}
-                      className="mb-2"
-                      color="primary"
-                    />
+                    <CProgress value={item.percent} className="mb-2" color="primary" />
                     <div>{item.value}</div>
                   </CCol>
                 ))}

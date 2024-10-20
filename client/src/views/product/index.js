@@ -20,16 +20,7 @@ import useMediaQuery from '../../components/useMediaQuery'
 import Typography from '../../views/theme/typography/Typography'
 import StarRating from '../../components/StarRating'
 
-const Product = ({
-  _id,
-  name,
-  description,
-  price,
-  rating,
-  category,
-  supply,
-  stat
-}) => {
+const Product = ({ _id, name, description, price, rating, category, supply, stat }) => {
   const theme = useTheme()
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -43,16 +34,14 @@ const Product = ({
       style={{
         backgroundImage: 'none',
         borderRadius: '0.55rem',
-        margin: '10px'
+        margin: '10px',
       }}
     >
       <CCardBody>
         <CCardText style={{ fontSize: 14, marginBottom: '0.5rem' }}>
           {category || 'No category'}
         </CCardText>
-        <CCardTitle style={{ fontSize: '1.25rem' }}>
-          {name || 'Unnamed Product'}
-        </CCardTitle>
+        <CCardTitle style={{ fontSize: '1.25rem' }}>{name || 'Unnamed Product'}</CCardTitle>
         <CCardText style={{ marginBottom: '1.5rem' }}>
           ₱{price ? Number(price).toFixed(2) : 'N/A'}
         </CCardText>
@@ -94,11 +83,12 @@ const Product = ({
 const Index = () => {
   const { data, isLoading } = useGetProductsQuery()
   const [searchTerm, setSearchTerm] = useState('')
-  const isNonMobile = useMediaQuery("(min-width:1000px)")
+  const isNonMobile = useMediaQuery('(min-width:1000px)')
 
-  const filteredProducts = data?.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = data?.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   return (
@@ -118,34 +108,27 @@ const Index = () => {
           <CRow
             className="mt-3 d-grid"
             style={{
-              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              justifyContent: "space-between",
-              rowGap: "20px",
-              columnGap: "1.33%",
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              justifyContent: 'space-between',
+              rowGap: '20px',
+              columnGap: '1.33%',
             }}
           >
-            {(filteredProducts.length > 0 ? filteredProducts : data).map(({
-              _id,
-              name,
-              description,
-              price,
-              rating,
-              category,
-              supply,
-              stat
-            }) => (
-              <Product
-                key={_id}
-                _id={_id}
-                name={name}
-                description={description}
-                price={price}
-                rating={rating}
-                category={category}
-                supply={supply}
-                stat={stat}
-              />
-            ))}
+            {(filteredProducts.length > 0 ? filteredProducts : data).map(
+              ({ _id, name, description, price, rating, category, supply, stat }) => (
+                <Product
+                  key={_id}
+                  _id={_id}
+                  name={name}
+                  description={description}
+                  price={price}
+                  rating={rating}
+                  category={category}
+                  supply={supply}
+                  stat={stat}
+                />
+              ),
+            )}
           </CRow>
         ) : (
           <>Loading...</>

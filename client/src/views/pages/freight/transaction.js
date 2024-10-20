@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState } from 'react'
 import {
   CContainer,
   CRow,
@@ -11,13 +11,17 @@ import {
   CTableHeaderCell,
   CTableRow,
   CFormSelect,
-  CBadge
-} from "@coreui/react"
+  CBadge,
+} from '@coreui/react'
 import CustomHeader from '../../../components/header/customhead'
-import { useGetShippingQuery, useUpdateShippingMutation, useDeleteShippingMutation } from "../../../state/api"
+import {
+  useGetShippingQuery,
+  useUpdateShippingMutation,
+  useDeleteShippingMutation,
+} from '../../../state/api'
 import * as XLSX from 'xlsx'
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faDownload } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faDownload } from '@fortawesome/free-solid-svg-icons'
 
 const Transaction = () => {
   const { data: shippingData, error, isLoading } = useGetShippingQuery()
@@ -31,27 +35,27 @@ const Transaction = () => {
   const handleUpdate = async (shippingId) => {
     setIsUpdating(true)
     try {
-      const newStatus = newStatusMap[shippingId] || "Pending"  // Fallback to "Pending" if not set
-      const deliveryDate = newStatus === "Delivered" ? new Date() : null
+      const newStatus = newStatusMap[shippingId] || 'Pending' // Fallback to "Pending" if not set
+      const deliveryDate = newStatus === 'Delivered' ? new Date() : null
 
       await updateShipping({ id: shippingId, status: newStatus, deliveryDate })
-      alert("Shipping status updated successfully!")
+      alert('Shipping status updated successfully!')
     } catch (err) {
-      alert("Error updating shipping status.")
+      alert('Error updating shipping status.')
     } finally {
       setIsUpdating(false)
     }
   }
 
   const handleDelete = async (shippingId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this shipping entry?")
+    const confirmDelete = window.confirm('Are you sure you want to delete this shipping entry?')
     if (confirmDelete) {
       setIsDeleting(true)
       try {
         await deleteShipping(shippingId)
-        alert("Shipping entry deleted successfully!")
+        alert('Shipping entry deleted successfully!')
       } catch (err) {
-        alert("Error deleting shipping entry.")
+        alert('Error deleting shipping entry.')
       } finally {
         setIsDeleting(false)
       }
@@ -67,13 +71,15 @@ const Transaction = () => {
       ShippingType: shipping.shippingType,
       OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
       Status: shipping.status,
-      DeliveryDate: shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : "N/A",
+      DeliveryDate: shipping.deliveryDate
+        ? new Date(shipping.deliveryDate).toLocaleString()
+        : 'N/A',
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData)
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions")
-    XLSX.writeFile(workbook, "shipping_transactions.xlsx")
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions')
+    XLSX.writeFile(workbook, 'shipping_transactions.xlsx')
   }
 
   if (isLoading) return <p>Loading...</p>
@@ -105,54 +111,57 @@ const Transaction = () => {
           </CTableRow>
         </CTableHead>
         <CTableBody>
-          {shippingData && shippingData.map((shipping) => (
-            <CTableRow key={shipping._id}>
-              <CTableDataCell>{shipping.customerName}</CTableDataCell>
-              <CTableDataCell>{shipping.orderVolume}</CTableDataCell>
-              <CTableDataCell>{shipping.shippingType}</CTableDataCell>
-              <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
-              <CTableDataCell>
-                <CBadge color={shipping.status === "Delivered" ? "success" : "warning"}>
-                  {shipping.status}
-                </CBadge>
-              </CTableDataCell>
-              <CTableDataCell>
-                {shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleDateString() : "N/A"}
-              </CTableDataCell>
-              <CTableDataCell>
-                <CFormSelect
-                  aria-label="Select Shipping Status"
-                  value={newStatusMap[shipping._id] || shipping.status}
-                  onChange={(e) =>
-                    setNewStatusMap((prev) => ({ ...prev, [shipping._id]: e.target.value }))
-                  }
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="In Transit">In Transit</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </CFormSelect>
-              </CTableDataCell>
-              <CTableDataCell>
-                <CButton
-                  color="warning"
-                  size="sm"
-                  onClick={() => handleUpdate(shipping._id)}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? 'Updating...' : 'Update'}
-                </CButton>
-                <CButton
-                  color="danger"
-                  size="sm"
-                  onClick={() => handleDelete(shipping._id)}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </CButton>
-              </CTableDataCell>
-            </CTableRow>
-          ))}
+          {shippingData &&
+            shippingData.map((shipping) => (
+              <CTableRow key={shipping._id}>
+                <CTableDataCell>{shipping.customerName}</CTableDataCell>
+                <CTableDataCell>{shipping.orderVolume}</CTableDataCell>
+                <CTableDataCell>{shipping.shippingType}</CTableDataCell>
+                <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
+                <CTableDataCell>
+                  <CBadge color={shipping.status === 'Delivered' ? 'success' : 'warning'}>
+                    {shipping.status}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  {shipping.deliveryDate
+                    ? new Date(shipping.deliveryDate).toLocaleDateString()
+                    : 'N/A'}
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CFormSelect
+                    aria-label="Select Shipping Status"
+                    value={newStatusMap[shipping._id] || shipping.status}
+                    onChange={(e) =>
+                      setNewStatusMap((prev) => ({ ...prev, [shipping._id]: e.target.value }))
+                    }
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </CFormSelect>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleUpdate(shipping._id)}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? 'Updating...' : 'Update'}
+                  </CButton>
+                  <CButton
+                    color="danger"
+                    size="sm"
+                    onClick={() => handleDelete(shipping._id)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </CButton>
+                </CTableDataCell>
+              </CTableRow>
+            ))}
         </CTableBody>
       </CTable>
     </CContainer>

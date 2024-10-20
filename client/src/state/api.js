@@ -63,19 +63,19 @@ export const api = createApi({
     // Update a shipping entry
     updateShipping: build.mutation({
       query: ({ id, ...shipping }) => ({
-        url: `sales/shipping/${id}`, // Correct endpoint for updating
+        url: `sales/shipping/${id}`,
         method: 'PATCH',
         body: shipping,
       }),
-      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
+      invalidatesTags: ['Shipping'],
     }),
     // Delete a shipping entry
     deleteShipping: build.mutation({
       query: (id) => ({
-        url: `sales/shipping/${id}`, // Correct endpoint for deleting
+        url: `sales/shipping/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
+      invalidatesTags: ['Shipping'],
     }),
     // Log user activity
     logUserActivity: build.mutation({
@@ -102,14 +102,13 @@ export const api = createApi({
     }),
     // Logistics queries and mutations
     getLogistics: build.query({
-      query: () => 'logix/logistic', // This should call your API correctly
+      query: () => 'logix/logistic',
       providesTags: ['Logistics'],
     }),
     getLogisticsById: build.query({
       query: (id) => `logistics/${id}`,
       providesTags: ['Logistics'],
     }),
-
     deleteLogistics: build.mutation({
       query: (id) => ({
         url: `logistics/${id}`,

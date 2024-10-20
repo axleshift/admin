@@ -12,7 +12,13 @@ import {
   CRow,
   CFormSelect,
 } from '@coreui/react'
-import { faBox, faCalendar, faUser, faWeightHanging, faMapMarkedAlt } from '@fortawesome/free-solid-svg-icons'
+import {
+  faBox,
+  faCalendar,
+  faUser,
+  faWeightHanging,
+  faMapMarkedAlt,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useCreateShippingMutation } from './../../../state/api'
 
@@ -57,7 +63,7 @@ const Shipping = () => {
   const handleCargoChange = (e) => {
     const cargoId = parseInt(e.target.value)
     const cargoOptions = getCargoOptions()
-    const cargo = cargoOptions.find(option => option.id === cargoId)
+    const cargo = cargoOptions.find((option) => option.id === cargoId)
     setSelectedCargo(cargo)
   }
 
@@ -80,13 +86,21 @@ const Shipping = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!customerName || !orderVolume || !orderDate || !shippingType || !destinationCountry) {
-      setError("Please fill in all fields.")
+      setError('Please fill in all fields.')
       return
     }
 
     try {
-      await createShipping({ customerName, orderVolume, orderDate, deliveryDate, shippingType, dropOffLocation, status })
-      alert("Shipping details submitted successfully!")
+      await createShipping({
+        customerName,
+        orderVolume,
+        orderDate,
+        deliveryDate,
+        shippingType,
+        dropOffLocation,
+        status,
+      })
+      alert('Shipping details submitted successfully!')
       setCustomerName('')
       setOrderVolume('')
       setOrderDate('')
@@ -97,8 +111,8 @@ const Shipping = () => {
       setDropOffLocation('Shanghai Port') // Reset to default based on country
       setStatus('pending')
     } catch (error) {
-      console.error("Failed to submit shipping details:", error)
-      setError("An error occurred while submitting shipping details.")
+      console.error('Failed to submit shipping details:', error)
+      setError('An error occurred while submitting shipping details.')
     }
   }
 
@@ -176,8 +190,10 @@ const Shipping = () => {
 
                   <CInputGroup className="mb-3">
                     <CFormSelect onChange={handleCargoChange}>
-                      {getCargoOptions().map(option => (
-                        <option key={option.id} value={option.id}>{option.name}</option>
+                      {getCargoOptions().map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.name}
+                        </option>
                       ))}
                     </CFormSelect>
                   </CInputGroup>
@@ -187,11 +203,13 @@ const Shipping = () => {
                       value={destinationCountry}
                       onChange={(e) => {
                         setDestinationCountry(e.target.value)
-                        const selectedCountry = countryOptions.find(country => country.value === e.target.value)
+                        const selectedCountry = countryOptions.find(
+                          (country) => country.value === e.target.value,
+                        )
                         setDropOffLocation(selectedCountry?.dropOffLocation || '') // Set initial drop-off location based on country selection
                       }}
                     >
-                      {countryOptions.map(country => (
+                      {countryOptions.map((country) => (
                         <option key={country.value} value={country.value}>
                           {country.label}
                         </option>
@@ -232,4 +250,4 @@ const Shipping = () => {
   )
 }
 
-export default Shipping  
+export default Shipping

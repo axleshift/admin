@@ -1,5 +1,14 @@
 import React, { useState } from 'react'
-import { CContainer, CRow, CCard, CCardBody, CCardHeader, CListGroup, CListGroupItem, CButton } from '@coreui/react'
+import {
+  CContainer,
+  CRow,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CListGroup,
+  CListGroupItem,
+  CButton,
+} from '@coreui/react'
 import { useGetEmployeesQuery } from '../../../state/api' // Adjust based on your API hook
 import CustomHeader from '../../../components/header/customhead'
 import * as XLSX from 'xlsx' // Import the XLSX library
@@ -15,7 +24,7 @@ const EmployeeManagement = () => {
 
   const handleEmployeeClick = (id) => {
     // Toggle the selected employee ID
-    setSelectedEmployeeId(prevId => (prevId === id ? null : id))
+    setSelectedEmployeeId((prevId) => (prevId === id ? null : id))
   }
 
   const handleDownloadAllAttendance = () => {
@@ -35,7 +44,7 @@ const EmployeeManagement = () => {
 
     const worksheet = XLSX.utils.json_to_sheet(allAttendanceData)
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "All Employees Attendance")
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'All Employees Attendance')
 
     // Trigger the file download
     XLSX.writeFile(workbook, 'All_Employees_Attendance.xlsx')
@@ -52,15 +61,28 @@ const EmployeeManagement = () => {
           onClick={handleDownloadAllAttendance}
           className="mb-3"
           size="sm"
-          style={{ width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          style={{
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
           <FontAwesomeIcon icon={faDownload} />
         </CButton>
 
-        {employees.map(employee => (
-          <CCard key={employee._id} className="mb-3" style={{ cursor: 'pointer' }} onClick={() => handleEmployeeClick(employee._id)}>
+        {employees.map((employee) => (
+          <CCard
+            key={employee._id}
+            className="mb-3"
+            style={{ cursor: 'pointer' }}
+            onClick={() => handleEmployeeClick(employee._id)}
+          >
             <CCardHeader>
-              <h4>{employee.firstName} {employee.lastName}</h4>
+              <h4>
+                {employee.firstName} {employee.lastName}
+              </h4>
             </CCardHeader>
             {selectedEmployeeId === employee._id && (
               <CCardBody>
@@ -68,7 +90,9 @@ const EmployeeManagement = () => {
                   <CListGroupItem>Email: {employee.email}</CListGroupItem>
                   <CListGroupItem>Role: {employee.role}</CListGroupItem>
                   <CListGroupItem>Job Description: {employee.jobDescription}</CListGroupItem>
-                  <CListGroupItem>Date of Joining: {new Date(employee.dateOfJoining).toLocaleDateString()}</CListGroupItem>
+                  <CListGroupItem>
+                    Date of Joining: {new Date(employee.dateOfJoining).toLocaleDateString()}
+                  </CListGroupItem>
                 </CListGroup>
 
                 {/* Attendance Section */}
@@ -86,7 +110,8 @@ const EmployeeManagement = () => {
                 <ul>
                   {employee.performance.map((review, index) => (
                     <li key={index}>
-                      Review Date: {new Date(review.reviewDate).toLocaleDateString()} - Rating: {review.rating}
+                      Review Date: {new Date(review.reviewDate).toLocaleDateString()} - Rating:{' '}
+                      {review.rating}
                       {review.comments && <span> - Comments: {review.comments}</span>}
                     </li>
                   ))}

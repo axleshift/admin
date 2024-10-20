@@ -38,7 +38,10 @@ const LogisticsDashboard = () => {
     <CCard>
       <CCardHeader className="d-flex justify-content-between align-items-center">
         <h2>Logistics Overview</h2>
-        <CButton color="primary" onClick={handleNavigate}>Send Location</CButton> {/* Button added */}
+        <CButton color="primary" onClick={handleNavigate}>
+          Send Location
+        </CButton>{' '}
+        {/* Button added */}
       </CCardHeader>
       <CCardBody>
         <CTable hover responsive>
@@ -78,7 +81,9 @@ const LogisticsDashboard = () => {
                 <CTableHeaderCell>{logistics.dispatchDate}</CTableHeaderCell>
                 <CTableHeaderCell>{logistics.loadOptimization.utilization}%</CTableHeaderCell>
                 <CTableHeaderCell>{logistics.loadOptimization.route}</CTableHeaderCell>
-                <CTableHeaderCell>{logistics.loadOptimization.estimatedTimeArrival}</CTableHeaderCell>
+                <CTableHeaderCell>
+                  {logistics.loadOptimization.estimatedTimeArrival}
+                </CTableHeaderCell>
                 <CTableHeaderCell>
                   {logistics.status === 'delivered'
                     ? 'Delivered'

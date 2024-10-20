@@ -14,7 +14,7 @@ import {
   CTableHead,
   CTableRow,
   CTableHeaderCell,
-  CTableDataCell
+  CTableDataCell,
 } from '@coreui/react'
 
 const ReceivingDispatching = () => {
@@ -22,12 +22,12 @@ const ReceivingDispatching = () => {
     productName: '',
     quantity: '',
     receivedFrom: '',
-    location: ''
+    location: '',
   })
 
   const [dispatchList, setDispatchList] = useState([
     { id: 1, product: 'Electronics', status: 'Pending', date: '2024-10-15' },
-    { id: 2, product: 'Furniture', status: 'In Transit', date: '2024-10-16' }
+    { id: 2, product: 'Furniture', status: 'In Transit', date: '2024-10-16' },
   ])
 
   const handleReceiveInputChange = (e) => {
@@ -44,15 +44,13 @@ const ReceivingDispatching = () => {
       productName: '',
       quantity: '',
       receivedFrom: '',
-      location: ''
+      location: '',
     })
   }
 
   const handleDispatchUpdate = (id, status) => {
     setDispatchList((prevList) =>
-      prevList.map((dispatch) =>
-        dispatch.id === id ? { ...dispatch, status } : dispatch
-      )
+      prevList.map((dispatch) => (dispatch.id === id ? { ...dispatch, status } : dispatch)),
     )
   }
 
