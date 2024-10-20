@@ -1,9 +1,10 @@
-import React from 'react'
-import { CIcon } from '@coreui/icons-react' // CoreUI icons
-import { cilStar, cilStarHalf } from '@coreui/icons' // CoreUI star icons
+import React from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes
+import { CIcon } from '@coreui/icons-react'; // CoreUI icons
+import { cilStar, cilStarHalf } from '@coreui/icons'; // CoreUI star icons
 
 const StarRating = ({ value }) => {
-  const stars = []
+  const stars = [];
 
   for (let i = 1; i <= 5; i++) {
     if (value >= i) {
@@ -13,8 +14,8 @@ const StarRating = ({ value }) => {
           key={i}
           icon={cilStar}
           style={{ color: 'gold' }} // Gold color for full star
-        />,
-      )
+        />
+      );
     } else if (value >= i - 0.5) {
       // Half star (light gold)
       stars.push(
@@ -22,8 +23,8 @@ const StarRating = ({ value }) => {
           key={i}
           icon={cilStarHalf}
           style={{ color: '#FFD700' }} // Light gold color for half star
-        />,
-      )
+        />
+      );
     } else {
       // Empty star (grey)
       stars.push(
@@ -31,12 +32,17 @@ const StarRating = ({ value }) => {
           key={i}
           icon={cilStar}
           style={{ color: 'lightgrey' }} // Grey color for empty star
-        />,
-      )
+        />
+      );
     }
   }
 
-  return <div>{stars}</div>
-}
+  return <div>{stars}</div>;
+};
 
-export default StarRating
+// Add prop types validation
+StarRating.propTypes = {
+  value: PropTypes.number.isRequired, // value is required and must be a number
+};
+
+export default StarRating;
