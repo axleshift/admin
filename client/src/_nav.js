@@ -47,22 +47,22 @@ const _nav = (userRole) => [
       },
       ...(userRole === 'admin' || userRole === 'manager'
         ? [
-          ...      {
-            component: CNavItem,
-            name: 'Customers',
-            to: '/customer',
-          },
-          {
-            component: CNavItem,
-            name: 'Employees',
-            to: '/worker',
-          },
-          {
-            component: CNavItem,
-            name: 'Transactions',
-            to: 'freight/transaction',
-          },
-        ]
+            ...{
+              component: CNavItem,
+              name: 'Customers',
+              to: '/customer',
+            },
+            {
+              component: CNavItem,
+              name: 'Employees',
+              to: '/worker',
+            },
+            {
+              component: CNavItem,
+              name: 'Transactions',
+              to: 'freight/transaction',
+            },
+          ]
         : []),
     ],
   },
