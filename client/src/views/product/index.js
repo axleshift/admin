@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import {
   CCard,
   CCardText,
@@ -20,6 +21,7 @@ import useMediaQuery from '../../components/useMediaQuery'
 import Typography from '../../views/theme/typography/Typography'
 import StarRating from '../../components/StarRating'
 
+// Add PropTypes validation for the Product component
 const Product = ({ _id, name, description, price, rating, category, supply, stat }) => {
   const theme = useTheme()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -77,6 +79,23 @@ const Product = ({ _id, name, description, price, rating, category, supply, stat
       )}
     </CCard>
   )
+}
+
+// Define PropTypes for the Product component
+Product.propTypes = {
+  _id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  price: PropTypes.number.isRequired,
+  rating: PropTypes.number,
+  category: PropTypes.string.isRequired,
+  supply: PropTypes.number,
+  stat: PropTypes.arrayOf(
+    PropTypes.shape({
+      yearlySalesTotal: PropTypes.number,
+      yearlyTotalSoldUnits: PropTypes.number,
+    }),
+  ),
 }
 
 // Index component remains unchanged

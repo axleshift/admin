@@ -78,6 +78,7 @@ const Login = () => {
       }
     }
   }
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -147,7 +148,7 @@ const Login = () => {
                 <CCardBody className="text-center">
                   <div>
                     <h2>Sign up</h2>
-                    <p>Don't have an account? Register now to gain access.</p>
+                    <p>Don&apos;t have an account? Register now to gain access.</p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>
                         Register Now!
