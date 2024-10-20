@@ -7,7 +7,8 @@
     "scripts": {
         "production": "node index",
         "dev": "nodemon index",
-        "prettier": "node_modules/prettier/bin/prettier.cjs ./ --write"
+        "prettier": "node_modules/prettier/bin/prettier.cjs ./ --write",
+        "lint": "eslint ."
     },
     "keywords": [],
     "author": "The Freight Capsone Team (https://github.com/orgs/freight-capstone/people)",
