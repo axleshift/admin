@@ -23,7 +23,8 @@ const _nav = (userRole) => [
       color: 'info',
       text: 'NEW',
     },
-  }, {
+  },
+  {
     component: CNavItem,
     name: 'Employee',
     to: '/employeedash',
@@ -67,19 +68,16 @@ const _nav = (userRole) => [
   },
   {
     component: CNavItem,
-    name: ' Employees',
+    name: 'Employees',
     to: 'hr1/EmployeeManagement',
     icon: <FontAwesomeIcon icon={faUser} />,
-
   },
   {
     component: CNavItem,
     name: 'Logistics',
     to: 'logistic1/index',
     icon: <FontAwesomeIcon icon={faTruckFast} />,
-
   },
-
   {
     component: CNavGroup,
     name: 'FREIGHT',
@@ -146,4 +144,4 @@ const _nav = (userRole) => [
   },
 ]
 
-export default _nav  // Ensure this line is included
+export default _nav
