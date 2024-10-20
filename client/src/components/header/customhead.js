@@ -1,5 +1,7 @@
-import React from 'react' // Import React
-import { CCard, CCardBody, CCardTitle, CCardText } from "@coreui/react"
+import React from 'react'; // Import React
+import { CCard, CCardBody, CCardTitle, CCardText } from '@coreui/react'; // Use single quotes
+
+import PropTypes from 'prop-types'; // Import prop-types for validation
 
 const CustomHeader = ({ title, subtitle }) => { // Accept title and subtitle as props
     return ( // Return the JSX
@@ -9,7 +11,12 @@ const CustomHeader = ({ title, subtitle }) => { // Accept title and subtitle as 
                 <CCardText>{subtitle}</CCardText> {/* Display the subtitle */}
             </CCardBody>
         </CCard>
-    )
-}
+    );
+};
 
-export default CustomHeader // Export the component
+CustomHeader.propTypes = {
+    title: PropTypes.string.isRequired, // Validate title as required string
+    subtitle: PropTypes.string.isRequired, // Validate subtitle as required string
+};
+
+export default CustomHeader; // Export the component

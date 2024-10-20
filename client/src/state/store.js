@@ -5,10 +5,10 @@ import { setupListeners } from '@reduxjs/toolkit/query'
 const initialState = {
     sidebarShow: true,
     theme: 'light',
-    userId: "",
+    userId: '',
     auth: {
         role: null,
-    }
+    },
 }
 
 const changeState = (state = initialState, { type, payload }) => {
@@ -33,9 +33,9 @@ const store = configureStore({
         changeState,
         [api.reducerPath]: api.reducer,
     },
-    middleware: (getDefault) =>
-        getDefault().concat(api.middleware),
+    middleware: (getDefault) => getDefault().concat(api.middleware),
 })
+
 setupListeners(store.dispatch)
 
 export default store

@@ -1,19 +1,25 @@
-import React from 'react';
-import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index';
-import { useGetUserQuery } from '../state/api';
-import { useSelector } from 'react-redux';
+import React from 'react'
+import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
+import { useGetUserQuery } from '../state/api'
+import { useSelector } from 'react-redux'
 
 const DefaultLayout = () => {
-  const userId = useSelector((state) => state.changeState.userId);
-  const { data, isLoading, error } = userId ? useGetUserQuery(userId) : { data: null, isLoading: false, error: null };
+  const userId = useSelector((state) => state.changeState.userId)
+  const { data, isLoading, error } = userId
+    ? useGetUserQuery(userId)
+    : { data: null, isLoading: false, error: null }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   if (error) {
-    console.error('Error fetching user:', error);
-    return <div>An error occurred: {error.status}: {JSON.stringify(error.data)}</div>; // Show status and error data
+    console.error('Error fetching user:', error)
+    return (
+      <div>
+        An error occurred: {error.status}: {JSON.stringify(error.data)}
+      </div>
+    )
   }
 
   return (
@@ -27,7 +33,7 @@ const DefaultLayout = () => {
         <AppFooter />
       </div>
     </div>
-  );
+  )
 }
 
-export default DefaultLayout;
+export default DefaultLayout

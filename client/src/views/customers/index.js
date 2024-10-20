@@ -31,7 +31,6 @@ const Index = () => {
     return <div>Error: {error.message}</div>
   }
 
-  // Filter data based on search input (name or email)
   const filteredData = data.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,11 +42,7 @@ const Index = () => {
       <CRow>
         <CustomHeader title="Customers" subtitle="List of Customers" />
 
-        <CButton
-          color="success"
-          className="mb-3"
-          onClick={() => navigate('/add')}
-        >
+        <CButton color="success" className="mb-3" onClick={() => navigate('/add')}>
           Add Customer
         </CButton>
 
@@ -87,7 +82,6 @@ const Index = () => {
                   <CTableDataCell>{item.occupation}</CTableDataCell>
                   <CTableDataCell>
                     <CBadge color="primary">
-
                       {item.role?.toLowerCase() === 'user' ? 'User' : item.role}
                     </CBadge>
                   </CTableDataCell>

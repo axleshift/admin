@@ -14,6 +14,7 @@ const changepass = React.lazy(() => import('./views/pages/profile/changepass'))
 const employee = React.lazy(() => import('./views/pages/hr1/EmployeeManagement'))
 const logistic1 = React.lazy(() => import('./views/pages/logistic1/index'))
 const pin = React.lazy(() => import('./views/pages/logistic1/pin.js'))
+
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },

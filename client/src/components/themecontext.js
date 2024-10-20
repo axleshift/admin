@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes for validation
 
 // Create a context for the theme
 const ThemeContext = createContext();
@@ -21,3 +22,9 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+ThemeProvider.propTypes = {
+  children: PropTypes.node.isRequired, // Validate children as required node
+};
+
+export default ThemeProvider; // Export the ThemeProvider

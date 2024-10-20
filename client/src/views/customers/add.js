@@ -8,7 +8,7 @@ import {
   CContainer,
   CRow,
   CInputGroup,
-  CInputGroupText
+  CInputGroupText,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser, cilPhone } from '@coreui/icons'
@@ -23,7 +23,7 @@ const Add = () => {
     country: '',
     occupation: '',
     password: '',
-    repeatPassword: ''
+    repeatPassword: '',
   })
 
   const [loading, setLoading] = useState(false)
@@ -33,9 +33,9 @@ const Add = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setData(prevData => ({
+    setData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }))
   }
 
@@ -62,7 +62,7 @@ const Add = () => {
         phoneNumber: data.phoneNumber,
         country: data.country,
         occupation: data.occupation,
-        password: data.password
+        password: data.password,
       })
       console.log(response.data)
 
