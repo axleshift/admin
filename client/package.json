@@ -37,7 +37,9 @@
     "core-js": "^3.37.1",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.21.1",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.11.1",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.2",
@@ -52,8 +54,7 @@
     "react-router-dom": "^6.26.2",
     "recharts": "^2.13.0",
     "redux": "5.0.1",
-    "simplebar-react": "^3.2.5",
-    "xlsx": "^0.18.5"
+    "simplebar-react": "^3.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

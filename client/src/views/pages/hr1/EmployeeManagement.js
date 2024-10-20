@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   CContainer,
   CRow,
@@ -8,47 +8,62 @@ import {
   CListGroup,
   CListGroupItem,
   CButton,
-} from '@coreui/react'
-import { useGetEmployeesQuery } from '../../../state/api' // Adjust based on your API hook
-import CustomHeader from '../../../components/header/customhead'
-import * as XLSX from 'xlsx' // Import the XLSX library
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDownload } from '@fortawesome/free-solid-svg-icons'
+} from '@coreui/react';
+import { useGetEmployeesQuery } from '../../../state/api'; // Adjust based on your API hook
+import CustomHeader from '../../../components/header/customhead';
+import ExcelJS from 'exceljs'; // Import the ExcelJS library
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDownload } from '@fortawesome/free-solid-svg-icons';
 
 const EmployeeManagement = () => {
-  const { data: employees, error, isLoading } = useGetEmployeesQuery() // Fetch all employee data
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null) // State to track selected employee
+  const { data: employees, error, isLoading } = useGetEmployeesQuery(); // Fetch all employee data
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null); // State to track selected employee
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error fetching employee data</div>
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error fetching employee data</div>;
 
   const handleEmployeeClick = (id) => {
     // Toggle the selected employee ID
-    setSelectedEmployeeId((prevId) => (prevId === id ? null : id))
-  }
+    setSelectedEmployeeId((prevId) => (prevId === id ? null : id));
+  };
 
-  const handleDownloadAllAttendance = () => {
-    // Create an array to store the consolidated attendance data for all employees
-    const allAttendanceData = []
+  const handleDownloadAllAttendance = async () => {
+    // Create a new workbook and a worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('All Employees Attendance');
 
+    // Define column headers
+    worksheet.columns = [
+      { header: 'Employee Name', key: 'EmployeeName', width: 30 },
+      { header: 'Email', key: 'Email', width: 30 },
+      { header: 'Date', key: 'Date', width: 15 },
+      { header: 'Status', key: 'Status', width: 15 },
+    ];
+
+    // Add attendance data
     employees.forEach((employee) => {
       employee.attendance.forEach((entry) => {
-        allAttendanceData.push({
+        worksheet.addRow({
           EmployeeName: `${employee.firstName} ${employee.lastName}`,
           Email: employee.email,
           Date: new Date(entry.date).toLocaleDateString(),
           Status: entry.status,
-        })
-      })
-    })
+        });
+      });
+    });
 
-    const worksheet = XLSX.utils.json_to_sheet(allAttendanceData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'All Employees Attendance')
-
+    // Create a buffer and save the workbook
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    
     // Trigger the file download
-    XLSX.writeFile(workbook, 'All_Employees_Attendance.xlsx')
-  }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'All_Employees_Attendance.xlsx';
+    a.click();
+    URL.revokeObjectURL(url); // Clean up
+  };
 
   return (
     <CContainer m="1.5rem 2.5rem">
@@ -122,7 +137,7 @@ const EmployeeManagement = () => {
         ))}
       </CRow>
     </CContainer>
-  )
-}
+  );
+};
 
-export default EmployeeManagement
+export default EmployeeManagement;

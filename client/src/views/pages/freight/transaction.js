@@ -19,7 +19,8 @@ import {
   useUpdateShippingMutation,
   useDeleteShippingMutation,
 } from '../../../state/api'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDownload } from '@fortawesome/free-solid-svg-icons'
 
@@ -28,14 +29,13 @@ const Transaction = () => {
   const [updateShipping] = useUpdateShippingMutation()
   const [deleteShipping] = useDeleteShippingMutation()
   const [newStatusMap, setNewStatusMap] = useState({})
-  const [isUpdating, setIsUpdating] = useState(false) // New state to manage global updating
-  const [isDeleting, setIsDeleting] = useState(false) // New state to manage global deleting
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  // Handle status update for each shipping entry
   const handleUpdate = async (shippingId) => {
     setIsUpdating(true)
     try {
-      const newStatus = newStatusMap[shippingId] || 'Pending' // Fallback to "Pending" if not set
+      const newStatus = newStatusMap[shippingId] || 'Pending'
       const deliveryDate = newStatus === 'Delivered' ? new Date() : null
 
       await updateShipping({ id: shippingId, status: newStatus, deliveryDate })
@@ -62,24 +62,40 @@ const Transaction = () => {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!shippingData) return
 
-    const formattedData = shippingData.map((shipping) => ({
-      CustomerName: shipping.customerName,
-      OrderVolume: `${shipping.orderVolume} kg`,
-      ShippingType: shipping.shippingType,
-      OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
-      Status: shipping.status,
-      DeliveryDate: shipping.deliveryDate
-        ? new Date(shipping.deliveryDate).toLocaleString()
-        : 'N/A',
-    }))
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Transactions')
 
-    const worksheet = XLSX.utils.json_to_sheet(formattedData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions')
-    XLSX.writeFile(workbook, 'shipping_transactions.xlsx')
+    // Adding headers
+    worksheet.columns = [
+      { header: 'Customer Name', key: 'CustomerName', width: 20 },
+      { header: 'Order Volume (kg)', key: 'OrderVolume', width: 15 },
+      { header: 'Shipping Type', key: 'ShippingType', width: 15 },
+      { header: 'Order Date', key: 'OrderDate', width: 20 },
+      { header: 'Status', key: 'Status', width: 15 },
+      { header: 'Delivery Date', key: 'DeliveryDate', width: 20 },
+    ]
+
+    // Adding data rows
+    shippingData.forEach((shipping) => {
+      worksheet.addRow({
+        CustomerName: shipping.customerName,
+        OrderVolume: `${shipping.orderVolume} kg`,
+        ShippingType: shipping.shippingType,
+        OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
+        Status: shipping.status,
+        DeliveryDate: shipping.deliveryDate
+          ? new Date(shipping.deliveryDate).toLocaleString()
+          : 'N/A',
+      })
+    })
+
+    // Generate buffer and trigger download
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    saveAs(blob, 'shipping_transactions.xlsx')
   }
 
   if (isLoading) return <p>Loading...</p>
@@ -149,15 +165,16 @@ const Transaction = () => {
                     onClick={() => handleUpdate(shipping._id)}
                     disabled={isUpdating}
                   >
-                    {isUpdating ? 'Updating...' : 'Update'}
+                    Update
                   </CButton>
                   <CButton
                     color="danger"
                     size="sm"
+                    className="ms-2"
                     onClick={() => handleDelete(shipping._id)}
                     disabled={isDeleting}
                   >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
+                    Delete
                   </CButton>
                 </CTableDataCell>
               </CTableRow>
