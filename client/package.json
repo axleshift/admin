@@ -15,6 +15,7 @@
   "scripts": {
     "build": "vite build",
     "serve": "vite preview",
+      "lint": "eslint .",
     "start": "vite"
   },
   "dependencies": {
