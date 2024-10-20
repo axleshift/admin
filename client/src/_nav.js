@@ -1,5 +1,5 @@
-import React from 'react';
-import CIcon from '@coreui/icons-react';
+import React from 'react'
+import CIcon from '@coreui/icons-react'
 import {
   cilBeachAccess,
   cilBoatAlt,
@@ -7,10 +7,10 @@ import {
   cilLocationPin,
   cilShieldAlt,
   cilSpeedometer,
-} from '@coreui/icons';
-import { CNavGroup, CNavItem } from '@coreui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTruckFast, faUser } from '@fortawesome/free-solid-svg-icons';
+} from '@coreui/icons'
+import { CNavGroup, CNavItem } from '@coreui/react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTruckFast, faUser } from '@fortawesome/free-solid-svg-icons'
 
 // Define the navigation items based on the user role
 const _nav = (userRole) => [
@@ -23,7 +23,7 @@ const _nav = (userRole) => [
       color: 'info',
       text: 'NEW',
     },
-  },{
+  }, {
     component: CNavItem,
     name: 'Employee',
     to: '/employeedash',
@@ -44,24 +44,24 @@ const _nav = (userRole) => [
         name: 'Products',
         to: '/product',
       },
-      ...(userRole === 'admin' || userRole === 'manager' 
+      ...(userRole === 'admin' || userRole === 'manager'
         ? [
-            {
-              component: CNavItem,
-              name: 'Customers',
-              to: '/customer',
-            },
-            {
-              component: CNavItem,
-              name: 'Employees',
-              to: '/worker',
-            },
-            {
-              component: CNavItem,
-              name: 'Transactions',
-              to: 'freight/transaction',
-            },
-          ] 
+          {
+            component: CNavItem,
+            name: 'Customers',
+            to: '/customer',
+          },
+          {
+            component: CNavItem,
+            name: 'Employees',
+            to: '/worker',
+          },
+          {
+            component: CNavItem,
+            name: 'Transactions',
+            to: 'freight/transaction',
+          },
+        ]
         : []),
     ],
   },
@@ -69,17 +69,17 @@ const _nav = (userRole) => [
     component: CNavItem,
     name: ' Employees',
     to: 'hr1/EmployeeManagement',
-    icon: <FontAwesomeIcon icon ={faUser }/>,
+    icon: <FontAwesomeIcon icon={faUser} />,
 
   },
   {
     component: CNavItem,
     name: 'Logistics',
     to: 'logistic1/index',
-    icon: <FontAwesomeIcon icon ={faTruckFast }/>,
+    icon: <FontAwesomeIcon icon={faTruckFast} />,
 
   },
-  
+
   {
     component: CNavGroup,
     name: 'FREIGHT',
@@ -144,6 +144,6 @@ const _nav = (userRole) => [
       },
     ],
   },
-];
+]
 
-export default _nav;  // Ensure this line is included
+export default _nav  // Ensure this line is included

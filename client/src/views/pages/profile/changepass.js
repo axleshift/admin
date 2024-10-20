@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import {
   CButton,
   CCard,
@@ -12,26 +12,26 @@ import {
   CContainer,
   CRow,
   CCol,
-} from '@coreui/react';
-import CIcon from '@coreui/icons-react';
-import { cilLockLocked } from '@coreui/icons';
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilLockLocked } from '@coreui/icons'
 
 const ChangePass = () => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const navigate = useNavigate();
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const email = sessionStorage.getItem('email');
+    e.preventDefault()
+    const email = sessionStorage.getItem('email')
 
     // Basic validation
     if (newPassword !== confirmPassword) {
-      setErrorMessage('New passwords do not match.');
-      return;
+      setErrorMessage('New passwords do not match.')
+      return
     }
 
     try {
@@ -40,23 +40,23 @@ const ChangePass = () => {
         email,
         currentPassword,
         newPassword,
-      });
+      })
 
       // Check if the password change was successful
       if (response.data.success) {
-        setSuccessMessage('Password changed successfully!');
+        setSuccessMessage('Password changed successfully!')
         setTimeout(() => {
-          navigate('/settings'); // Navigate back to settings after success
-        }, 2000); // Redirect after 2 seconds
+          navigate('/settings') // Navigate back to settings after success
+        }, 2000) // Redirect after 2 seconds
       }
     } catch (error) {
       if (error.response) {
-        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
+        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.')
       } else {
-        setErrorMessage('An error occurred. Please try again later.');
+        setErrorMessage('An error occurred. Please try again later.')
       }
     }
-  };
+  }
 
   return (
     <CContainer>
@@ -119,7 +119,7 @@ const ChangePass = () => {
         </CCol>
       </CRow>
     </CContainer>
-  );
-};
+  )
+}
 
-export default ChangePass;
+export default ChangePass

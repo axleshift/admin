@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CButton,
   CCard,
@@ -11,28 +11,28 @@ import {
   CTableRow,
   CTableHead,
   CSpinner,
-} from '@coreui/react';
-import { useGetLogisticsQuery } from '../../../state/api';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+} from '@coreui/react'
+import { useGetLogisticsQuery } from '../../../state/api'
+import { useNavigate } from 'react-router-dom' // Import useNavigate
 
 const LogisticsDashboard = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
-  const { data, isLoading, error } = useGetLogisticsQuery();
-  const [selectedStatus, setSelectedStatus] = useState({});
+  const navigate = useNavigate() // Initialize useNavigate
+  const { data, isLoading, error } = useGetLogisticsQuery()
+  const [selectedStatus, setSelectedStatus] = useState({})
 
-  if (isLoading) return <CSpinner color="primary" />;
-  if (error) return <p>Error loading logistics data.</p>;
+  if (isLoading) return <CSpinner color="primary" />
+  if (error) return <p>Error loading logistics data.</p>
 
   // Handle status change for logistics
   const handleStatusChange = (event, id) => {
-    const status = event.target.value;
-    setSelectedStatus((prev) => ({ ...prev, [id]: status }));
-  };
+    const status = event.target.value
+    setSelectedStatus((prev) => ({ ...prev, [id]: status }))
+  }
 
   // Function to navigate to the desired route
   const handleNavigate = () => {
-    navigate('/logistic1/pin'); // Replace with your actual route
-  };
+    navigate('/logistic1/pin') // Replace with your actual route
+  }
 
   return (
     <CCard>
@@ -83,10 +83,10 @@ const LogisticsDashboard = () => {
                   {logistics.status === 'delivered'
                     ? 'Delivered'
                     : logistics.status === 'in transit'
-                    ? 'In Transit'
-                    : logistics.status === 'delay'
-                    ? 'Delay'
-                    : 'Pending'}
+                      ? 'In Transit'
+                      : logistics.status === 'delay'
+                        ? 'Delay'
+                        : 'Pending'}
                 </CTableHeaderCell>
               </CTableRow>
             ))}
@@ -94,7 +94,7 @@ const LogisticsDashboard = () => {
         </CTable>
       </CCardBody>
     </CCard>
-  );
-};
+  )
+}
 
-export default LogisticsDashboard;
+export default LogisticsDashboard

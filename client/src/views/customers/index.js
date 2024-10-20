@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CCard,
   CContainer,
@@ -13,22 +13,22 @@ import {
   CInputGroup,
   CFormInput,
   CButton,
-} from '@coreui/react';
-import { useGetCustomersQuery } from '../../state/api';
-import CustomHeader from '../../components/header/customhead';
-import { useNavigate } from 'react-router-dom';
+} from '@coreui/react'
+import { useGetCustomersQuery } from '../../state/api'
+import CustomHeader from '../../components/header/customhead'
+import { useNavigate } from 'react-router-dom'
 
 const Index = () => {
-  const { data, isLoading, error } = useGetCustomersQuery();
-  const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
+  const { data, isLoading, error } = useGetCustomersQuery()
+  const [searchTerm, setSearchTerm] = useState('')
+  const navigate = useNavigate()
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   if (error) {
-    return <div>Error: {error.message}</div>;
+    return <div>Error: {error.message}</div>
   }
 
   // Filter data based on search input (name or email)
@@ -36,7 +36,7 @@ const Index = () => {
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   return (
     <CContainer m="1.5rem 2.5rem">
@@ -46,7 +46,7 @@ const Index = () => {
         <CButton
           color="success"
           className="mb-3"
-          onClick={() => navigate('/add')} 
+          onClick={() => navigate('/add')}
         >
           Add Customer
         </CButton>
@@ -87,7 +87,7 @@ const Index = () => {
                   <CTableDataCell>{item.occupation}</CTableDataCell>
                   <CTableDataCell>
                     <CBadge color="primary">
-                    
+
                       {item.role?.toLowerCase() === 'user' ? 'User' : item.role}
                     </CBadge>
                   </CTableDataCell>
@@ -98,7 +98,7 @@ const Index = () => {
         </CCard>
       </CRow>
     </CContainer>
-  );
-};
+  )
+}
 
-export default Index;
+export default Index

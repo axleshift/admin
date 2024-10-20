@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import {
   CButton,
   CCard,
@@ -13,67 +13,67 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
-} from '@coreui/react';
-import CIcon from '@coreui/icons-react';
-import { cilLockLocked, cilUser } from '@coreui/icons';
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilLockLocked, cilUser } from '@coreui/icons'
 
 const Login = () => {
   const [data, setData] = useState({
     identifier: '',
     password: '',
-  });
-  const [errorMessage, setErrorMessage] = useState(null);
-  const navigate = useNavigate();
+  })
+  const [errorMessage, setErrorMessage] = useState(null)
+  const navigate = useNavigate()
 
   const loginUser = async (e) => {
-    e.preventDefault();
-  
+    e.preventDefault()
+
     // Validate data before sending request
     if (!data.identifier || !data.password) {
-      setErrorMessage('Both fields are required.');
-      return;
+      setErrorMessage('Both fields are required.')
+      return
     }
-  
+
     try {
       // Send a POST request to your backend's login endpoint
-      const response = await axios.post('http://localhost:5053/client/login', data, { withCredentials: true });
-  
+      const response = await axios.post('http://localhost:5053/client/login', data, { withCredentials: true })
+
       // Check if login was successful
       if (response.data.token) {
         // Fetch the user data if login is successful
-        const userResponse = await axios.get('http://localhost:5053/client/user', { withCredentials: true });
-  
+        const userResponse = await axios.get('http://localhost:5053/client/user', { withCredentials: true })
+
         // Debugging: log full user response
-        console.log("User response after login:", userResponse.data);
-  
+        console.log("User response after login:", userResponse.data)
+
         if (userResponse.data.user) {
-          const name = userResponse.data.user.name || ''; 
-          const role = userResponse.data.user.role || ''; 
-          const email = userResponse.data.user.email || ''; 
-          const username = userResponse.data.user.username || ''; 
-  
+          const name = userResponse.data.user.name || ''
+          const role = userResponse.data.user.role || ''
+          const email = userResponse.data.user.email || ''
+          const username = userResponse.data.user.username || ''
+
           // Save the user's name and role in session storage
-          sessionStorage.setItem('name', name);
-          sessionStorage.setItem('role', role);
-          sessionStorage.setItem('email', email);
-          sessionStorage.setItem('username', username);
-  
+          sessionStorage.setItem('name', name)
+          sessionStorage.setItem('role', role)
+          sessionStorage.setItem('email', email)
+          sessionStorage.setItem('username', username)
+
           // Debugging: log saved role
-          console.log("Saved User Role in session:", sessionStorage.getItem('role'));
-  
+          console.log("Saved User Role in session:", sessionStorage.getItem('role'))
+
           // Navigate to dashboard
-          navigate('/dashboard');
+          navigate('/dashboard')
         }
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error:', error)
       if (error.response) {
-        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
+        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.')
       } else {
-        setErrorMessage('An error occurred. Please try again later.');
+        setErrorMessage('An error occurred. Please try again later.')
       }
     }
-  };
+  }
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -157,7 +157,7 @@ const Login = () => {
         </CRow>
       </CContainer>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

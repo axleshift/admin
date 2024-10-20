@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CCard,
   CCardText,
@@ -12,13 +12,13 @@ import {
   CCollapse,
   CInputGroup,
   CFormInput,
-} from '@coreui/react';
-import CustomHeader from '../../components/header/customhead';
-import { useGetProductsQuery } from '../../state/api'; 
-import { useTheme } from '../../components/themecontext';
-import useMediaQuery from '../../components/useMediaQuery';
-import Typography from '../../views/theme/typography/Typography';
-import StarRating from '../../components/StarRating';
+} from '@coreui/react'
+import CustomHeader from '../../components/header/customhead'
+import { useGetProductsQuery } from '../../state/api'
+import { useTheme } from '../../components/themecontext'
+import useMediaQuery from '../../components/useMediaQuery'
+import Typography from '../../views/theme/typography/Typography'
+import StarRating from '../../components/StarRating'
 
 const Product = ({
   _id,
@@ -30,12 +30,12 @@ const Product = ({
   supply,
   stat
 }) => {
-  const theme = useTheme();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const theme = useTheme()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   // Check for essential product properties
   if (!name || !category || !price) {
-    return <p>Missing Product Data</p>;
+    return <p>Missing Product Data</p>
   }
 
   return (
@@ -60,15 +60,15 @@ const Product = ({
         <CCardText variant="body2">{description || 'No description'}</CCardText>
       </CCardBody>
       <CCardFooter>
-        <CButton 
-          color="primary" 
+        <CButton
+          color="primary"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)} // Toggle expanded state
         >
           {isExpanded ? 'See less' : 'See more'}
         </CButton>
       </CCardFooter>
-    
+
       {/* Only render CCollapse if isExpanded is true */}
       {isExpanded && (
         <CCollapse in={isExpanded} timeout={300}>
@@ -87,25 +87,25 @@ const Product = ({
         </CCollapse>
       )}
     </CCard>
-  );
-};
+  )
+}
 
 // Index component remains unchanged
 const Index = () => {
-  const { data, isLoading } = useGetProductsQuery();
-  const [searchTerm, setSearchTerm] = useState('');
-  const isNonMobile = useMediaQuery("(min-width:1000px)");
+  const { data, isLoading } = useGetProductsQuery()
+  const [searchTerm, setSearchTerm] = useState('')
+  const isNonMobile = useMediaQuery("(min-width:1000px)")
 
   const filteredProducts = data?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="PRODUCT" subtitle="List of products" />
-        
+
         <CInputGroup className="mb-3">
           <CFormInput
             placeholder="Search by Name or Category"
@@ -113,11 +113,11 @@ const Index = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </CInputGroup>
-        
+
         {data && !isLoading ? (
-          <CRow 
+          <CRow
             className="mt-3 d-grid"
-            style={{ 
+            style={{
               gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
               justifyContent: "space-between",
               rowGap: "20px",
@@ -134,8 +134,8 @@ const Index = () => {
               supply,
               stat
             }) => (
-              <Product 
-                key={_id} 
+              <Product
+                key={_id}
                 _id={_id}
                 name={name}
                 description={description}
@@ -152,8 +152,7 @@ const Index = () => {
         )}
       </CRow>
     </CContainer>
-  );
-};
+  )
+}
 
-export default Index;
-                                                                                                                                                                                                                                                             
+export default Index

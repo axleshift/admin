@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   CAvatar,
   CDropdown,
@@ -7,8 +7,8 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
-} from '@coreui/react';
-import CIcon from '@coreui/icons-react';
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
 import {
   cilBell,
   cilCreditCard,
@@ -19,12 +19,12 @@ import {
   cilSettings,
   cilTask,
   cilUser,
-} from '@coreui/icons';
-import avatar8 from './../../assets/images/avatars/8.jpg';
+} from '@coreui/icons'
+import avatar8 from './../../assets/images/avatars/8.jpg'
 
 const AppHeaderDropdown = () => {
   // Retrieve the user's name from session storage
-  const name = sessionStorage.getItem('name');
+  const name = sessionStorage.getItem('name')
 
   return (
     <CDropdown variant="nav-item">
@@ -74,7 +74,7 @@ const AppHeaderDropdown = () => {
         </CDropdownItem>
       </CDropdownMenu>
     </CDropdown>
-  );
-};
+  )
+}
 
-export default AppHeaderDropdown;
+export default AppHeaderDropdown

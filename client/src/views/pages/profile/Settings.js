@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   CButton,
   CCard,
@@ -8,16 +8,16 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
-} from '@coreui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBriefcase, faEnvelope, faUser, faLock } from '@fortawesome/free-solid-svg-icons'; 
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+} from '@coreui/react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBriefcase, faEnvelope, faUser, faLock } from '@fortawesome/free-solid-svg-icons'
+import { Link } from 'react-router-dom' // Import Link from react-router-dom
 
 const Settings = () => {
   // Retrieve the user's data from session storage
-  const name = sessionStorage.getItem('name');
-  const email = sessionStorage.getItem('email');
-  const role = sessionStorage.getItem('role'); 
+  const name = sessionStorage.getItem('name')
+  const email = sessionStorage.getItem('email')
+  const role = sessionStorage.getItem('role')
 
   return (
     <div >
@@ -61,7 +61,7 @@ const Settings = () => {
         </CRow>
       </CContainer>
     </div>
-  );
-};
+  )
+}
 
-export default Settings;
+export default Settings

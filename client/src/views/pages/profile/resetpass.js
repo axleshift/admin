@@ -1,38 +1,38 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import axios from 'axios'
 
 function ResetPass() {
-    const [password, setPassword] = useState('');
-    const navigate = useNavigate();
-    const { id, token } = useParams();
+    const [password, setPassword] = useState('')
+    const navigate = useNavigate()
+    const { id, token } = useParams()
 
-    axios.defaults.withCredentials = true;
+    axios.defaults.withCredentials = true
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault()
 
-        console.log("ID:", id);
-        console.log("Token:", token);
-        console.log("Password:", password);
+        console.log("ID:", id)
+        console.log("Token:", token)
+        console.log("Password:", password)
 
         try {
-            const res = await axios.post(`http://localhost:5053/general/reset-password/${id}/${token}`, { password });
-            console.log("Response:", res.data);
-            
+            const res = await axios.post(`http://localhost:5053/general/reset-password/${id}/${token}`, { password })
+            console.log("Response:", res.data)
+
             if (res.data.Status === "Success") {
-                navigate('/login');
+                navigate('/login')
             } else {
-                console.error("Reset failed:", res.data);
+                console.error("Reset failed:", res.data)
             }
         } catch (err) {
-            console.error("Error:", err.message);
+            console.error("Error:", err.message)
             if (err.response) {
-                console.error("Server responded with status:", err.response.status);
-                console.error("Response data:", err.response.data);
+                console.error("Server responded with status:", err.response.status)
+                console.error("Response data:", err.response.data)
             }
         }
-    };
+    }
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
@@ -55,7 +55,7 @@ function ResetPass() {
                 </form>
             </div>
         </div>
-    );
+    )
 }
 
-export default ResetPass;
+export default ResetPass

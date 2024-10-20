@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
 import {
   CRow,
   CCol,
@@ -8,50 +8,50 @@ import {
   CDropdownItem,
   CDropdownToggle,
   CWidgetStatsA,
-} from '@coreui/react';
-import { getStyle } from '@coreui/utils';
-import { CChartLine } from '@coreui/react-chartjs';
-import CIcon from '@coreui/icons-react';
-import { cilOptions } from '@coreui/icons';
-import { useGetLogisticsQuery, useGetEmployeesQuery } from '../../state/api'; // Import both hooks
+} from '@coreui/react'
+import { getStyle } from '@coreui/utils'
+import { CChartLine } from '@coreui/react-chartjs'
+import CIcon from '@coreui/icons-react'
+import { cilOptions } from '@coreui/icons'
+import { useGetLogisticsQuery, useGetEmployeesQuery } from '../../state/api' // Import both hooks
 
 const WidgetsDropdown = (props) => {
-  const widgetChartRef1 = useRef(null);
-  const widgetChartRef2 = useRef(null);
-  const { data: logistics, isLoading: loadingLogistics, isError: errorLogistics } = useGetLogisticsQuery();
-  const { data: employees, isLoading: loadingEmployees, isError: errorEmployees } = useGetEmployeesQuery();
+  const widgetChartRef1 = useRef(null)
+  const widgetChartRef2 = useRef(null)
+  const { data: logistics, isLoading: loadingLogistics, isError: errorLogistics } = useGetLogisticsQuery()
+  const { data: employees, isLoading: loadingEmployees, isError: errorEmployees } = useGetEmployeesQuery()
 
   // Calculating key metrics for cargo
-  const cargoCounts = logistics ? calculateCargoCounts(logistics) : { delivered: 0, inTransit: 0, pending: 0 };
-  const totalEmployees = employees ? employees.length : 0;
-  const attritionRate = calculateAttritionRate(employees); // Implement this function based on your logic
+  const cargoCounts = logistics ? calculateCargoCounts(logistics) : { delivered: 0, inTransit: 0, pending: 0 }
+  const totalEmployees = employees ? employees.length : 0
+  const attritionRate = calculateAttritionRate(employees) // Implement this function based on your logic
 
   useEffect(() => {
     // Update chart colors based on theme
     const handleColorSchemeChange = () => {
       if (widgetChartRef1.current) {
         setTimeout(() => {
-          widgetChartRef1.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-success'); // Green for delivered
-          widgetChartRef1.current.update();
-        });
+          widgetChartRef1.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-success') // Green for delivered
+          widgetChartRef1.current.update()
+        })
       }
 
       if (widgetChartRef2.current) {
         setTimeout(() => {
-          widgetChartRef2.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-warning'); // Orange for pending
-          widgetChartRef2.current.update();
-        });
+          widgetChartRef2.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-warning') // Orange for pending
+          widgetChartRef2.current.update()
+        })
       }
-    };
+    }
 
     // Listen for color scheme changes
-    document.documentElement.addEventListener('ColorSchemeChange', handleColorSchemeChange);
+    document.documentElement.addEventListener('ColorSchemeChange', handleColorSchemeChange)
 
     // Clean up event listener on unmount
     return () => {
-      document.documentElement.removeEventListener('ColorSchemeChange', handleColorSchemeChange);
-    };
-  }, [widgetChartRef1, widgetChartRef2]);
+      document.documentElement.removeEventListener('ColorSchemeChange', handleColorSchemeChange)
+    }
+  }, [widgetChartRef1, widgetChartRef2])
 
   return (
     <CRow className={props.className} xs={{ gutter: 4 }}>
@@ -99,7 +99,7 @@ const WidgetsDropdown = (props) => {
         />
       </CCol>
     </CRow>
-  );
+  )
 
   function renderDropdown() {
     return (
@@ -114,7 +114,7 @@ const WidgetsDropdown = (props) => {
           <CDropdownItem disabled>Disabled action</CDropdownItem>
         </CDropdownMenu>
       </CDropdown>
-    );
+    )
   }
 
   function renderCargoChart(ref, cargoCounts) {
@@ -137,7 +137,7 @@ const WidgetsDropdown = (props) => {
         }}
         options={chartOptions()}
       />
-    );
+    )
   }
 
   function renderPendingCargoChart(ref, cargoCounts) {
@@ -160,7 +160,7 @@ const WidgetsDropdown = (props) => {
         }}
         options={chartOptions()}
       />
-    );
+    )
   }
 
   function renderEmployeeGrowthChart() {
@@ -182,7 +182,7 @@ const WidgetsDropdown = (props) => {
         }}
         options={chartOptions()}
       />
-    );
+    )
   }
 
   function renderAttritionChart() {
@@ -204,7 +204,7 @@ const WidgetsDropdown = (props) => {
         }}
         options={chartOptions()}
       />
-    );
+    )
   }
 
   function chartOptions() {
@@ -230,29 +230,29 @@ const WidgetsDropdown = (props) => {
         line: { borderWidth: 1, tension: 0.4 },
         point: { radius: 4, hitRadius: 10, hoverRadius: 4 },
       },
-    };
+    }
   }
-};
+}
 
 // Helper function to calculate cargo counts based on status
 const calculateCargoCounts = (data) => {
-  const counts = { delivered: 0, inTransit: 0, pending: 0 };
+  const counts = { delivered: 0, inTransit: 0, pending: 0 }
   data.forEach((logistics) => {
-    if (logistics.status === 'delivered') counts.delivered++;
-    else if (logistics.status === 'in transit') counts.inTransit++;
-    else counts.pending++;
-  });
-  return counts;
-};
+    if (logistics.status === 'delivered') counts.delivered++
+    else if (logistics.status === 'in transit') counts.inTransit++
+    else counts.pending++
+  })
+  return counts
+}
 
 // Implement this function to calculate the attrition rate
 const calculateAttritionRate = (employees) => {
   // Logic to calculate attrition rate based on your criteria
-  return 10; // Placeholder value; replace with actual calculation
-};
+  return 10 // Placeholder value replace with actual calculation
+}
 
 WidgetsDropdown.propTypes = {
   className: PropTypes.string,
-};
+}
 
-export default WidgetsDropdown;
+export default WidgetsDropdown

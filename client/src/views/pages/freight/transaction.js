@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from "react"
 import {
   CContainer,
   CRow,
@@ -12,54 +12,54 @@ import {
   CTableRow,
   CFormSelect,
   CBadge
-} from "@coreui/react";
-import CustomHeader from '../../../components/header/customhead';
-import { useGetShippingQuery, useUpdateShippingMutation, useDeleteShippingMutation } from "../../../state/api";
-import * as XLSX from 'xlsx';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDownload } from "@fortawesome/free-solid-svg-icons";
+} from "@coreui/react"
+import CustomHeader from '../../../components/header/customhead'
+import { useGetShippingQuery, useUpdateShippingMutation, useDeleteShippingMutation } from "../../../state/api"
+import * as XLSX from 'xlsx'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faDownload } from "@fortawesome/free-solid-svg-icons"
 
 const Transaction = () => {
-  const { data: shippingData, error, isLoading } = useGetShippingQuery();
-  const [updateShipping] = useUpdateShippingMutation();
-  const [deleteShipping] = useDeleteShippingMutation();
-  const [newStatusMap, setNewStatusMap] = useState({});
-  const [isUpdating, setIsUpdating] = useState(false); // New state to manage global updating
-  const [isDeleting, setIsDeleting] = useState(false); // New state to manage global deleting
+  const { data: shippingData, error, isLoading } = useGetShippingQuery()
+  const [updateShipping] = useUpdateShippingMutation()
+  const [deleteShipping] = useDeleteShippingMutation()
+  const [newStatusMap, setNewStatusMap] = useState({})
+  const [isUpdating, setIsUpdating] = useState(false) // New state to manage global updating
+  const [isDeleting, setIsDeleting] = useState(false) // New state to manage global deleting
 
   // Handle status update for each shipping entry
   const handleUpdate = async (shippingId) => {
-    setIsUpdating(true);
+    setIsUpdating(true)
     try {
-      const newStatus = newStatusMap[shippingId] || "Pending";  // Fallback to "Pending" if not set
-      const deliveryDate = newStatus === "Delivered" ? new Date() : null;
+      const newStatus = newStatusMap[shippingId] || "Pending"  // Fallback to "Pending" if not set
+      const deliveryDate = newStatus === "Delivered" ? new Date() : null
 
-      await updateShipping({ id: shippingId, status: newStatus, deliveryDate });
-      alert("Shipping status updated successfully!");
+      await updateShipping({ id: shippingId, status: newStatus, deliveryDate })
+      alert("Shipping status updated successfully!")
     } catch (err) {
-      alert("Error updating shipping status.");
+      alert("Error updating shipping status.")
     } finally {
-      setIsUpdating(false);
+      setIsUpdating(false)
     }
-  };
+  }
 
   const handleDelete = async (shippingId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this shipping entry?");
+    const confirmDelete = window.confirm("Are you sure you want to delete this shipping entry?")
     if (confirmDelete) {
-      setIsDeleting(true);
+      setIsDeleting(true)
       try {
-        await deleteShipping(shippingId);
-        alert("Shipping entry deleted successfully!");
+        await deleteShipping(shippingId)
+        alert("Shipping entry deleted successfully!")
       } catch (err) {
-        alert("Error deleting shipping entry.");
+        alert("Error deleting shipping entry.")
       } finally {
-        setIsDeleting(false);
+        setIsDeleting(false)
       }
     }
-  };
+  }
 
   const handleDownload = () => {
-    if (!shippingData) return;
+    if (!shippingData) return
 
     const formattedData = shippingData.map((shipping) => ({
       CustomerName: shipping.customerName,
@@ -68,16 +68,16 @@ const Transaction = () => {
       OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
       Status: shipping.status,
       DeliveryDate: shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : "N/A",
-    }));
+    }))
 
-    const worksheet = XLSX.utils.json_to_sheet(formattedData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-    XLSX.writeFile(workbook, "shipping_transactions.xlsx");
-  };
+    const worksheet = XLSX.utils.json_to_sheet(formattedData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions")
+    XLSX.writeFile(workbook, "shipping_transactions.xlsx")
+  }
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error loading shipping data: {error.message}</p>;
+  if (isLoading) return <p>Loading...</p>
+  if (error) return <p>Error loading shipping data: {error.message}</p>
 
   return (
     <CContainer m="1.5rem 2.5rem">
@@ -86,9 +86,9 @@ const Transaction = () => {
       </CRow>
       <CRow className="p-2">
         <CCol xs="auto">
-        <CButton color="Gray" onClick={handleDownload}>
-          <FontAwesomeIcon icon={faDownload}/>
-        </CButton>
+          <CButton color="Gray" onClick={handleDownload}>
+            <FontAwesomeIcon icon={faDownload} />
+          </CButton>
         </CCol>
       </CRow>
       <CTable striped bordered hover responsive>
@@ -156,7 +156,7 @@ const Transaction = () => {
         </CTableBody>
       </CTable>
     </CContainer>
-  );
-};
+  )
+}
 
-export default Transaction;
+export default Transaction

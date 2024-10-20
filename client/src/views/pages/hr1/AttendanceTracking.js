@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CButton,
   CCard,
@@ -15,7 +15,7 @@ import {
   CTableRow,
   CTableHeaderCell,
   CTableDataCell
-} from '@coreui/react';
+} from '@coreui/react'
 
 const ReceivingDispatching = () => {
   const [receivingData, setReceivingData] = useState({
@@ -23,38 +23,38 @@ const ReceivingDispatching = () => {
     quantity: '',
     receivedFrom: '',
     location: ''
-  });
+  })
 
   const [dispatchList, setDispatchList] = useState([
     { id: 1, product: 'Electronics', status: 'Pending', date: '2024-10-15' },
     { id: 2, product: 'Furniture', status: 'In Transit', date: '2024-10-16' }
-  ]);
+  ])
 
   const handleReceiveInputChange = (e) => {
-    const { name, value } = e.target;
-    setReceivingData({ ...receivingData, [name]: value });
-  };
+    const { name, value } = e.target
+    setReceivingData({ ...receivingData, [name]: value })
+  }
 
   const handleReceiveSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     // Submit the receiving data to backend or update state
-    console.log('Received Goods:', receivingData);
+    console.log('Received Goods:', receivingData)
     // Clear form
     setReceivingData({
       productName: '',
       quantity: '',
       receivedFrom: '',
       location: ''
-    });
-  };
+    })
+  }
 
   const handleDispatchUpdate = (id, status) => {
     setDispatchList((prevList) =>
       prevList.map((dispatch) =>
         dispatch.id === id ? { ...dispatch, status } : dispatch
       )
-    );
-  };
+    )
+  }
 
   return (
     <div>
@@ -164,7 +164,7 @@ const ReceivingDispatching = () => {
         </CCardBody>
       </CCard>
     </div>
-  );
-};
+  )
+}
 
-export default ReceivingDispatching;
+export default ReceivingDispatching

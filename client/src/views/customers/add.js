@@ -1,5 +1,5 @@
 // src/views/customers/add.js
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CCard,
   CForm,
@@ -9,13 +9,13 @@ import {
   CRow,
   CInputGroup,
   CInputGroupText
-} from '@coreui/react';
-import CIcon from '@coreui/icons-react';
-import { cilLockLocked, cilUser, cilPhone } from '@coreui/icons';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; 
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilLockLocked, cilUser, cilPhone } from '@coreui/icons'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
-const Add = () => { 
+const Add = () => {
   const [data, setData] = useState({
     name: '',
     email: '',
@@ -24,36 +24,36 @@ const Add = () => {
     occupation: '',
     password: '',
     repeatPassword: ''
-  });
+  })
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const navigate = useNavigate(); 
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setData(prevData => ({
       ...prevData,
       [name]: value
-    }));
-  };
+    }))
+  }
 
   const handleRegister = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (data.password !== data.repeatPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      return
     }
 
     if (!data.name || !data.email || !data.password) {
-      setError('All fields are required');
-      return;
+      setError('All fields are required')
+      return
     }
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
     try {
       // Send data to the server
       const response = await axios.post('http://localhost:9000/client/register', {
@@ -63,18 +63,18 @@ const Add = () => {
         country: data.country,
         occupation: data.occupation,
         password: data.password
-      });
-      console.log(response.data);
-      
+      })
+      console.log(response.data)
+
       // Redirect upon success
-      navigate('/customer');
+      navigate('/customer')
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Registration failed');
+      console.error('Registration error:', err)
+      setError(err.response?.data?.error || 'Registration failed')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <CContainer>
@@ -148,10 +148,10 @@ const Add = () => {
               />
             </CInputGroup>
             <div className="d-grid">
-              <CButton 
-                color="success" 
-                type="submit" 
-                disabled={loading} 
+              <CButton
+                color="success"
+                type="submit"
+                disabled={loading}
                 style={{ padding: '10px', marginTop: '10px' }}
               >
                 {loading ? 'Creating Account...' : 'Create Account'}
@@ -161,7 +161,7 @@ const Add = () => {
         </CCard>
       </CRow>
     </CContainer>
-  );
-};
+  )
+}
 
-export default Add;
+export default Add

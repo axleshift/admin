@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CButton,
   CCard,
@@ -11,96 +11,96 @@ import {
   CInputGroupText,
   CRow,
   CFormSelect,
-} from '@coreui/react';
-import { faBox, faCalendar, faUser, faWeightHanging, faMapMarkedAlt } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useCreateShippingMutation } from './../../../state/api';
+} from '@coreui/react'
+import { faBox, faCalendar, faUser, faWeightHanging, faMapMarkedAlt } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useCreateShippingMutation } from './../../../state/api'
 
 const Shipping = () => {
   const landCargoOptions = [
     { id: 1, name: 'Dry Van', volume: 4000, image: '/img/dryvan.jpeg' },
     { id: 2, name: 'Box Truck', volume: 6000, image: '/img/boxtruck.jpeg' },
     { id: 3, name: 'Flatbed Truck', volume: 4800, image: '/img/flatbed.jpeg' },
-  ];
+  ]
 
   const seaCargoOptions = [
     { id: 1, name: 'Container Ship', volume: 100000, image: '/img/containership.jpeg' },
     { id: 2, name: 'Bulk Carrier', volume: 400000, image: '/img/bulkcarrier.jpeg' },
     { id: 3, name: 'Roro Vessel', volume: 6000, image: '/img/rorovessel.jpeg' },
-  ];
+  ]
 
   const airCargoOptions = [
     { id: 1, name: 'Boeing 747-400F', volume: 100000, image: '/img/boeing747.jpeg' },
     { id: 2, name: 'Airbus A300-600F', volume: 40000, image: '/img/airbusa300.jpeg' },
     { id: 3, name: 'McDonnell Douglas MD-11F', volume: 90000, image: '/img/mcdonnel.jpeg' },
-  ];
+  ]
 
   const countryOptions = [
     { value: 'china', label: 'China', dropOffLocation: 'Shanghai Port' },
     { value: 'usa', label: 'USA', dropOffLocation: 'Los Angeles Port' },
     { value: 'germany', label: 'Germany', dropOffLocation: 'Hamburg Port' },
-  ];
+  ]
 
-  const [customerName, setCustomerName] = useState('');
-  const [orderVolume, setOrderVolume] = useState('');
-  const [orderDate, setOrderDate] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState('');
-  const [shippingType, setShippingType] = useState('land');
-  const [selectedCargo, setSelectedCargo] = useState(landCargoOptions[0]);
-  const [destinationCountry, setDestinationCountry] = useState('china');
-  const [dropOffLocation, setDropOffLocation] = useState('Shanghai Port'); 
-  const [status, setStatus] = useState('pending');
-  const [error, setError] = useState('');
+  const [customerName, setCustomerName] = useState('')
+  const [orderVolume, setOrderVolume] = useState('')
+  const [orderDate, setOrderDate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
+  const [shippingType, setShippingType] = useState('land')
+  const [selectedCargo, setSelectedCargo] = useState(landCargoOptions[0])
+  const [destinationCountry, setDestinationCountry] = useState('china')
+  const [dropOffLocation, setDropOffLocation] = useState('Shanghai Port')
+  const [status, setStatus] = useState('pending')
+  const [error, setError] = useState('')
 
-  const [createShipping, { isLoading }] = useCreateShippingMutation();
+  const [createShipping, { isLoading }] = useCreateShippingMutation()
 
   const handleCargoChange = (e) => {
-    const cargoId = parseInt(e.target.value);
-    const cargoOptions = getCargoOptions();
-    const cargo = cargoOptions.find(option => option.id === cargoId);
-    setSelectedCargo(cargo);
-  };
+    const cargoId = parseInt(e.target.value)
+    const cargoOptions = getCargoOptions()
+    const cargo = cargoOptions.find(option => option.id === cargoId)
+    setSelectedCargo(cargo)
+  }
 
   const getCargoOptions = () => {
     switch (shippingType) {
       case 'sea':
-        return seaCargoOptions;
+        return seaCargoOptions
       case 'air':
-        return airCargoOptions;
+        return airCargoOptions
       case 'land':
       default:
-        return landCargoOptions;
+        return landCargoOptions
     }
-  };
+  }
 
   const getDropOffLocation = () => {
-    return dropOffLocation || 'Unknown location';
-  };
+    return dropOffLocation || 'Unknown location'
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!customerName || !orderVolume || !orderDate || !shippingType || !destinationCountry) {
-      setError("Please fill in all fields.");
-      return;
+      setError("Please fill in all fields.")
+      return
     }
 
     try {
-      await createShipping({ customerName, orderVolume, orderDate, deliveryDate, shippingType, dropOffLocation, status });
-      alert("Shipping details submitted successfully!");
-      setCustomerName('');
-      setOrderVolume('');
-      setOrderDate('');
-      setDeliveryDate('');
-      setShippingType('land');
-      setSelectedCargo(landCargoOptions[0]);
-      setDestinationCountry('china');
-      setDropOffLocation('Shanghai Port'); // Reset to default based on country
-      setStatus('pending');
+      await createShipping({ customerName, orderVolume, orderDate, deliveryDate, shippingType, dropOffLocation, status })
+      alert("Shipping details submitted successfully!")
+      setCustomerName('')
+      setOrderVolume('')
+      setOrderDate('')
+      setDeliveryDate('')
+      setShippingType('land')
+      setSelectedCargo(landCargoOptions[0])
+      setDestinationCountry('china')
+      setDropOffLocation('Shanghai Port') // Reset to default based on country
+      setStatus('pending')
     } catch (error) {
-      console.error("Failed to submit shipping details:", error);
-      setError("An error occurred while submitting shipping details.");
+      console.error("Failed to submit shipping details:", error)
+      setError("An error occurred while submitting shipping details.")
     }
-  };
+  }
 
   return (
     <div>
@@ -164,8 +164,8 @@ const Shipping = () => {
                     <CFormSelect
                       value={shippingType}
                       onChange={(e) => {
-                        setShippingType(e.target.value);
-                        setSelectedCargo(getCargoOptions()[0]); // Reset to first cargo option on type change
+                        setShippingType(e.target.value)
+                        setSelectedCargo(getCargoOptions()[0]) // Reset to first cargo option on type change
                       }}
                     >
                       <option value="land">Land Freight</option>
@@ -186,9 +186,9 @@ const Shipping = () => {
                     <CFormSelect
                       value={destinationCountry}
                       onChange={(e) => {
-                        setDestinationCountry(e.target.value);
-                        const selectedCountry = countryOptions.find(country => country.value === e.target.value);
-                        setDropOffLocation(selectedCountry?.dropOffLocation || ''); // Set initial drop-off location based on country selection
+                        setDestinationCountry(e.target.value)
+                        const selectedCountry = countryOptions.find(country => country.value === e.target.value)
+                        setDropOffLocation(selectedCountry?.dropOffLocation || '') // Set initial drop-off location based on country selection
                       }}
                     >
                       {countryOptions.map(country => (
@@ -229,7 +229,7 @@ const Shipping = () => {
         </CRow>
       </CContainer>
     </div>
-  );
-};
+  )
+}
 
-export default Shipping;  
+export default Shipping  

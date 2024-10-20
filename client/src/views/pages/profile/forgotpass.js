@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { CButton, CForm, CFormInput, CCard, CCardBody, CCardTitle, CAlert } from '@coreui/react';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { CButton, CForm, CFormInput, CCard, CCardBody, CCardTitle, CAlert } from '@coreui/react'
 
 const ForgotPass = () => {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const navigate = useNavigate()
 
   // Set default Axios configurations
-  axios.defaults.withCredentials = true;
+  axios.defaults.withCredentials = true
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Update the URL to match the backend port
     axios.post('http://localhost:5053/general/forgot-password', { email })
       .then(res => {
         if (res.data.message === 'Reset link sent to your email') {
-          setMessage('Reset link sent successfully! Check your email.');
+          setMessage('Reset link sent successfully! Check your email.')
           setTimeout(() => {
-            navigate('/login');
-          }, 2000);
+            navigate('/login')
+          }, 2000)
         } else {
-          setMessage('Failed to send reset link. Please try again.');
+          setMessage('Failed to send reset link. Please try again.')
         }
       })
       .catch(err => {
-        setMessage('An error occurred. Please try again.');
-        console.error(err); // Use console.error for better error visibility
-      });
-  };
+        setMessage('An error occurred. Please try again.')
+        console.error(err) // Use console.error for better error visibility
+      })
+  }
 
   return (
     <CCard>
@@ -49,7 +49,7 @@ const ForgotPass = () => {
         </CForm>
       </CCardBody>
     </CCard>
-  );
-};
+  )
+}
 
-export default ForgotPass;
+export default ForgotPass

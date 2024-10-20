@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   CCard,
   CContainer,
@@ -14,66 +14,66 @@ import {
   CFormSelect,
   CInputGroup,
   CFormInput,
-} from '@coreui/react';
-import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation } from '../../state/api';
-import CustomHeader from '../../components/header/customhead';
+} from '@coreui/react'
+import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation } from '../../state/api'
+import CustomHeader from '../../components/header/customhead'
 
 const Works = () => {
-  const { data, isLoading, error } = useGetWorkersQuery(); // Fetch workers data
-  const [changeRole] = useChangeRoleMutation(); // Mutation to change role
-  const [fireUser] = useFireUserMutation(); // Mutation to delete user
-  const [searchTerm, setSearchTerm] = useState(''); // Search term state
-  const [selectedRole, setSelectedRole] = useState({}); // Store role changes
+  const { data, isLoading, error } = useGetWorkersQuery() // Fetch workers data
+  const [changeRole] = useChangeRoleMutation() // Mutation to change role
+  const [fireUser] = useFireUserMutation() // Mutation to delete user
+  const [searchTerm, setSearchTerm] = useState('') // Search term state
+  const [selectedRole, setSelectedRole] = useState({}) // Store role changes
 
   // Check for loading state
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   // Check for errors
   if (error) {
-    return <div>Error: {error.message}</div>;
+    return <div>Error: {error.message}</div>
   }
 
   // Function to handle role change
   const handleRoleChange = async (userId) => {
-    const newRole = selectedRole[userId] || ''; // Get the selected role or default to empty string
+    const newRole = selectedRole[userId] || '' // Get the selected role or default to empty string
     if (!newRole) {
-      alert('Please select a role before updating.');
-      return;
+      alert('Please select a role before updating.')
+      return
     }
     try {
-      await changeRole({ userId, newRole });
-      alert('Role updated successfully!');
+      await changeRole({ userId, newRole })
+      alert('Role updated successfully!')
     } catch (err) {
-      alert('Error updating role');
+      alert('Error updating role')
     }
-  };
+  }
 
   // Function to handle user deletion
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await fireUser({ userId });
-        alert('User deleted successfully!');
+        await fireUser({ userId })
+        alert('User deleted successfully!')
       } catch (err) {
-        alert('Error deleting user');
+        alert('Error deleting user')
       }
     }
-  };
+  }
 
   // Filter the workers data based on the search term (searching by username or email)
   const filteredData = data.filter(
     (item) =>
       item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="Employees" subtitle="List of Employees" />
-        
+
         {/* Search Bar */}
         <CInputGroup className="mb-3">
           <CFormInput
@@ -82,7 +82,7 @@ const Works = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </CInputGroup>
-        
+
         <CCard mt="40px" height="75vh">
           <CTable striped bordered>
             <CTableHead>
@@ -142,7 +142,7 @@ const Works = () => {
         </CCard>
       </CRow>
     </CContainer>
-  );
-};
+  )
+}
 
-export default Works;
+export default Works
