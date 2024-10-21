@@ -1,126 +1,127 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Define the base API with RTK Query
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_APP_BASE_URL }),
-  reducerPath: 'adminApi',
-  tagTypes: ['User', 'Products', 'Customers', 'Workers', 'Freight', 'Employees', 'Logistics'],
+  reducerPath: "adminApi",
+  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics"], 
   endpoints: (build) => ({
     // Fetch user data by ID
     getUser: build.query({
       query: (id) => `general/user/${id}`,
-      providesTags: ['User'],
+      providesTags: ["User"],
     }),
     // Fetch all products
     getProducts: build.query({
       query: () => `client/products`,
-      providesTags: ['Products'],
+      providesTags: ["Products"],
     }),
     // Fetch all customers
     getCustomers: build.query({
       query: () => `client/customers/`,
-      providesTags: ['Customers'],
+      providesTags: ["Customers"],
     }),
     // Fetch all workers
     getWorkers: build.query({
       query: () => `client/worker/`,
-      providesTags: ['Workers'],
+      providesTags: ["Workers"],
     }),
     // Change role of a worker
     changeRole: build.mutation({
       query: ({ userId, newRole }) => ({
         url: `client/worker/${userId}/role`,
-        method: 'PUT',
+        method: "PUT",
         body: { newRole },
       }),
-      invalidatesTags: ['Workers'],
+      invalidatesTags: ["Workers"],
     }),
     // Fire (delete) a user
     fireUser: build.mutation({
       query: ({ userId }) => ({
         url: `client/worker/${userId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['Workers'],
+      invalidatesTags: ["Workers"],
     }),
     // Fetch shipping data with optional parameters
     getShipping: build.query({
       query: (params) => {
-        const { customerId, product } = params || {}
+        const { customerId, product } = params || {};
         return `sales/shipping${
           customerId || product ? `?customerId=${customerId}&product=${product}` : ''
-        }`
+        }`;
       },
-      providesTags: ['Shipping'],
+      providesTags: ["Shipping"],
     }),
     // Create new shipping entry
     createShipping: build.mutation({
       query: (newShipping) => ({
         url: `sales/shipping`,
-        method: 'POST',
+        method: "POST",
         body: newShipping,
       }),
-      invalidatesTags: ['Shipping'],
+      invalidatesTags: ["Shipping"], 
     }),
     // Update a shipping entry
     updateShipping: build.mutation({
       query: ({ id, ...shipping }) => ({
         url: `sales/shipping/${id}`, // Correct endpoint for updating
-        method: 'PATCH',
+        method: "PATCH",
         body: shipping,
       }),
-      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
+      invalidatesTags: ["Shipping"], // Invalidate shipping tag to refetch data
     }),
     // Delete a shipping entry
     deleteShipping: build.mutation({
       query: (id) => ({
         url: `sales/shipping/${id}`, // Correct endpoint for deleting
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['Shipping'], // Invalidate shipping tag to refetch data
+      invalidatesTags: ["Shipping"], // Invalidate shipping tag to refetch data
     }),
     // Log user activity
     logUserActivity: build.mutation({
       query: (activityData) => ({
-        url: 'user-activity',
+        url: 'user-activity', 
         method: 'POST',
         body: activityData,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ["User"], 
     }),
     // Update user details
     updateUser: build.mutation({
       query: ({ id, ...userDetails }) => ({
-        url: `general/user/${id}`,
-        method: 'PUT',
+        url: `general/user/${id}`, 
+        method: "PUT", 
         body: userDetails,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ["User"], 
     }),
     // Fetch all employees
     getEmployees: build.query({
-      query: () => 'hr1/employee',
-      providesTags: ['Employees'],
+      query: () => 'hr1/employee', 
+      providesTags: ["Employees"],
     }),
     // Logistics queries and mutations
     getLogistics: build.query({
-      query: () => 'logix/logistic', // This should call your API correctly
+      query: () => 'logix/logistic',  // This should call your API correctly
       providesTags: ['Logistics'],
     }),
     getLogisticsById: build.query({
       query: (id) => `logistics/${id}`,
       providesTags: ['Logistics'],
     }),
-
-    deleteLogistics: build.mutation({
-      query: (id) => ({
-        url: `logistics/${id}`,
-        method: 'DELETE',
+  
+    updateLogisticsLocation: build.mutation({
+      query: ({ id, currentLocation }) => ({
+        url: `logistics/${id}`, // Assuming you have an endpoint to update logistics by ID
+        method: 'PUT', // or 'PATCH' depending on your backend implementation
+        body: { currentLocation }, // Sending the updated location
       }),
-      invalidatesTags: ['Logistics'],
+      invalidatesTags: ['Logistics'], // Invalidate logistics tag to refetch data
     }),
   }),
-})
+});
 
 // Export the hooks generated by RTK Query
 export const {
@@ -136,7 +137,7 @@ export const {
   useDeleteShippingMutation,
   useLogUserActivityMutation,
   useUpdateUserMutation,
-  useGetEmployeesQuery,
+  useGetEmployeesQuery, 
   useGetLogisticsQuery,
-  useDeleteLogisticsMutation,
-} = api
+  useUpdateLogisticsLocationMutation
+} = api;
