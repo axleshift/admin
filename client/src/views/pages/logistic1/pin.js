@@ -1,96 +1,99 @@
 import React, { useState } from 'react';
-import { useGetLogisticsQuery, useUpdateLogisticsLocationMutation } from '../../../state/api'; // Adjust the import path based on your project structure
+import { useGetLogisticsByTrackingNumQuery, useGetLogisticsQuery } from '../../../state/api'; // Adjust the import path as necessary
+import axios from 'axios'; // Ensure axios is imported
 
 const Pin = () => {
-  // Fetch logistics data
-  const { data: logistics, error, isLoading } = useGetLogisticsQuery();
-  const [selectedLogistics, setSelectedLogistics] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState('');
+    const [trackingNum, setTrackingNum] = useState('');
+    const [searchTriggered, setSearchTriggered] = useState(false);
+    const [email, setEmail] = useState(''); // State for the email input
+    const [message, setMessage] = useState(''); // State for success/error message
 
-  // Use the update logistics location mutation
-  const [updateLogisticsLocation, { isLoading: isUpdating }] = useUpdateLogisticsLocationMutation();
+    // Fetch all logistics to populate tracking numbers
+    const { data: logisticsData, error: logisticsError, isLoading: logisticsLoading } = useGetLogisticsQuery();
 
-  // Handle loading and error states
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error fetching logistics data.</div>;
+    // Use the RTK Query hook to fetch logistics by tracking number
+    const { data: logistics, error, isLoading } = useGetLogisticsByTrackingNumQuery(trackingNum, {
+        skip: !searchTriggered || !trackingNum, // Skip the query if search hasn't been triggered or trackingNum is empty
+    });
 
-  // Handle change event for the dropdown
-  const handleTrackingNumberChange = (event) => {
-    const selectedTrackingNumber = event.target.value;
-    const logisticsItem = logistics.find(item => item.trackingNumber === selectedTrackingNumber);
-    setSelectedLogistics(logisticsItem || null); // Set the selected logistics item or null if not found
+    const handleSearch = () => {
+        setSearchTriggered(true);
+    };
 
-    if (logisticsItem) {
-      setCurrentLocation(logisticsItem.currentLocation || 'Location not available');
-    } else {
-      setCurrentLocation(''); // Clear the location if nothing is selected
-    }
-  };
+    const handleSendEmail = () => {
+        // Replace this with actual email sending logic
+        if (logistics && email) {
+            // Send email via API
+            axios.post('http://localhost:5053/logix/send-logistics-email', { email, currentLocation: logistics.currentLocation })
+                .then((res) => {
+                    if (res.data.message === 'Email sent successfully') {
+                        setMessage('Email sent successfully! Check your inbox.');
+                    } else {
+                        setMessage('Failed to send email. Please try again.');
+                    }
+                })
+                .catch((err) => {
+                    setMessage('An error occurred while sending the email.');
+                    console.error(err); // Use console.error for better error visibility
+                });
 
-  // Handle updating the current location
-  const handleLocationChange = (event) => {
-    setCurrentLocation(event.target.value);
-  };
+            // Clear the email input after sending
+            setEmail('');
+        } else {
+            setMessage('Please select a tracking number and enter your email.');
+        }
+    };
 
-  const handleUpdateLocation = async () => {
-    if (selectedLogistics) {
-      try {
-        await updateLogisticsLocation({
-          id: selectedLogistics._id, // Using the ID of the selected logistics
-          currentLocation: currentLocation, // Sending the new location
-        }).unwrap(); // Using unwrap to handle the result
-        
-        console.log(`Updated Location for Tracking Number ${selectedLogistics.trackingNumber}: ${currentLocation}`);
-        
-        // Optionally, you may want to refetch the logistics data here
-        // This could be done by invalidating the query if using RTK Query
-
-        // Clear form after successful update
-        setSelectedLogistics(null);
-        setCurrentLocation('');
-      } catch (error) {
-        console.error('Failed to update location:', error);
-        alert('Failed to update location. Please try again.'); // Notify the user
-      }
-    }
-  };
-
-  return (
-    <div>
-      <h1>Select Tracking Number</h1>
-      {logistics && logistics.length > 0 ? (
-        <select onChange={handleTrackingNumberChange} defaultValue="">
-          <option value="">Select a tracking number</option>
-          {logistics.map((item) => (
-            <option key={item._id} value={item.trackingNumber}>
-              {item.trackingNumber}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <p>No logistics data available.</p>
-      )}
-
-      {selectedLogistics && (
+    return (
         <div>
-          <h2>Selected Tracking Number: {selectedLogistics.trackingNumber}</h2>
-          <p>Employee ID: {selectedLogistics.employeeId}</p> {/* Display the employee ID */}
-          
-          <label htmlFor="currentLocation">Current Location:</label>
-          <input 
-            id="currentLocation" 
-            type="text" 
-            value={currentLocation} 
-            onChange={handleLocationChange} 
-            disabled={isUpdating} // Disable input while updating
-          />
-          <button onClick={handleUpdateLocation} disabled={isUpdating}>
-            {isUpdating ? 'Updating...' : 'Update Location'}
-          </button>
+            <h2>Track Your Logistics</h2>
+
+            {/* Dropdown for selecting tracking number */}
+            {logisticsLoading && <p>Loading tracking numbers...</p>}
+            {logisticsError && <p>Error fetching logistics: {logisticsError.message}</p>}
+            {logisticsData && (
+                <select 
+                    value={trackingNum} 
+                    onChange={(e) => setTrackingNum(e.target.value)} 
+                    placeholder="Select Tracking Number"
+                >
+                    <option value="">Select Tracking Number</option>
+                    {logisticsData.map((logistic) => (
+                        <option key={logistic.trackingNumber} value={logistic.trackingNumber}>
+                            {logistic.trackingNumber}
+                        </option>
+                    ))}
+                </select>
+            )}
+            
+            <button onClick={handleSearch} disabled={!trackingNum}>Search</button>
+
+            {isLoading && <p>Loading logistics data...</p>}
+            {error && <p>Error fetching logistics: {error.message}</p>}
+            
+            {logistics && (
+                <div>
+                    <h3>Current Location:</h3>
+                    <p>{logistics.currentLocation || "Location not available"}</p>
+
+                    {/* Email input and send button */}
+                    <div>
+                        <input 
+                            type="email" 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="Enter your email" 
+                        />
+                        <button onClick={handleSendEmail} disabled={!email}>
+                            Send Location
+                        </button>
+                    </div>
+
+                    {message && <p>{message}</p>} {/* Display success/error message */}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default Pin;

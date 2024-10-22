@@ -102,24 +102,38 @@ export const api = createApi({
       query: () => 'hr1/employee', 
       providesTags: ["Employees"],
     }),
-    // Logistics queries and mutations
-    getLogistics: build.query({
-      query: () => 'logix/logistic',  // This should call your API correctly
-      providesTags: ['Logistics'],
+   // Logistics queries and mutations
+   getLogistics: build.query({
+    query: () => 'logix/logistic',  // Fetch all logistics
+    providesTags: ['Logistics'],
+  }),
+  getLogisticsById: build.query({
+    query: (id) => `logix/logistic/${id}`, // Fetch logistics by ID
+    providesTags: ['Logistics'],
+  }),
+  getLogisticsByTrackingNum: build.query({
+    query: (trackingNumber) => ({
+      url: `logix/logistic/track`, // Fetch logistics by tracking number
+      method: 'POST',
+      body: { trackingNumber },
     }),
-    getLogisticsById: build.query({
-      query: (id) => `logistics/${id}`,
-      providesTags: ['Logistics'],
+    providesTags: ['Logistics'],
+  }),
+  updateLogistics: build.mutation({
+    query: ({ id, currentLocation }) => ({
+      url: `logix/logistic/${id}`, // Update logistics
+      method: "PUT",
+      body: { currentLocation },
     }),
-  
-    updateLogisticsLocation: build.mutation({
-      query: ({ id, currentLocation }) => ({
-        url: `logistics/${id}`, // Assuming you have an endpoint to update logistics by ID
-        method: 'PUT', // or 'PATCH' depending on your backend implementation
-        body: { currentLocation }, // Sending the updated location
-      }),
-      invalidatesTags: ['Logistics'], // Invalidate logistics tag to refetch data
+    invalidatesTags: ["Logistics"],
+  }),
+  deleteLogistics: build.mutation({
+    query: (id) => ({
+      url: `logix/logistic/${id}`, // Delete logistics
+      method: "DELETE",
     }),
+    invalidatesTags: ["Logistics"],
+  }),
   }),
 });
 
@@ -139,5 +153,8 @@ export const {
   useUpdateUserMutation,
   useGetEmployeesQuery, 
   useGetLogisticsQuery,
-  useUpdateLogisticsLocationMutation
+  useGetLogisticsByIdQuery,
+  useGetLogisticsByTrackingNumQuery,
+  useUpdateLogisticsMutation,
+  useDeleteLogisticsMutation,
 } = api;
