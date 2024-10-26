@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_APP_BASE_URL }),
   reducerPath: "adminApi",
-  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics"], 
+  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics","ActivityLogs"], 
   endpoints: (build) => ({
     // Fetch user data by ID
     getUser: build.query({
@@ -79,15 +79,7 @@ export const api = createApi({
       }),
       invalidatesTags: ["Shipping"], // Invalidate shipping tag to refetch data
     }),
-    // Log user activity
-    logUserActivity: build.mutation({
-      query: (activityData) => ({
-        url: 'user-activity', 
-        method: 'POST',
-        body: activityData,
-      }),
-      invalidatesTags: ["User"], 
-    }),
+    
     // Update user details
     updateUser: build.mutation({
       query: ({ id, ...userDetails }) => ({
@@ -97,11 +89,26 @@ export const api = createApi({
       }),
       invalidatesTags: ["User"], 
     }),
+
+
     // Fetch all employees
     getEmployees: build.query({
       query: () => 'hr1/employee', 
       providesTags: ["Employees"],
     }),
+    // Fetch performance report
+    getPerformanceReport: build.query({
+      query: () => 'hr1/report/performance', 
+      providesTags: ["Employees"],
+    }),
+    // Fetch attendance report
+    getAttendanceReport: build.query({
+      query: () => 'hr1/report/attendance', 
+      providesTags: ["Employees"],
+    }),
+
+
+
    // Logistics queries and mutations
    getLogistics: build.query({
     query: () => 'logix/logistic',  // Fetch all logistics
@@ -149,9 +156,15 @@ export const {
   useCreateShippingMutation,
   useUpdateShippingMutation,
   useDeleteShippingMutation,
-  useLogUserActivityMutation,
   useUpdateUserMutation,
+
+
   useGetEmployeesQuery, 
+  useGetPerformanceReportQuery,
+  useGetAttendanceReportQuery,
+
+
+
   useGetLogisticsQuery,
   useGetLogisticsByIdQuery,
   useGetLogisticsByTrackingNumQuery,

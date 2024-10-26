@@ -1,10 +1,8 @@
 import express from "express";
-import { getProducts, getCustomers, getWorker, changeUserRole, deleteUser, registerUser, loginUser, registerCustomer, changePassword } from "../controllers/client.js";
+import {  getWorker, changeUserRole, deleteUser, registerUser, loginUser, registerCustomer, changePassword,logUserActivity } from "../controllers/client.js";
 
 const router = express.Router();
 
-router.get("/products", getProducts);
-router.get("/customers", getCustomers);
 router.get("/worker", getWorker);
 
 // Route to update the role of a user
@@ -33,5 +31,7 @@ router.get("/user", (req, res) => {
 
 // Change password
 router.put("/change-password", changePassword);
+
+router.post('/logUserActivity', logUserActivity);
 
 export default router;

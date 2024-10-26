@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   CAvatar,
+  CButton,
   CDropdown,
   CDropdownDivider,
   CDropdownHeader,
@@ -21,8 +22,22 @@ import {
   cilUser,
 } from '@coreui/icons'
 import avatar8 from './../../assets/images/avatars/8.jpg'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { useNavigate } from 'react-router-dom'
+
+
 
 const AppHeaderDropdown = () => {
+  const navigate = useNavigate()
+  const handleLogout = () => {
+ 
+    localStorage.removeItem('userToken')  
+    localStorage.removeItem('userName')   
+    localStorage.clear() 
+     
+      navigate('/login')
+    }
   // Retrieve the user's name from session storage
   const name = sessionStorage.getItem('name')
 
@@ -68,9 +83,11 @@ const AppHeaderDropdown = () => {
           Projects
         </CDropdownItem>
         <CDropdownDivider />
-        <CDropdownItem href="#">
-          <CIcon icon={cilLockLocked} className="me-2" />
-          Lock Account
+        <CDropdownItem>
+          <CButton onClick={handleLogout}>
+            <FontAwesomeIcon icon={faRightFromBracket} />
+            Logout
+          </CButton>
         </CDropdownItem>
       </CDropdownMenu>
     </CDropdown>

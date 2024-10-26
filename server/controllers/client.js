@@ -1,6 +1,8 @@
 import Product from "../model/Product.js";
 import Customer from "../model/Customer.js";
 import User from "../model/User.js";
+import UserActivity from "../model/useractivity.js";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateUsername } from "../UTIL/generateCode.js";
@@ -17,36 +19,9 @@ const passwordComplexityOptions = {
     requirementCount: 4,
 };
 
-export const getProducts = async (req, res) => {
-    try {
-        const products = await Product.find();
 
-        const productsWithStats = await Promise.all(
-            products.map(async (product) => {
-                const stat = await ProductStat.find({
-                    productId: product._id,
-                });
-                return {
-                    ...product._doc,
-                    stat,
-                };
-            })
-        );
 
-        res.status(200).json(productsWithStats);
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-};
 
-export const getCustomers = async (req, res) => {
-    try {
-        const customers = await Customer.find(); 
-        res.status(200).json(customers);
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-};
 
 export const getWorker = async (req, res) => {
     try {
@@ -269,3 +244,21 @@ export const changePassword = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+export const logUserActivity = async (req, res) => {
+    try {
+      const { userId, action, route } = req.body;
+  
+      const userActivity = new UserActivity({
+        userId,
+        action,
+        route,
+      });
+  
+      await userActivity.save();
+      res.status(200).json({ message: 'User activity logged successfully' });
+    } catch (error) {
+      console.error(error); // Log the error for debugging
+      res.status(500).json({ error: 'Error logging user activity' });
+    }
+  };

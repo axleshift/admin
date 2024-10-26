@@ -24,33 +24,20 @@ const _nav = (userRole) => [
       text: 'NEW',
     },
   },
-  {
-    component: CNavItem,
-    name: 'Employee',
-    to: '/employeedash',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    badge: {
-      color: 'info',
-      text: 'NEW',
-    },
-  },
+
   {
     component: CNavGroup,
     name: 'Administration',
     to: '',
     icon: <CIcon icon={cilBeachAccess} customClassName="nav-icon" />,
     items: [
-      {
-        component: CNavItem,
-        name: 'Products',
-        to: '/product',
-      },
+     
       ...(userRole === 'admin' || userRole === 'manager'
         ? [
             {
               component: CNavItem,
-              name: 'Customers',
-              to: '/customer',
+              name: 'Activity',
+              to: 'useractivity/index',
             },
             {
               component: CNavItem,
@@ -62,6 +49,7 @@ const _nav = (userRole) => [
               name: 'Transactions',
               to: 'freight/transaction',
             },
+           
           ]
         : []),
     ],
@@ -71,6 +59,36 @@ const _nav = (userRole) => [
     name: ' Employees',
     to: 'hr1/EmployeeManagement',
     icon: <FontAwesomeIcon icon={faUser} />,
+  },
+  {
+    component: CNavItem,
+    name: ' Performance',
+    to: 'hr1/PerformanceManagement',
+    icon: <FontAwesomeIcon icon={faUser} />,
+  },
+  {
+    component: CNavGroup,
+    name: 'JobPosting',
+    to: 'Settings',
+    icon: <CIcon icon={cilShieldAlt} customClassName="nav-icon" />,
+    items: [
+      
+        {
+          component: CNavItem,
+          name: 'JobPost',
+          to: 'hr2/jobpost',
+        },
+        { 
+          component: CNavItem,
+          name: 'Interview',
+          to: 'hr2/interview',
+        },
+       {
+        component: CNavItem,
+        name: 'Application',
+        to: 'hr2/application',}
+        ,
+      ],
   },
   {
     component: CNavItem,
@@ -100,7 +118,7 @@ const _nav = (userRole) => [
   {
     component: CNavItem,
     name: 'Track',
-    to: '/track/PdfGenerator',
+    to: '/useractivity/activity',
     icon: <CIcon icon={cilLocationPin} customClassName="nav-icon" />,
   },
   {

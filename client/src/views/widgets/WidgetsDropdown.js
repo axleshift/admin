@@ -13,11 +13,12 @@ import { getStyle } from '@coreui/utils'
 import { CChartLine } from '@coreui/react-chartjs'
 import CIcon from '@coreui/icons-react'
 import { cilOptions } from '@coreui/icons'
-import { useGetLogisticsQuery, useGetEmployeesQuery } from '../../state/api' // Import both hooks
+import { useGetLogisticsQuery, useGetEmployeesQuery } from '../../state/api'
 
 const WidgetsDropdown = (props) => {
   const widgetChartRef1 = useRef(null)
   const widgetChartRef2 = useRef(null)
+
   const {
     data: logistics,
     isLoading: loadingLogistics,
@@ -29,35 +30,31 @@ const WidgetsDropdown = (props) => {
     isError: errorEmployees,
   } = useGetEmployeesQuery()
 
-  // Calculating key metrics for cargo
   const cargoCounts = logistics
     ? calculateCargoCounts(logistics)
     : { delivered: 0, inTransit: 0, pending: 0 }
   const totalEmployees = employees ? employees.length : 0
-  const attritionRate = calculateAttritionRate(employees) // Implement this function based on your logic
+  const attritionRate = calculateAttritionRate(employees)
 
   useEffect(() => {
-    // Update chart colors based on theme
     const handleColorSchemeChange = () => {
       if (widgetChartRef1.current) {
         setTimeout(() => {
-          widgetChartRef1.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-success') // Green for delivered
+          widgetChartRef1.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-success')
           widgetChartRef1.current.update()
         })
       }
 
       if (widgetChartRef2.current) {
         setTimeout(() => {
-          widgetChartRef2.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-warning') // Orange for pending
+          widgetChartRef2.current.data.datasets[0].pointBackgroundColor = getStyle('--cui-warning')
           widgetChartRef2.current.update()
         })
       }
     }
 
-    // Listen for color scheme changes
     document.documentElement.addEventListener('ColorSchemeChange', handleColorSchemeChange)
 
-    // Clean up event listener on unmount
     return () => {
       document.documentElement.removeEventListener('ColorSchemeChange', handleColorSchemeChange)
     }
@@ -65,10 +62,9 @@ const WidgetsDropdown = (props) => {
 
   return (
     <CRow className={props.className} xs={{ gutter: 4 }}>
-      {/* Delivered Cargo Widget */}
       <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
-          color="success" // Changed to success color
+          color="success"
           value={loadingLogistics ? 'Loading...' : cargoCounts.delivered}
           title="Delivered Cargo"
           action={renderDropdown()}
@@ -76,10 +72,9 @@ const WidgetsDropdown = (props) => {
         />
       </CCol>
 
-      {/* Pending Cargo Widget */}
       <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
-          color="warning" // Changed to warning color
+          color="warning"
           value={
             loadingLogistics
               ? 'Loading...'
@@ -91,7 +86,6 @@ const WidgetsDropdown = (props) => {
         />
       </CCol>
 
-      {/* Total Employees Widget */}
       <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
           color="primary"
@@ -102,7 +96,6 @@ const WidgetsDropdown = (props) => {
         />
       </CCol>
 
-      {/* Attrition Rate Widget */}
       <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
           color="info"
@@ -144,7 +137,7 @@ const WidgetsDropdown = (props) => {
               label: 'Cargo Status',
               backgroundColor: 'transparent',
               borderColor: 'rgba(255,255,255,.55)',
-              pointBackgroundColor: getStyle('--cui-success'), // Green for delivered
+              pointBackgroundColor: getStyle('--cui-success'),
               data: [cargoCounts.delivered, cargoCounts.inTransit, cargoCounts.pending],
             },
           ],
@@ -167,7 +160,7 @@ const WidgetsDropdown = (props) => {
               label: 'Cargo Status',
               backgroundColor: 'transparent',
               borderColor: 'rgba(255,255,255,.55)',
-              pointBackgroundColor: getStyle('--cui-warning'), // Orange for pending
+              pointBackgroundColor: getStyle('--cui-warning'),
               data: [cargoCounts.pending, cargoCounts.inTransit],
             },
           ],
@@ -190,7 +183,7 @@ const WidgetsDropdown = (props) => {
               backgroundColor: 'transparent',
               borderColor: 'rgba(255,255,255,.55)',
               pointBackgroundColor: getStyle('--cui-primary'),
-              data: [65, 59, 84, 84, 51, 55, 40], // Replace with actual data
+              data: [65, 59, 84, 84, 51, 55, 40],
             },
           ],
         }}
@@ -212,7 +205,7 @@ const WidgetsDropdown = (props) => {
               backgroundColor: 'transparent',
               borderColor: 'rgba(255,255,255,.55)',
               pointBackgroundColor: getStyle('--cui-info'),
-              data: [1, 18, 9, 17, 34, 22, 11], // Replace with actual data
+              data: [1, 18, 9, 17, 34, 22, 11],
             },
           ],
         }}
@@ -248,7 +241,6 @@ const WidgetsDropdown = (props) => {
   }
 }
 
-// Helper function to calculate cargo counts based on status
 const calculateCargoCounts = (data) => {
   const counts = { delivered: 0, inTransit: 0, pending: 0 }
   data.forEach((logistics) => {
@@ -259,10 +251,8 @@ const calculateCargoCounts = (data) => {
   return counts
 }
 
-// Implement this function to calculate the attrition rate
 const calculateAttritionRate = (employees) => {
-  // Logic to calculate attrition rate based on your criteria
-  return 10 // Placeholder value; replace with actual calculation
+  return 10 // Placeholder for actual calculation logic
 }
 
 WidgetsDropdown.propTypes = {
