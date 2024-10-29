@@ -44,9 +44,7 @@ const routes = [
   { path: '/Settings', name: 'Settings', element: Settings },
   { path: '/changepass', name: 'ChangePassword', element: changepass },
 
-  { path: '/hr1/EmployeeManagement', name: 'EMPLOYEE DETAILS', element: employee },
-  { path: '/hr1/PerformanceManagement', name: 'PERFORMANCE DETAILS', element: performance},
-
+  
 
   { path: '/logistic1/index', name: 'OPERATIONAL', element: logistic1 },
   { path: '/logistic1/pin', name: 'Track', element: pin },
