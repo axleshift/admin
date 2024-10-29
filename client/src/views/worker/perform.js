@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useGetPerformanceQuery } from '../../state/api';
 import {
   CartesianGrid,
@@ -17,21 +18,17 @@ const Perform = () => {
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error occurred: {error.message}</div>;
 
-  // Log the data to check its structure
   console.log("data", data);
 
-  // Check if data exists and is an array
   if (!data || !Array.isArray(data) || data.length === 0) {
     return <div>No performance data available.</div>;
   }
 
-  // Map data to the format required by the chart
   const chartData = data.map(user => ({
     name: user.name,
-    performance: Number(user.performance) || 0, // Ensure it's a number
+    performance: Number(user.performance) || 0,
   }));
 
-  // Custom tooltip to display performance
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -41,8 +38,17 @@ const Perform = () => {
         </div>
       );
     }
-
     return null;
+  };
+
+  CustomTooltip.propTypes = {
+    active: PropTypes.bool,
+    payload: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string,
+        value: PropTypes.number,
+      })
+    ),
   };
 
   return (
