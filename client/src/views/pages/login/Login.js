@@ -66,7 +66,7 @@ const Login = () => {
           console.log('Saved User Role in session:', sessionStorage.getItem('role'))
 
           // Navigate to dashboard
-          navigate('/dashboard')
+          navigate('/employeedash')
         }
       }
     } catch (error) {

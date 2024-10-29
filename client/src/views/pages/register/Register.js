@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   CButton,
   CCard,
@@ -11,11 +11,11 @@ import {
   CInputGroupText,
   CRow,
   CFormSelect,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilPhone, cilUser } from '@coreui/icons'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilLockLocked, cilPhone, cilUser } from '@coreui/icons';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Register = () => {
   const [data, setData] = useState({
@@ -26,45 +26,46 @@ const Register = () => {
     repeatPassword: '',
     role: '',
     adminUsername: '', // New field for admin's username
-  })
+    department: '', // New field for department
+  });
 
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Validate password match
     if (data.password !== data.repeatPassword) {
-      setError('Passwords do not match')
-      return
+      setError('Passwords do not match');
+      return;
     }
 
     // Check for empty fields
-    if (!data.name || !data.email || !data.password || !data.role) {
-      setError('All fields are required')
-      return
+    if (!data.name || !data.email || !data.password || !data.role || !data.department) {
+      setError('All fields are required');
+      return;
     }
 
     // If role is admin, employee, or manager, check for admin username
     if (['admin', 'manager', 'employee'].includes(data.role) && !data.adminUsername) {
-      setError('Admin username is required for the selected role')
-      return
+      setError('Admin username is required for the selected role');
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5053/client/register', data)
-      console.log(response.data)
-      navigate('/login')
+      const response = await axios.post('http://localhost:5053/client/register', data);
+      console.log(response.data);
+      navigate('/login');
     } catch (err) {
-      console.error('Registration error:', err)
-      setError(err.response?.data?.error || 'Registration failed')
+      console.error('Registration error:', err);
+      setError(err.response?.data?.error || 'Registration failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
@@ -159,16 +160,19 @@ const Register = () => {
                     </CInputGroup>
                   )}
 
-                  <div className="d-grid">
-                    <CButton
-                      color="success"
-                      type="submit"
-                      disabled={loading}
-                      style={{ padding: '10px', marginTop: '10px' }}
-                    >
-                      {loading ? 'Creating Account...' : 'Create Account'}
-                    </CButton>
-                  </div>
+                  {/* Department input */}
+                  <CInputGroup className="mb-4">
+                    <CInputGroupText>Department</CInputGroupText>
+                    <CFormInput
+                      placeholder="Department"
+                      value={data.department}
+                      onChange={(e) => setData({ ...data, department: e.target.value })}
+                    />
+                  </CInputGroup>
+
+                  <CButton type="submit" color="success" disabled={loading}>
+                    {loading ? 'Registering...' : 'Create Account'}
+                  </CButton>
                 </CForm>
               </CCardBody>
             </CCard>
@@ -176,7 +180,7 @@ const Register = () => {
         </CRow>
       </CContainer>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_APP_BASE_URL }),
   reducerPath: "adminApi",
-  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics","ActivityLogs"], 
+  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics","ActivityLogs"],
   endpoints: (build) => ({
     // Fetch user data by ID
     getUser: build.query({
@@ -26,6 +26,12 @@ export const api = createApi({
       query: () => `client/worker/`,
       providesTags: ["Workers"],
     }),
+
+
+    getPerformance: build.query({
+      query: () => 'client/performance',
+    }),
+
     // Change role of a worker
     changeRole: build.mutation({
       query: ({ userId, newRole }) => ({
@@ -60,7 +66,7 @@ export const api = createApi({
         method: "POST",
         body: newShipping,
       }),
-      invalidatesTags: ["Shipping"], 
+      invalidatesTags: ["Shipping"],
     }),
     // Update a shipping entry
     updateShipping: build.mutation({
@@ -79,33 +85,33 @@ export const api = createApi({
       }),
       invalidatesTags: ["Shipping"], // Invalidate shipping tag to refetch data
     }),
-    
+
     // Update user details
     updateUser: build.mutation({
       query: ({ id, ...userDetails }) => ({
-        url: `general/user/${id}`, 
-        method: "PUT", 
+        url: `general/user/${id}`,
+        method: "PUT",
         body: userDetails,
       }),
-      invalidatesTags: ["User"], 
+      invalidatesTags: ["User"],
     }),
 
 
-    // Fetch all employees
-    getEmployees: build.query({
-      query: () => 'hr1/employee', 
-      providesTags: ["Employees"],
-    }),
-    // Fetch performance report
-    getPerformanceReport: build.query({
-      query: () => 'hr1/report/performance', 
-      providesTags: ["Employees"],
-    }),
-    // Fetch attendance report
-    getAttendanceReport: build.query({
-      query: () => 'hr1/report/attendance', 
-      providesTags: ["Employees"],
-    }),
+    // // Fetch all employees
+    // getEmployees: build.query({
+    //   query: () => 'hr1/employee',
+    //   providesTags: ["Employees"],
+    // }),
+    // // Fetch performance report
+    // getPerformanceReport: build.query({
+    //   query: () => 'hr1/report/performance',
+    //   providesTags: ["Employees"],
+    // }),
+    // // Fetch attendance report
+    // getAttendanceReport: build.query({
+    //   query: () => 'hr1/report/attendance',
+    //   providesTags: ["Employees"],
+    // }),
 
 
 
@@ -149,7 +155,10 @@ export const {
   useGetUserQuery,
   useGetProductsQuery,
   useGetCustomersQuery,
+
   useGetWorkersQuery,
+  useGetPerformanceQuery,
+
   useChangeRoleMutation,
   useFireUserMutation,
   useGetShippingQuery,
@@ -159,9 +168,9 @@ export const {
   useUpdateUserMutation,
 
 
-  useGetEmployeesQuery, 
-  useGetPerformanceReportQuery,
-  useGetAttendanceReportQuery,
+  // useGetEmployeesQuery,
+  // useGetPerformanceReportQuery,
+  // useGetAttendanceReportQuery,
 
 
 

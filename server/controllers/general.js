@@ -75,17 +75,15 @@ export const resetPassword = async (req, res) => {
 // Controller to get all user activities
 export const getUserActivities = async (req, res) => {
     try {
-        // Fetch all activities sorted by timestamp in descending order
         const activities = await UserActivity.find({})
             .sort({ timestamp: -1 })
-            .populate('userId', 'name role'); // Populate user name and role
+            .populate('userId', 'name role'); // Populate with user's name and role for clarity
 
         res.json(activities);
     } catch (err) {
         res.status(500).send(err);
     }
 };
-
 // Controller to log user activity
 export const logUserActivity = async (req, res) => {
     if (!req.session.user) {
@@ -102,5 +100,22 @@ export const logUserActivity = async (req, res) => {
         res.status(200).send('Activity logged');
     } catch (err) {
         res.status(500).send(err);
+    }
+};
+export const deleteUserActivities = async (req, res) => {
+    const { userId } = req.params; // Get user ID from request parameters
+
+    try {
+        // Check if activities exist for the given userId
+        const activities = await UserActivity.find({ userId });
+        if (activities.length === 0) {
+            return res.status(404).json({ message: "No activities found for this user." });
+        }
+
+        // Delete all activities for the specified userId
+        await UserActivity.deleteMany({ userId });
+        res.status(200).json({ message: "User activities deleted successfully." });
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 };

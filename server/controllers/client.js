@@ -32,6 +32,16 @@ export const getWorker = async (req, res) => {
     }
 };
 
+export const getperform = async (req, res)=>{
+    try{
+        const users =await User.find({}, 'name performance'); // Get names and performance reviews
+        res.json(users);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    
+    
 // Update a user's role
 export const changeUserRole = async (req, res) => {
     const { newRole } = req.body;
@@ -72,7 +82,7 @@ export const deleteUser = async (req, res) => {
 // Register User
 
 export const registerUser = async (req, res) => {
-    const { name, email, password, phoneNumber, role, adminUsername } = req.body;
+    const { name, email, password, phoneNumber, role, adminUsername, department } = req.body;
     console.log("Received registration data:", req.body);
 
     // Validate input
@@ -89,9 +99,10 @@ export const registerUser = async (req, res) => {
         phoneNumber: Joi.string().optional(),
         role: Joi.string().valid("admin", "manager", "employee", "user").required(),
         adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
+        department: Joi.string().required() // New field for department
     });
 
-    const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername });
+    const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername, department });
     if (error) {
         return res.status(400).json({ error: error.details[0].message });
     }
@@ -121,6 +132,7 @@ export const registerUser = async (req, res) => {
             password: hashedPassword,
             phoneNumber,
             role,
+            department, // Save the department
             username: generateUsername(role), // Example username generation
         });
 
@@ -134,7 +146,6 @@ export const registerUser = async (req, res) => {
         res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
     }
 };
-
 // Login endpoint
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
@@ -143,13 +154,10 @@ export const loginUser = async (req, res) => {
         return res.status(400).json({ message: "Identifier and password are required" });
     }
 
-    console.log("Request body:", req.body);
-
     try {
         const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
 
         if (!user) {
-            console.error("User not found for identifier:", identifier);
             return res.status(400).json({ message: "User not found" });
         }
 
@@ -160,11 +168,15 @@ export const loginUser = async (req, res) => {
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-        if (!req.session) {
-            return res.status(500).json({ message: "Session is not initialized" });
-        }
+        req.session.user = { id: user._id, username: user.username, name: user.name, role: user.role };
 
-        req.session.user = { id: user._id, username: user.username, name: user.name, email: user.email, phoneNumber: user.phoneNumber, role: user.role };
+        // Log login activity
+        const loginActivity = new UserActivity({
+            userId: user._id,
+            route: "User Login",
+            timestamp: new Date()
+        });
+        await loginActivity.save();
 
         res.status(200).json({
             token,
@@ -175,9 +187,15 @@ export const loginUser = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Login error:", error.message);
-        console.error("Full error object:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+export const getCustomers = async (req, res) => {
+    try {
+        const customers = await Customer.find();
+        res.status(200).json(customers);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching customers', error: error.message });
     }
 };
 // Register Customer

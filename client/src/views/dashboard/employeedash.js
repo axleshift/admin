@@ -1,33 +1,22 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
-import { useGetEmployeeDetailsQuery } from '../../state/api'
-import CustomHeader from '../../components/header/customhead'
-import { CCard, CCardBody, CRow } from '@coreui/react'
+import React from 'react';
+import { CContainer, CRow, CCol } from '@coreui/react';
+import WidgetsDropdown from '../widgets/WidgetsDropdown';
 
-const EmployeeDashboard = () => {
-  const { employeeId } = useParams() // Fetch employeeId from URL
-  const { data, isLoading, error } = useGetEmployeeDetailsQuery(employeeId) // Call API with employeeId
-
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error loading employee details.</div>
-
+const Employeedash = () => {
   return (
-    <CCard>
+    <CContainer>
       <CRow>
-        <CustomHeader title="Performance Dashboard" subtitle="Employee Performance Dashboard" />
+        <CCol>
+          <h3>Dashboard</h3>
+        </CCol>
       </CRow>
-      <CCardBody>
-        {data ? (
-          <div>
-            <h2>{data.name}</h2>
-            <p>{data.position}</p>
-          </div>
-        ) : (
-          <div>No employee data available.</div>
-        )}
-      </CCardBody>
-    </CCard>
-  )
+      <CRow>
+        <CCol>
+          <WidgetsDropdown className="mb-4" />
+        </CCol>
+      </CRow>
+    </CContainer>
+  );
 }
 
-export default EmployeeDashboard
+export default Employeedash;

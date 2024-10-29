@@ -7,6 +7,7 @@ import './scss/style.scss';
 
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'));
 const Login = React.lazy(() => import('./views/pages/login/Login'));
+const SystemLogin = React.lazy(() => import('./views/pages/login/systemlogin'));
 const Logout = React.lazy(() => import('./views/pages/logout/index'));
 const Register = React.lazy(() => import('./views/pages/register/Register'));
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'));
@@ -66,6 +67,7 @@ const App = () => {
                 <LogActivity /> {/* Log the user activity */}
                 <Routes>
                     <Route exact path="/login" name="Login Page" element={<Login />} />
+                    <Route exact path="/systemlogin" name="System Login Page" element={<SystemLogin />} />
                     <Route exact path="/logout" name="Logout" element={<Logout />} />
                     <Route exact path="/forgotpass" name="Forgot Password" element={<Forgotpass />} />
                     <Route exact path="/resetpass/:id/:token" name="Reset Password" element={<Resetpass />} />

@@ -1,23 +1,17 @@
 import UserActivity from '../model/useractivity.js';
 
-// Middleware to log user activities
 export const activityLogger = (req, res, next) => {
     if (req.session.user) {
-        const userId = req.session.user.id; 
-        const clientUrl = req.get('X-Client-URL'); 
-        const timestamp = new Date(); 
-
+        const clientUrl = req.originalUrl; // Get current route
         const activity = new UserActivity({
-            userId: userId,
+            userId: req.session.user.id,
             route: clientUrl,
-            timestamp: timestamp
+            timestamp: new Date()
         });
 
         activity.save()
-            .then(() => {
-                console.log(`Activity logged: User ID: ${userId}, Route: ${clientUrl}, Time: ${timestamp}`);
-            })
-            .catch(err => console.error('Error saving activity:', err));
+            .then(() => console.log(`Logged: ${req.session.user.id} accessed ${clientUrl}`))
+            .catch(err => console.error('Logging error:', err));
     }
     next();
 };

@@ -21,7 +21,8 @@
 
     import Employee from "./model/hr1.js";
     import Logistics from "./model/logix.js";
-    import { employee, mockLogisticsData } from "./data/index.js";
+    import user from "./model/User.js"
+    import { employee, mockLogisticsData ,users} from "./data/index.js";
 
 
     import { activityLogger } from "./middleware/activityLogger.js";
@@ -77,5 +78,6 @@
 
             // Employee.insertMany(employee)
             // Logistics.insertMany(mockLogisticsData)
+             //user.insertMany(users)
         })
         .catch((err) => console.log(`${err} did not connect`));

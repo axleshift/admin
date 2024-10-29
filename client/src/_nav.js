@@ -8,17 +8,18 @@ import {
   cilShieldAlt,
   cilSpeedometer,
 } from '@coreui/icons'
-import { CNavGroup, CNavItem } from '@coreui/react'
+import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTruckFast, faUser } from '@fortawesome/free-solid-svg-icons'
+import { faTruckFast, faUser ,faListCheck, faChartSimple, faCartShopping, faUserGroup, faHouse} from '@fortawesome/free-solid-svg-icons'
 
 // Define the navigation items based on the user role
 const _nav = (userRole) => [
+  
   {
     component: CNavItem,
     name: 'Dashboard',
-    to: '/dashboard',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    to: 'dashboard/employeedash',
+    icon: <FontAwesomeIcon icon ={faHouse} style={{ marginRight: '8px' }}  />,
     badge: {
       color: 'info',
       text: 'NEW',
@@ -26,122 +27,67 @@ const _nav = (userRole) => [
   },
 
   {
+    component: CNavTitle,
+    name: 'Client',
+  },
+    {component: CNavItem,
+      name:'Transactions',
+      icon: <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }}  />,
+      to: 'freight/transaction'
+    },
+    {component: CNavItem,
+      name:'Customer',
+      icon: <FontAwesomeIcon icon={faUserGroup} style={{ marginRight: '8px' }}  />,
+      to: '/customer'
+    },
+  
+  {
+    component: CNavTitle,
+    name: 'Sales',
+  },
+  {
+    component: CNavTitle,
+    name: 'Management',
+  },
+
+
+ 
+ 
+
+ 
+  
+  {
+    component: CNavTitle,
+    name: 'Management',
+  },
+  {
+    icon: <FontAwesomeIcon icon={faListCheck} />,
     component: CNavGroup,
-    name: 'Administration',
-    to: '',
-    icon: <CIcon icon={cilBeachAccess} customClassName="nav-icon" />,
+    name: 'Admin',
+    icon: <CIcon icon={cilShieldAlt} customClassName="nav-icon" />,
     items: [
-     
       ...(userRole === 'admin' || userRole === 'manager'
         ? [
+          {
+            component: CNavItem,
+            name: 'Employees',
+            to: '/worker',
+          },
             {
               component: CNavItem,
               name: 'Activity',
               to: 'useractivity/index',
             },
-            {
+              {
               component: CNavItem,
-              name: 'Employees',
-              to: '/worker',
+              name: 'Performance',
+              to: '/perform',
+              icon: <FontAwesomeIcon icon={faChartSimple} style={{ marginRight: '8px' }}  />,
             },
-            {
-              component: CNavItem,
-              name: 'Transactions',
-              to: 'freight/transaction',
-            },
+         
            
           ]
         : []),
-    ],
-  },
-  {
-    component: CNavItem,
-    name: ' Employees',
-    to: 'hr1/EmployeeManagement',
-    icon: <FontAwesomeIcon icon={faUser} />,
-  },
-  {
-    component: CNavItem,
-    name: ' Performance',
-    to: 'hr1/PerformanceManagement',
-    icon: <FontAwesomeIcon icon={faUser} />,
-  },
-  {
-    component: CNavGroup,
-    name: 'JobPosting',
-    to: 'Settings',
-    icon: <CIcon icon={cilShieldAlt} customClassName="nav-icon" />,
-    items: [
-      
-        {
-          component: CNavItem,
-          name: 'JobPost',
-          to: 'hr2/jobpost',
-        },
-        { 
-          component: CNavItem,
-          name: 'Interview',
-          to: 'hr2/interview',
-        },
-       {
-        component: CNavItem,
-        name: 'Application',
-        to: 'hr2/application',}
-        ,
-      ],
-  },
-  {
-    component: CNavItem,
-    name: 'Logistics',
-    to: 'logistic1/index',
-    icon: <FontAwesomeIcon icon={faTruckFast} />,
-  },
-
-  {
-    component: CNavGroup,
-    name: 'FREIGHT',
-    to: '',
-    icon: <CIcon icon={cilBoatAlt} customClassName="nav-icon" />,
-    items: [
-      {
-        component: CNavItem,
-        name: 'LandFreight',
-        to: 'freight/land',
-      },
-      {
-        component: CNavItem,
-        name: 'Shipping',
-        to: 'freight/shipping',
-      },
-    ],
-  },
-  {
-    component: CNavItem,
-    name: 'Track',
-    to: '/useractivity/activity',
-    icon: <CIcon icon={cilLocationPin} customClassName="nav-icon" />,
-  },
-  {
-    component: CNavItem,
-    name: 'Pricing',
-    to: '/pricing',
-    icon: <CIcon icon={cilDollar} customClassName="nav-icon" />,
-  },
-  {
-    component: CNavGroup,
-    name: 'Threat',
-    icon: <CIcon icon={cilShieldAlt} customClassName="nav-icon" />,
-    items: [
-      {
-        component: CNavItem,
-        name: 'Form Control',
-        to: '/forms/form-control',
-      },
-      {
-        component: CNavItem,
-        name: 'Select',
-        to: '/forms/select',
-      },
     ],
   },
   {
@@ -156,11 +102,19 @@ const _nav = (userRole) => [
       },
       {
         component: CNavItem,
+        name: 'Login',
+        to: '/systemlogin',
+      },
+      {
+        component: CNavItem,
         name: 'Register',
         to: '/register',
       },
     ],
   },
-]
+  ]
 
-export default _nav // Ensure this line is included
+
+
+
+export default _nav 

@@ -12,14 +12,29 @@ const hashedPassword4 = bcrypt.hashSync(plainPassword, saltRounds);
 const generateObjectId = () => new mongoose.Types.ObjectId();
 
 // Users
+// Assume hashedPassword1, hashedPassword2, hashedPassword3 are defined elsewhere
+
 export const users = [
     {
         name: "Admin One",
         email: "admin1@example.com",
-        password: hashedPassword1, // Use the hashed password
+        password: hashedPassword1,
         phoneNumber: "+1-555-123-4567",
         role: "admin",
         username: "ad1234567890",
+        department: "HR",
+        attendance: [
+            { date: new Date("2023-01-02"), status: "present" },
+            { date: new Date("2023-01-03"), status: "absent" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-06-01"), rating: 5, comments: "Outstanding performance" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-07-01"),
+        },
     },
     {
         name: "Admin Two",
@@ -28,6 +43,23 @@ export const users = [
         phoneNumber: "+1-555-123-4568",
         role: "admin",
         username: "ad2345678901",
+        department: "Core",
+        attendance: [
+            { date: new Date("2023-01-04"), status: "present" },
+            { date: new Date("2023-01-05"), status: "leave" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-06-01"), rating: 4, comments: "Great team leader" },
+        ],
+        offboarding: {
+            exitInterviewDate: new Date("2023-09-01"),
+            reasonForLeaving: "Career advancement",
+            feedback: "Positive experience overall",
+        },
+        selfService: {
+            profileUpdated: false,
+            lastUpdated: new Date("2023-06-15"),
+        },
     },
     {
         name: "Manager One",
@@ -36,6 +68,19 @@ export const users = [
         phoneNumber: "+1-555-456-7890",
         role: "manager",
         username: "ma3456789012",
+        department: "Logistics",
+        attendance: [
+            { date: new Date("2023-02-01"), status: "present" },
+            { date: new Date("2023-02-02"), status: "present" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-05-01"), rating: 4, comments: "Effective manager" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-03-10"),
+        },
     },
     {
         name: "Manager Two",
@@ -44,6 +89,19 @@ export const users = [
         phoneNumber: "+1-555-456-7891",
         role: "manager",
         username: "ma4567890123",
+        department: "Finance",
+        attendance: [
+            { date: new Date("2023-02-15"), status: "present" },
+            { date: new Date("2023-02-16"), status: "absent" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-07-15"), rating: 3, comments: "Needs improvement in communication" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: false,
+            lastUpdated: new Date("2023-07-10"),
+        },
     },
     {
         name: "Employee One",
@@ -52,6 +110,19 @@ export const users = [
         phoneNumber: "+1-555-987-6543",
         role: "employee",
         username: "em5678901234",
+        department: "Administrative",
+        attendance: [
+            { date: new Date("2023-03-01"), status: "present" },
+            { date: new Date("2023-03-02"), status: "leave" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-04-10"), rating: 5, comments: "Exceptional work" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-03-20"),
+        },
     },
     {
         name: "Employee Two",
@@ -60,6 +131,19 @@ export const users = [
         phoneNumber: "+1-555-987-6544",
         role: "employee",
         username: "em6789012345",
+        department: "HR",
+        attendance: [
+            { date: new Date("2023-03-05"), status: "present" },
+            { date: new Date("2023-03-06"), status: "absent" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-06-15"), rating: 4, comments: "Great team player" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-03-10"),
+        },
     },
     {
         name: "Employee Three",
@@ -68,6 +152,19 @@ export const users = [
         phoneNumber: "+1-555-987-6545",
         role: "employee",
         username: "em7890123456",
+        department: "Core",
+        attendance: [
+            { date: new Date("2023-03-07"), status: "present" },
+            { date: new Date("2023-03-08"), status: "present" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-07-10"), rating: 3, comments: "Average performance" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: false,
+            lastUpdated: new Date("2023-05-18"),
+        },
     },
     {
         name: "Employee Four",
@@ -76,6 +173,19 @@ export const users = [
         phoneNumber: "+1-555-987-6546",
         role: "employee",
         username: "em8901234567",
+        department: "Logistics",
+        attendance: [
+            { date: new Date("2023-03-09"), status: "present" },
+            { date: new Date("2023-03-10"), status: "leave" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-04-05"), rating: 2, comments: "Needs improvement" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: false,
+            lastUpdated: new Date("2023-04-25"),
+        },
     },
     {
         name: "Manager Three",
@@ -84,6 +194,19 @@ export const users = [
         phoneNumber: "+1-555-456-7892",
         role: "manager",
         username: "ma5678901234",
+        department: "Finance",
+        attendance: [
+            { date: new Date("2023-02-20"), status: "present" },
+            { date: new Date("2023-02-21"), status: "leave" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-08-01"), rating: 5, comments: "Excellent management skills" },
+        ],
+        offboarding: null,
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-08-05"),
+        },
     },
     {
         name: "Admin Three",
@@ -92,8 +215,26 @@ export const users = [
         phoneNumber: "+1-555-123-4569",
         role: "admin",
         username: "ad3456789012",
+        department: "Administrative",
+        attendance: [
+            { date: new Date("2023-01-08"), status: "present" },
+            { date: new Date("2023-01-09"), status: "absent" },
+        ],
+        performance: [
+            { reviewDate: new Date("2023-05-20"), rating: 4, comments: "Contributes to team goals" },
+        ],
+        offboarding: {
+            exitInterviewDate: new Date("2023-12-15"),
+            reasonForLeaving: "Personal reasons",
+            feedback: "Positive overall",
+        },
+        selfService: {
+            profileUpdated: true,
+            lastUpdated: new Date("2023-07-12"),
+        },
     },
 ];
+
 
 export const mockLogisticsData = [
     {

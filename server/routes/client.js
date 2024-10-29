@@ -1,15 +1,19 @@
 import express from "express";
-import {  getWorker, changeUserRole, deleteUser, registerUser, loginUser, registerCustomer, changePassword,logUserActivity } from "../controllers/client.js";
+import {  getWorker,getCustomers,getperform, changeUserRole, deleteUser, registerUser, loginUser, registerCustomer, changePassword,logUserActivity } from "../controllers/client.js";
 
 const router = express.Router();
 
 router.get("/worker", getWorker);
-
+router.get('/performance', getperform)
 // Route to update the role of a user
 router.put("/worker/:id/role", changeUserRole);
 
 // Route to delete a user
 router.delete("/worker/:id", deleteUser);
+
+
+
+router.get('/customers', getCustomers);
 
 // Register
 router.post("/register", registerUser);

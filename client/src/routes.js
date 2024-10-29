@@ -1,7 +1,9 @@
 import React from 'react'
 
-const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
+//const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
+const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'))
 const Worker = React.lazy(() => import('./views/worker/works'))
+const Performance = React.lazy(() => import('./views/worker/perform'))
 const Customers = React.lazy(() => import('./views/customers/index'))
 const Index = React.lazy(() => import('./views/product'))
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'))
@@ -32,11 +34,12 @@ const pin = React.lazy(() => import('./views/pages/logistic1/pin.js'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
-  { path: '/dashboard', name: 'Dashboard', element: Dashboard },
+  { path: '/dashboard/employeedash', name: 'Dashboard', element: Dashboard },
   { path: '/product', name: 'Product', element: Index },
   { path: '/customer', name: 'Customer', element: Customers },
   { path: '/add', name: 'Add Customer', element: AddCustomer },
   { path: '/worker', name: 'Employees', element: Worker },
+  { path: '/perform', name: 'Employees Performance', element: Performance },
   { path: '/profile', name: 'Profile Page', element: Profile },
   { path: '/freight/land', name: 'Freight Land', element: Land },
   { path: '/freight/transaction', name: 'Freight transaction', element: transaction },
