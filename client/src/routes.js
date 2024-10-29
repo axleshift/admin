@@ -16,12 +16,8 @@ const activity = React.lazy(() => import('./views/pages/useractivity/index'))
 const Settings = React.lazy(() => import('./views/pages/profile/Settings'))
 const changepass = React.lazy(() => import('./views/pages/profile/changepass'))
 
-//hr1
-const employee = React.lazy(() => import('./views/pages/hr1/EmployeeManagement')) 
-
 
 //logistic 
-const performance = React.lazy(() => import('./views/pages/hr1/PerformanceManagement')) 
 const logistic1 = React.lazy(() => import('./views/pages/logistic1/index'))
 const pin = React.lazy(() => import('./views/pages/logistic1/pin.js'))
 
