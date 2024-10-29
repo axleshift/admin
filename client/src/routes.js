@@ -1,6 +1,5 @@
 import React from 'react'
 
-//const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'))
 const Worker = React.lazy(() => import('./views/worker/works'))
 const Performance = React.lazy(() => import('./views/worker/perform'))
@@ -20,10 +19,6 @@ const changepass = React.lazy(() => import('./views/pages/profile/changepass'))
 //hr1
 const employee = React.lazy(() => import('./views/pages/hr1/EmployeeManagement')) 
 
-//h2/2
-// const post = React.lazy(() => import('./views/pages/hr2/jobpost'))
-// const interview = React.lazy(() => import('./views/pages/hr2/interview'))
-// const application= React.lazy(() => import('./views/pages/hr2/application'))
 
 //logistic 
 const performance = React.lazy(() => import('./views/pages/hr1/PerformanceManagement')) 
@@ -51,9 +46,7 @@ const routes = [
 
   { path: '/hr1/EmployeeManagement', name: 'EMPLOYEE DETAILS', element: employee },
   { path: '/hr1/PerformanceManagement', name: 'PERFORMANCE DETAILS', element: performance},
-  // { path: '/hr2/jobpost', name:'JOBPOST', element: post },
-  // { path: '/hr2/interview', name:'INTERVIEW', element: interview },
-  // { path: '/hr2/application', name:'APPLICATION', element: application },
+
 
   { path: '/logistic1/index', name: 'OPERATIONAL', element: logistic1 },
   { path: '/logistic1/pin', name: 'Track', element: pin },
