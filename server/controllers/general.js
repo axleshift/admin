@@ -1,9 +1,12 @@
 import User from "../model/User.js";
 import UserActivity from "../model/useractivity.js";
+import transaction from "../model/transaction.js";
+import Overall from '../model/overall.js';
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
+import Transaction from "../model/transaction.js";
 
 dotenv.config();
 
@@ -119,3 +122,50 @@ export const deleteUserActivities = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
+
+
+export const getDashboardStats = async (req, res) => {
+    try {
+      // hardcoded values
+      const currentMonth = "November";
+      const currentYear = 2024;
+      const currentDay = "2024-01-15";
+  
+      /* Recent Transactions */
+      const transactions = await Transaction.find()
+        .limit(50)
+        .sort({ createdOn: -1 });
+  
+      /* Overall Stats */
+      const overall = await Overall.find({ year: currentYear });
+  
+      const {
+        totalCustomers,
+        yearlyTotalSoldUnits,
+        yearlySalesTotal,
+        monthlyData, 
+        salesByCategory,
+      } = overall[0];
+  
+      const thisMonthStats = overall[0].monthlyData.find(({ month }) => {
+        return month === currentMonth;
+      });
+  
+      const todayStats = overall[0].dailyData.find(({ date }) => {
+        return date === currentDay;
+      });
+  
+      res.status(200).json({
+        totalCustomers,
+        yearlyTotalSoldUnits,
+        yearlySalesTotal,
+        monthlyData,
+        salesByCategory,
+        thisMonthStats,
+        todayStats,
+        transactions,
+      });
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  };

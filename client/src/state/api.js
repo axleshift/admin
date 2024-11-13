@@ -4,7 +4,18 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_APP_BASE_URL }),
   reducerPath: "adminApi",
-  tagTypes: ["User", "Products", "Customers", "Workers", "Freight", "Employees", "Logistics","ActivityLogs"],
+  tagTypes: [
+    "User", 
+    "Products", 
+    "Customers", 
+    "Workers", 
+    "Freight", 
+    "Employees", 
+    "Logistics",
+    "ActivityLogs",
+    'Sales',
+    'Dashboard'
+  ],
   endpoints: (build) => ({
     // Fetch user data by ID
     getUser: build.query({
@@ -97,24 +108,6 @@ export const api = createApi({
     }),
 
 
-    // // Fetch all employees
-    // getEmployees: build.query({
-    //   query: () => 'hr1/employee',
-    //   providesTags: ["Employees"],
-    // }),
-    // // Fetch performance report
-    // getPerformanceReport: build.query({
-    //   query: () => 'hr1/report/performance',
-    //   providesTags: ["Employees"],
-    // }),
-    // // Fetch attendance report
-    // getAttendanceReport: build.query({
-    //   query: () => 'hr1/report/attendance',
-    //   providesTags: ["Employees"],
-    // }),
-
-
-
    // Logistics queries and mutations
    getLogistics: build.query({
     query: () => 'logix/logistic',  // Fetch all logistics
@@ -147,6 +140,15 @@ export const api = createApi({
     }),
     invalidatesTags: ["Logistics"],
   }),
+  getSales: build.query({
+    query:()=>'sales/sales',
+    providesTags:['Sales'],
+  }),
+
+  getDashboard: build.query({
+    query:()=>'general/dashboard',
+    providesTags:['Dashboard'],
+  })
   }),
 });
 
@@ -167,16 +169,13 @@ export const {
   useDeleteShippingMutation,
   useUpdateUserMutation,
 
-
-  // useGetEmployeesQuery,
-  // useGetPerformanceReportQuery,
-  // useGetAttendanceReportQuery,
-
-
-
   useGetLogisticsQuery,
   useGetLogisticsByIdQuery,
   useGetLogisticsByTrackingNumQuery,
   useUpdateLogisticsMutation,
   useDeleteLogisticsMutation,
+
+
+  useGetSalesQuery,
+  useGetDashboardQuery
 } = api;

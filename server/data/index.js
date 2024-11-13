@@ -514,3 +514,164 @@ export const employee = [
         },
     },
 ];
+// Mock Data for Transactions
+export const transactions = [
+    {
+      customerName: "Alice",
+      orderVolume: 3200,
+      orderDate: new Date("2024-01-10"),
+      shippingType: "air",
+      dropOffLocation: "N/A", // You can set this to an appropriate location if needed
+      status: "Delivered",
+      deliveryDate: new Date("2024-01-15"),
+    },
+    {
+      customerName: "Bob",
+      orderVolume: 2100,
+      orderDate: new Date("2024-01-20"),
+      shippingType: "sea",
+      dropOffLocation: "N/A",
+      status: "In Transit",
+      deliveryDate: new Date("2024-01-25"),
+    },
+    {
+      customerName: "Eve",
+      orderVolume: 3500,
+      orderDate: new Date("2024-02-12"),
+      shippingType: "land",
+      dropOffLocation: "N/A",
+      status: "Pending",
+      deliveryDate: new Date("2024-02-20"),
+    },
+    {
+      customerName: "Sam",
+      orderVolume: 2800,
+      orderDate: new Date("2024-02-25"),
+      shippingType: "air",
+      dropOffLocation: "N/A",
+      status: "Delivered",
+      deliveryDate: new Date("2024-02-28"),
+    },
+    {
+      customerName: "Elisa",
+      orderVolume: 50000,
+      orderDate: new Date("2024-12-24"),
+      shippingType: "land",
+      dropOffLocation: "N/A",
+      status: "In Transit",
+      deliveryDate: null, // Delivery date is "N/A" in original data, so set to null
+    },
+    {
+      customerName: "Ark",
+      orderVolume: 100000,
+      orderDate: new Date("2024-12-29"),
+      shippingType: "land",
+      dropOffLocation: "N/A",
+      status: "Pending",
+      deliveryDate: new Date("2025-12-09"),
+    },
+  ];
+
+
+//overall
+export const overalldata = [
+    {
+      totalCustomers: 320,
+      yearlySalesTotal: 1050000,
+      yearlyTotalSoldUnits: 13500,
+      year: 2024,
+      monthlyData: [
+        {
+          month: "January",
+          totalSales: 52000,
+          totalUnits: 190,
+          _id: "637000f7a5a686695b5170b1",
+        },
+        {
+          month: "February",
+          totalSales: 59000,
+          totalUnits: 210,
+          _id: "637000f7a5a686695b5170b2",
+        },
+        {
+          month: "March",
+          totalSales: 72000,
+          totalUnits: 240,
+          _id: "637000f7a5a686695b5170b3",
+        },
+        {
+          month: "April",
+          totalSales: 77000,
+          totalUnits: 260,
+          _id: "637000f7a5a686695b5170b4",
+        },
+        {
+          month: "May",
+          totalSales: 64000,
+          totalUnits: 220,
+          _id: "637000f7a5a686695b5170b5",
+        },
+        {
+          month: "June",
+          totalSales: 89000,
+          totalUnits: 300,
+          _id: "637000f7a5a686695b5170b6",
+        },
+        {
+          month: "July",
+          totalSales: 71000,
+          totalUnits: 240,
+          _id: "637000f7a5a686695b5170b7",
+        },
+        {
+          month: "August",
+          totalSales: 86000,
+          totalUnits: 280,
+          _id: "637000f7a5a686695b5170b8",
+        },
+        {
+          month: "September",
+          totalSales: 63000,
+          totalUnits: 210,
+          _id: "637000f7a5a686695b5170b9",
+        },
+        {
+          month: "October",
+          totalSales: 87000,
+          totalUnits: 290,
+          _id: "637000f7a5a686695b5170ba",
+        },
+        {
+          month: "November",
+          totalSales: 75000,
+          totalUnits: 270,
+          _id: "637000f7a5a686695b5170bb",
+        },
+        {
+          month: "December",
+          totalSales: 93000,
+          totalUnits: 320,
+          _id: "637000f7a5a686695b5170bc",
+        },
+      ],
+      dailyData: [
+        { date: "2024-01-15", totalSales: 2600, totalUnits: 9 },
+        { date: "2024-01-31", totalSales: 2200, totalUnits: 8 },
+        { date: "2024-02-15", totalSales: 3100, totalUnits: 11 },
+        { date: "2024-02-28", totalSales: 2800, totalUnits: 10 },
+        // Add remaining daily entries here as needed
+        { date: "2024-12-31", totalSales: 4800, totalUnits: 16 },
+      ],
+      salesByCategory: {
+        airFreight: 351000,
+        landFreight: 350000,
+        seaFreight: 350000,
+      },
+      _id: "636ffd4fc7195768677097d7",
+      createdAt: "2024-01-10T18:53:05.874Z",
+      updatedAt: "2024-07-06T05:12:27.736Z",
+      __v: 36729,
+    },
+  ];
+  
+  

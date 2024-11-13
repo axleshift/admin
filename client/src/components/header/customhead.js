@@ -6,8 +6,8 @@ const CustomHeader = ({ title, subtitle }) => {
   // Accept title and subtitle as props
   return (
     // Return the JSX
-    <CCard>
-      <CCardBody>
+    <CCard >
+      <CCardBody >
         <CCardTitle>{title}</CCardTitle> {/* Display the title */}
         <CCardText>{subtitle}</CCardText> {/* Display the subtitle */}
       </CCardBody>

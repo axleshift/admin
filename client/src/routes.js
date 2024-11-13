@@ -11,6 +11,12 @@ const Land = React.lazy(() => import('./views/pages/freight/land'))
 const transaction = React.lazy(() => import('./views/pages/freight/transaction'))
 const shipping = React.lazy(() => import('./views/pages/freight/shipping'))
 
+//sales
+const sales = React.lazy(()=> import ('./views/pages/sales/oversales'))
+const daily = React.lazy(()=> import ('./views/pages/sales/daily.js'))
+const monthly = React.lazy(()=> import ('./views/pages/sales/monthly'))
+const breakdown = React.lazy(()=> import ('./views/pages/sales/breakdown'))
+
 const activity = React.lazy(() => import('./views/pages/useractivity/index'))
 
 const Settings = React.lazy(() => import('./views/pages/profile/Settings'))
@@ -25,7 +31,7 @@ const pin = React.lazy(() => import('./views/pages/logistic1/pin.js'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
-  { path: '/dashboard/employeedash', name: 'Dashboard', element: Dashboard },
+  { path: '/employeedash', name: 'Dashboard', element: Dashboard },
   { path: '/product', name: 'Product', element: Index },
   { path: '/customer', name: 'Customer', element: Customers },
   { path: '/add', name: 'Add Customer', element: AddCustomer },
@@ -40,6 +46,10 @@ const routes = [
   { path: '/Settings', name: 'Settings', element: Settings },
   { path: '/changepass', name: 'ChangePassword', element: changepass },
 
+  { path: '/oversales', name: 'Oversales', element:sales},
+  { path: '/monthly', name: 'Monthly', element:monthly},
+  { path: '/daily', name: 'Daily', element:daily},
+  { path: '/breakdown', name: 'Breakdown ', element:breakdown},
   
 
   { path: '/logistic1/index', name: 'OPERATIONAL', element: logistic1 },

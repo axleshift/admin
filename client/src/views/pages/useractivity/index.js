@@ -110,7 +110,10 @@ const UserActivityLog = () => {
             </CListGroup>
 
             {uniqueUserIds.map(userId => {
-              const userActivities = activities.filter(activity => activity.userId?._id === userId);
+              const userActivities = activities
+                .filter(activity => activity.userId?._id === userId)
+                .filter(activity => activity.route.startsWith("http")); // Filter out entries that do not start with "http"
+
               const userName = userActivities.length > 0 ? userActivities[0].userId?.name || 'Unknown User' : 'Unknown User';
 
               return (

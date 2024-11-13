@@ -1,1 +1,25 @@
-// Here you can add other styles
+.custom-margin-top {
+    margin-top: 6rem; /* Adjust the value as needed */
+  }
+
+
+::-webkit-scrollbar{
+  width:10px
+}
+
+::-webkit-scrollbar-track{
+  background:#7a7f9d
+}
+
+::-webkit-scrollbar-thumb{
+  background: #21295c
+}
+
+::-webkit-scrollbar-track:hover{
+  background:#21295c
+}
+
+.custom-nav-title {
+  font-size: 1.2rem; // Adjust this size as desired
+  font-weight: bold; // Optional, adds emphasis to the title
+}
