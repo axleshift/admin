@@ -4,7 +4,6 @@ const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'))
 const Worker = React.lazy(() => import('./views/worker/works'))
 const Performance = React.lazy(() => import('./views/worker/perform'))
 const Customers = React.lazy(() => import('./views/customers/index'))
-const Index = React.lazy(() => import('./views/product'))
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'))
 const AddCustomer = React.lazy(() => import('./views/customers/add'))
 const Land = React.lazy(() => import('./views/pages/freight/land'))
@@ -32,7 +31,6 @@ const pin = React.lazy(() => import('./views/pages/logistic1/pin.js'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/employeedash', name: 'Dashboard', element: Dashboard },
-  { path: '/product', name: 'Product', element: Index },
   { path: '/customer', name: 'Customer', element: Customers },
   { path: '/add', name: 'Add Customer', element: AddCustomer },
   { path: '/worker', name: 'Employees', element: Worker },
