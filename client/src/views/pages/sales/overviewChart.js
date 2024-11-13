@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
+import PropTypes from 'prop-types';
 const OverviewChart = ({ view, salesData }) => {
   const chartData = salesData?.monthlyData?.map((month) => ({
     month: month.month,
@@ -38,4 +38,16 @@ const OverviewChart = ({ view, salesData }) => {
   );
 };
 
+OverviewChart.propTypes = {
+  view: PropTypes.string.isRequired,
+  salesData: PropTypes.shape({
+    monthlyData: PropTypes.arrayOf(
+      PropTypes.shape({
+        month: PropTypes.string.isRequired,
+        totalSales: PropTypes.number,
+        totalUnits: PropTypes.number,
+      })
+    ),
+  }),
+};
 export default OverviewChart;

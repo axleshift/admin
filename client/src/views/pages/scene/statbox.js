@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FlexBetween from './FlexBetween';
+import PropTypes from 'prop-types';
+
 
 const StatBox = ({ title, value, increase, icon, description }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -40,6 +42,15 @@ const StatBox = ({ title, value, increase, icon, description }) => {
       </FlexBetween>
     </div>
   );
+};
+
+
+StatBox.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  increase: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  icon: PropTypes.element.isRequired,
+  description: PropTypes.string.isRequired,
 };
 
 export default StatBox;
