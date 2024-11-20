@@ -65,6 +65,16 @@ const userSchema = new mongoose.Schema(
       profileUpdated: { type: Boolean, default: false },
       lastUpdated: { type: Date },
     },
+
+    // OAuth token management
+    token: {
+      type: String,
+      default: null, // Default value is null if no token is set
+    },
+    tokenExpiry: {
+      type: Date,
+      default: null, // Default value is null if no expiration is set
+    },
   },
   { timestamps: true }
 );

@@ -1,0 +1,38 @@
+.notification-dropdown {
+    max-width: 300px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+    .dropdown-item {
+      padding: 10px 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-radius: 6px;
+      margin: 0;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+  
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+  
+      &.unread {
+        background-color: rgba(0, 0, 0, 0.1);
+        font-weight: bold;
+      }
+  
+      &.read {
+        background-color: #f8f9fa;
+      }
+    }
+  
+    .notification-item {
+      .text-muted {
+        font-size: 0.875rem;
+        color: rgba(0, 0, 0, 0.6);
+      }
+    }
+  }
+  

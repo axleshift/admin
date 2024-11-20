@@ -13,21 +13,37 @@ import {
   CFormSelect,
   CBadge,
 } from '@coreui/react';
-import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation } from '../../state/api';
+import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation, usePostgenerateMutation } from '../../state/api';
 import CustomHeader from '../../components/header/customhead';
 import ExcelJS from 'exceljs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
 
+// Import the mutations for the departments
+import { 
+  usePostToHrMutation, 
+  usePostToFinanceMutation, 
+  usePostToCoreMutation, 
+  usePostToLogisticsMutation 
+} from '../../state/api';  // Adjust the import path based on your project structure
+
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
   const [changeRole] = useChangeRoleMutation();
   const [fireUser] = useFireUserMutation();
+  const [postGenerate] = usePostgenerateMutation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState({});
-  const [selectedDepartment, setSelectedDepartment] = useState('all'); 
-  const [selectedRoleFilter, setSelectedRoleFilter] = useState('all'); 
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
+  const [oauthToken, setOauthToken] = useState(null);
+
+  // Define hooks for the department mutations
+  const [postToHr] = usePostToHrMutation();
+  const [postToFinance] = usePostToFinanceMutation();
+  const [postToCore] = usePostToCoreMutation();
+  const [postToLogistics] = usePostToLogisticsMutation();
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -60,18 +76,6 @@ const Works = () => {
       }
     }
   };
-
-  const filteredData = data.filter((item) => {
-    const matchesSearch =
-      item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment =
-      selectedDepartment === 'all' || item.department === selectedDepartment;
-    const matchesRole =
-      selectedRoleFilter === 'all' || item.role === selectedRoleFilter;
-
-    return matchesSearch && matchesDepartment && matchesRole;
-  });
 
   const handleDownloadAll = async () => {
     const workbook = new ExcelJS.Workbook();
@@ -111,11 +115,75 @@ const Works = () => {
     URL.revokeObjectURL(url);
   };
 
+  const filteredData = data.filter((item) => {
+    const matchesSearch =
+      item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDepartment =
+      selectedDepartment === 'all' || item.department === selectedDepartment;
+    const matchesRole =
+      selectedRoleFilter === 'all' || item.role === selectedRoleFilter;
+
+    return matchesSearch && matchesDepartment && matchesRole;
+  });
+
+  const handleGenerateAndSend = async (userId, department) => {
+    try {
+      const tokenResponse = await postGenerate(userId).unwrap();
+      const { token, message } = tokenResponse;
+      setOauthToken(token);
+      alert(message);
+  
+      const userData = data.find((user) => user._id === userId);
+      const payload = {
+        ...userData,
+        oauthToken: token,
+        department: department.toUpperCase(), // Convert department to uppercase
+      };
+  
+      let response;
+      switch (department.toLowerCase()) {
+        case 'hr':
+          response = await postToHr({ payload }).unwrap();
+          break;
+        case 'finance':
+          response = await postToFinance({ payload }).unwrap();
+          break;
+        case 'core':
+          response = await postToCore({ payload }).unwrap();
+          break;
+        case 'logistics':
+          response = await postToLogistics({ payload }).unwrap();
+          break;
+        default:
+          throw new Error('Invalid department');
+      }
+  
+      console.log(`Response from ${department}:`, response);
+      alert(response.message);
+    } catch (error) {
+      console.error('Error during generation and sending:', error);
+      alert('Failed to generate token or send data.');
+    }
+  };
+
+  const handleDepartmentGenerateToken = () => {
+    if (selectedDepartment === 'all') {
+      alert('Please select a department to generate token.');
+      return;
+    }
+    // Loop through the filtered employees and generate token for each one in the selected department
+    const departmentEmployees = filteredData.filter(employee => employee.department === selectedDepartment);
+    departmentEmployees.forEach(employee => {
+      handleGenerateAndSend(employee._id, selectedDepartment);
+    });
+  };
+
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
         <CustomHeader title="Employees" subtitle="List of Employees" />
-
+        
         <CCol xs="12" className="mb-3">
           <CFormInput
             placeholder="Search by Username or Email"
@@ -155,10 +223,13 @@ const Works = () => {
             </CFormSelect>
           </CCol>
 
-          <CCol xs="4" className="d-flex">
-            <div className="ms-auto">
-              <CButton color="info" onClick={handleDownloadAll} size="sm">
+          <CCol xs="4" className="d-flex justify-content-end">
+            <div className="d-flex align-items-center">
+              <CButton color="info" onClick={handleDownloadAll} size="sm" className="me-2">
                 <FontAwesomeIcon icon={faDownload} /> Download All
+              </CButton>
+              <CButton color="success" onClick={handleDepartmentGenerateToken} size="sm">
+                Send to {selectedDepartment} Department
               </CButton>
             </div>
           </CCol>
@@ -185,20 +256,56 @@ const Works = () => {
                   </CListGroupItem>
                   <CListGroupItem>Country: {item.country}</CListGroupItem>
                   <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
+                  <CListGroupItem>Role: {item.role}</CListGroupItem>
                   <CListGroupItem>
                     Department: {item.department}
                   </CListGroupItem>
                   <CListGroupItem>
-                    Role: <CBadge color="primary">{item.role}</CBadge>
+                    <CFormSelect
+                      value={selectedRole[item._id] || ''}
+                      onChange={(e) =>
+                        setSelectedRole({
+                          ...selectedRole,
+                          [item._id]: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select Role</option>
+                      <option value="admin">Admin</option>
+                      <option value="manager">Manager</option>
+                      <option value="employee">Employee</option>
+                    </CFormSelect>
+                  </CListGroupItem>
+                  <CListGroupItem>
+                    <CButton
+                      color="primary"
+                      size="sm"
+                      onClick={() => handleRoleChange(item._id)}
+                    >
+                      Change Role
+                    </CButton>
+                    <CButton
+                      color="danger"
+                      size="sm"
+                      className="ms-2"
+                      onClick={() => handleDeleteUser(item._id)}
+                    >
+                      Fire User
+                    </CButton>
+                  </CListGroupItem>
+                  {/* Conditional rendering for the Generate Token button */}
+                  <CListGroupItem>
+                    {item.department !== 'Administrative' && (
+                      <CButton
+                        color="info"
+                        size="sm"
+                        onClick={() => handleGenerateAndSend(item._id, item.department)}
+                      >
+                        Send to {item.department}
+                      </CButton>
+                    )}
                   </CListGroupItem>
                 </CListGroup>
-
-                <CButton color="warning" onClick={() => handleRoleChange(item._id)}>
-                  Update Role
-                </CButton>
-                <CButton color="danger" onClick={() => handleDeleteUser(item._id)}>
-                  Delete
-                </CButton>
               </CCardBody>
             )}
           </CCard>

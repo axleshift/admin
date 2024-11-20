@@ -9,12 +9,14 @@ export const api = createApi({
     "Products", 
     "Customers", 
     "Workers", 
+    "Generate",
     "Freight", 
     "Employees", 
     "Logistics",
     "ActivityLogs",
     'Sales',
-    'Dashboard'
+    'Dashboard',
+    "Notif"
   ],
   endpoints: (build) => ({
     // Fetch user data by ID
@@ -38,7 +40,13 @@ export const api = createApi({
       providesTags: ["Workers"],
     }),
 
-
+    postgenerate: build.mutation({
+      query: (userId) => ({
+        url: `client/generate/${userId}`, // Correctly matches the backend route
+        method: 'POST',
+      }),
+      invalidatesTags: ['Generate'],
+    }),
     getPerformance: build.query({
       query: () => 'client/performance',
     }),
@@ -107,48 +115,90 @@ export const api = createApi({
       invalidatesTags: ["User"],
     }),
 
+    // Logistics queries and mutations
+    getLogistics: build.query({
+      query: () => 'logix/logistic',  // Fetch all logistics
+      providesTags: ['Logistics'],
+    }),
+    getLogisticsById: build.query({
+      query: (id) => `logix/logistic/${id}`, // Fetch logistics by ID
+      providesTags: ['Logistics'],
+    }),
+    getLogisticsByTrackingNum: build.query({
+      query: (trackingNumber) => ({
+        url: `logix/logistic/track`, // Fetch logistics by tracking number
+        method: 'POST',
+        body: { trackingNumber },
+      }),
+      providesTags: ['Logistics'],
+    }),
+    updateLogistics: build.mutation({
+      query: ({ id, currentLocation }) => ({
+        url: `logix/logistic/${id}`, // Update logistics
+        method: "PUT",
+        body: { currentLocation },
+      }),
+      invalidatesTags: ["Logistics"],
+    }),
+    deleteLogistics: build.mutation({
+      query: (id) => ({
+        url: `logix/logistic/${id}`, // Delete logistics
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Logistics"],
+    }),
+    getSales: build.query({
+      query: () => 'sales/sales',
+      providesTags: ['Sales'],
+    }),
 
-   // Logistics queries and mutations
-   getLogistics: build.query({
-    query: () => 'logix/logistic',  // Fetch all logistics
-    providesTags: ['Logistics'],
-  }),
-  getLogisticsById: build.query({
-    query: (id) => `logix/logistic/${id}`, // Fetch logistics by ID
-    providesTags: ['Logistics'],
-  }),
-  getLogisticsByTrackingNum: build.query({
-    query: (trackingNumber) => ({
-      url: `logix/logistic/track`, // Fetch logistics by tracking number
-      method: 'POST',
-      body: { trackingNumber },
+    getDashboard: build.query({
+      query: () => 'general/dashboard',
+      providesTags: ['Dashboard'],
     }),
-    providesTags: ['Logistics'],
-  }),
-  updateLogistics: build.mutation({
-    query: ({ id, currentLocation }) => ({
-      url: `logix/logistic/${id}`, // Update logistics
-      method: "PUT",
-      body: { currentLocation },
-    }),
-    invalidatesTags: ["Logistics"],
-  }),
-  deleteLogistics: build.mutation({
-    query: (id) => ({
-      url: `logix/logistic/${id}`, // Delete logistics
-      method: "DELETE",
-    }),
-    invalidatesTags: ["Logistics"],
-  }),
-  getSales: build.query({
-    query:()=>'sales/sales',
-    providesTags:['Sales'],
-  }),
 
-  getDashboard: build.query({
-    query:()=>'general/dashboard',
-    providesTags:['Dashboard'],
-  })
+    getNotif: build.query({
+      query: () => 'notification/getnotif',
+      providesTags: ['Notif'],
+    }),
+    postNotif: build.mutation({
+      query: (newNotif) => ({
+        url: `notification/postnotif`,
+        method: "POST",
+        body: newNotif,
+      }),
+      invalidatesTags: ["Notif"],
+    }),
+
+    // Integration
+      postToHr: build.mutation({
+        query: ({ department, payload }) => ({
+          url: `management/hr`,
+          method: "POST",
+          body: payload,
+        }),
+      }),
+    postToFinance: build.mutation({
+      query: ({ department, payload }) => ({
+        url: `management/finance`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    postToCore: build.mutation({
+      query: ({ department, payload }) => ({
+        url: `management/core`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    postToLogistics: build.mutation({
+      query: ({ department, payload }) => ({
+        url: `management/logistics`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -157,10 +207,9 @@ export const {
   useGetUserQuery,
   useGetProductsQuery,
   useGetCustomersQuery,
-
   useGetWorkersQuery,
+  usePostgenerateMutation,
   useGetPerformanceQuery,
-
   useChangeRoleMutation,
   useFireUserMutation,
   useGetShippingQuery,
@@ -168,14 +217,19 @@ export const {
   useUpdateShippingMutation,
   useDeleteShippingMutation,
   useUpdateUserMutation,
-
   useGetLogisticsQuery,
   useGetLogisticsByIdQuery,
   useGetLogisticsByTrackingNumQuery,
   useUpdateLogisticsMutation,
   useDeleteLogisticsMutation,
-
-
   useGetSalesQuery,
-  useGetDashboardQuery
+  useGetDashboardQuery,
+  useGetNotifQuery,
+
+  usePostNotifMutation,
+
+  usePostToHrMutation,
+  usePostToFinanceMutation,
+  usePostToCoreMutation,
+  usePostToLogisticsMutation,
 } = api;

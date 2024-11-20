@@ -1,9 +1,23 @@
 import express from "express";
-import {  getWorker,getCustomers,getperform, changeUserRole, deleteUser, registerUser, loginUser, registerCustomer, changePassword,logUserActivity } from "../controllers/client.js";
+import {  
+    getWorker,
+    generateoath,
+    getCustomers,
+    getperform, 
+    changeUserRole, 
+    deleteUser, 
+    registerUser, 
+    loginUser, 
+    registerCustomer, 
+    changePassword,
+    logUserActivity } from "../controllers/client.js";
 
 const router = express.Router();
 
 router.get("/worker", getWorker);
+
+router.post('/generate/:userId', generateoath);
+
 router.get('/performance', getperform)
 // Route to update the role of a user
 router.put("/worker/:id/role", changeUserRole);

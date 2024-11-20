@@ -5,9 +5,9 @@ import { CCard, CCardBody, CCardTitle, CCardText } from '@coreui/react'
 const CustomHeader = ({ title, subtitle }) => {
   // Accept title and subtitle as props
   return (
-    // Return the JSX
-    <CCard >
-      <CCardBody >
+    // Add border-0 class to remove the border from CCard
+    <CCard className="border-0">
+      <CCardBody>
         <CCardTitle>{title}</CCardTitle> {/* Display the title */}
         <CCardText>{subtitle}</CCardText> {/* Display the subtitle */}
       </CCardBody>
