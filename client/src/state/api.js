@@ -16,7 +16,8 @@ export const api = createApi({
     "ActivityLogs",
     'Sales',
     'Dashboard',
-    "Notif"
+    "Notif",
+    "Backup"
   ],
   endpoints: (build) => ({
     // Fetch user data by ID
@@ -199,6 +200,19 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    postBackup: build.mutation({
+      query: () => ({
+        url: 'management/backup',
+        method: 'POST',
+      }),
+    }),
+    postRestore: build.mutation({
+      query: (timestamp) => ({
+        url: 'management/restore',
+        method: 'POST',
+        body: { timestamp },  
+      }),
+    }),
   }),
 });
 
@@ -225,8 +239,10 @@ export const {
   useGetSalesQuery,
   useGetDashboardQuery,
   useGetNotifQuery,
-
   usePostNotifMutation,
+
+  usePostBackupMutation,
+  usePostRestoreMutation ,
 
   usePostToHrMutation,
   usePostToFinanceMutation,

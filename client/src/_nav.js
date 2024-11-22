@@ -86,6 +86,13 @@ const _nav = (userRole) => [
           
           to: 'useractivity/index',
         },
+        {
+          component: CNavItem,
+          name: 'Backup & Restore',
+          icon: <FontAwesomeIcon icon={faCheck} style={{ marginRight: '8px' }} />,
+          
+          to: '/recovery',
+        },
       
       ]
     : []),

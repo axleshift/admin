@@ -12,15 +12,9 @@ import salesRoutes from "./routes/sales.js";
 import notificationsRoutes from './routes/notification.js'
 
 
-import hr1Routes from "./routes/hr1.js";
-
-import logixRoutes from "./routes/logix.js";
-
 import session from "express-session";
 import MongoStore from "connect-mongo";
 
-import Employee from "./model/hr1.js";
-import Logistics from "./model/logix.js";
 import user from "./model/User.js"
 import Shipping from "./model/Shipping.js";
 import overall from "./model/overall.js";
@@ -68,8 +62,6 @@ app.use("/sales", salesRoutes);
 
 app.use('/notifications', notificationsRoutes);
 
-app.use("/hr1", hr1Routes);
-app.use("/logix", logixRoutes);
 
 // Mongoose connection
 const PORT = process.env.PORT || 9000;

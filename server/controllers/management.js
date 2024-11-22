@@ -1,4 +1,17 @@
-import User from '../model/User.js'
+import path from 'path';
+import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import User from '../model/User.js';
+
+
+
+const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  
+  const BACKUP_DIR = path.resolve(__dirname, 'C:/Users/ryans/OneDrive/Desktop/capstone/system/backup');
+
+
 
 export const sendToLogistics = async (req, res) => {
     try {
@@ -87,4 +100,89 @@ export const sendToHR = async (req, res) => {
     }
   };
   
+  
+
+
+  //backup and recovery
+  export const createBackup = (req, res) => {
+    // Get the current date and time
+    const now = new Date();
+  
+    // Convert to 12-hour format with AM/PM
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12; // Convert hours to 12-hour format
+    hours = hours ? hours : 12; // If hour is 0, set it to 12 (midnight)
+  
+    // Format date and time as 'yyyy-MM-dd_hh-mm-ss-APM'
+    const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${hours.toString().padStart(2, '0')}-${minutes}-${seconds}-${ampm}`;
+  
+    // Set backup path with the formatted timestamp
+    const backupPath = path.join(BACKUP_DIR, timestamp);
+  
+    // Run mongodump to back up the MongoDB data
+    exec(
+      `mongodump --uri="${process.env.MONGO_URL}" --out="${backupPath}"`,
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Backup failed: ${stderr}`);
+          return res.status(500).json({ message: 'Backup failed!', error: stderr });
+        }
+        console.log(`Backup completed: ${stdout}`);
+        res.json({ message: `Backup created at ${backupPath}` });
+      }
+    );
+  };
+
+
+  export const restoreBackup = (req, res) => {
+    const { timestamp } = req.body;
+  
+    // Log the type and value of timestamp to help with debugging
+    console.log('Received timestamp:', timestamp);
+    console.log('Type of timestamp:', typeof timestamp);
+  
+    // Ensure timestamp is a string
+    if (typeof timestamp !== 'string') {
+      console.error('Invalid timestamp: Not a string');
+      return res.status(400).json({ message: 'Invalid timestamp format. Please provide a string timestamp.' });
+    }
+  
+    // Validate timestamp format
+    const timestampRegex = /^\d{4}-\d{2}-\d{2}_[0-1]?[0-9]-[0-5]?[0-9]-[0-5]?[0-9]-[AP]{1}[M]{1}$/;
+    if (!timestamp.match(timestampRegex)) {
+      console.error('Invalid timestamp format:', timestamp);
+      return res.status(400).json({ message: 'Invalid timestamp format. Please use YYYY-MM-DD_HH-MM-SS format.' });
+    }
+  
+    const restorePath = path.join(BACKUP_DIR, timestamp);
+  
+    // Check if backup directory exists
+    if (!fs.existsSync(restorePath)) {
+      console.error(`Backup directory not found at ${restorePath}`);
+      return res.status(400).json({ message: `Backup not found at ${restorePath}` });
+    }
+  
+    const mongoUri = process.env.MONGO_URL;
+    if (!mongoUri) {
+      console.error('Mongo URI is not set correctly!');
+      return res.status(500).json({ message: 'Mongo URI is not set correctly!' });
+    }
+  
+    console.log(`Restoring from backup at: ${restorePath}`);
+    exec(
+      `mongorestore --uri="${mongoUri}" --dir="${restorePath}" --drop`,
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error during restore:', error);
+          console.error('stderr:', stderr);
+          return res.status(500).json({ message: `Restore failed! ${stderr}` });
+        }
+        console.log(`Restore completed: ${stdout}`);
+        return res.json({ message: `Database restored from ${restorePath}` });
+      }
+    );
+  };
   

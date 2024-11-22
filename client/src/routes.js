@@ -17,7 +17,7 @@ const monthly = React.lazy(()=> import ('./views/pages/sales/monthly'))
 const breakdown = React.lazy(()=> import ('./views/pages/sales/breakdown'))
 
 const activity = React.lazy(() => import('./views/pages/useractivity/index'))
-
+const Recovery = React.lazy(()=>import('./views/pages/scene/Recoverytuts'))
 const Settings = React.lazy(() => import('./views/pages/profile/Settings'))
 const changepass = React.lazy(() => import('./views/pages/profile/changepass'))
 
@@ -40,7 +40,8 @@ const routes = [
   { path: '/freight/transaction', name: 'Freight transaction', element: transaction },
   { path: '/freight/shipping', name: 'Freight shipping', element: shipping },
   { path: '/useractivity/index', name: 'ACTIVITY', element: activity },
-
+  { path: '/recovery', name: 'RECOVERY', element: Recovery},
+  
   { path: '/Settings', name: 'Settings', element: Settings },
   { path: '/changepass', name: 'ChangePassword', element: changepass },
 
