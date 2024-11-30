@@ -29,12 +29,12 @@ set timestamp=%year%-%month%-%day%_%hour%-%minute%-00-%ampm%
 
 :: Set Mongo URI and backup directory
 set MONGO_URI=mongodb+srv://shiroshinomiya3013:maricar3013@cluster0.lzfzy.mongodb.net/adminis
-set BACKUP_DIR="C:\Users\ryans\OneDrive\Desktop\capstone\system\backup\%timestamp%"
+set BACKUP_DIR="C:\Users\ryans\OneDrive\Desktop\capstone\shesh\admin\backup\%timestamp%"
 
 :: Create backup directory
 mkdir "%BACKUP_DIR%"
 
-:: Run mongodump (no timestamp, direct to backup directory)
+:: Run mongodump (no database specified, so it backs up the entire MongoDB instance)
 mongodump --uri="%MONGO_URI%" --out="%BACKUP_DIR%"
 
 :: Check if mongodump was successful

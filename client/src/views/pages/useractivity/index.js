@@ -13,6 +13,9 @@ import {
   CButton,
   CAlert,
 } from '@coreui/react';
+import "../../../scss/_custom.scss";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const UserActivityLog = () => {
   const [activities, setActivities] = useState([]);
@@ -20,6 +23,7 @@ const UserActivityLog = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [bookmarkedUsers, setBookmarkedUsers] = useState([]);
+  const [stripEffectUserId, setStripEffectUserId] = useState(null);  // Add this state
   const location = useLocation();
 
   useEffect(() => {
@@ -135,10 +139,16 @@ const UserActivityLog = () => {
                           cursor: 'pointer',
                         }}
                       />
-                      <CButton color="danger" onClick={(e) => {
-                        e.stopPropagation(); // Prevent the card click event
-                        handleDeleteActivities(userId);
-                      }}>
+                      <CButton
+                        className={`box ${stripEffectUserId === userId ? 'strip-effect' : ''}`} // Apply the animation class
+                        color="danger"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent the card click event
+                          setStripEffectUserId(userId); // Trigger the animation
+                          setTimeout(() => handleDeleteActivities(userId), 500); // Wait for animation to complete
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px' }} />
                         Delete Activity Logs
                       </CButton>
                     </div>

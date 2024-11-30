@@ -10,6 +10,8 @@ import Joi from "joi";
 import PasswordComplexity from "joi-password-complexity";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 
+
+  
 const passwordComplexityOptions = {
     min: 8,
     max: 30,
@@ -26,49 +28,60 @@ const passwordComplexityOptions = {
 
 export const getWorker = async (req, res) => {
     try {
-        const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
-        res.status(200).json(workers);
+      const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
+  
+      // Ensure consistent data
+      const sanitizedWorkers = workers.map((worker) => ({
+        ...worker._doc,
+        username: worker.username || "", // Ensure username is never undefined
+        email: worker.email || "", // Ensure email is never undefined
+      }));
+  
+      res.status(200).json(sanitizedWorkers);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+      res.status(404).json({ message: error.message });
+    }
+  };
+  
+export const generateOAuth = async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+    }
+
+    try {
+        // Find the user in the database
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if the user already has a token and if it is still valid
+        if (user.token && user.tokenExpiry > new Date()) {
+            return res
+                .status(200)
+                .json({ token: user.token, message: "Token already exists and is valid." });
+        }
+
+        // Generate a new token using the imported function
+        const token = generateOAuthToken(userId);
+        const tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour expiration
+
+        // Update the user record with the new token
+        user.token = token;
+        user.tokenExpiry = tokenExpiry;
+        await user.save();
+
+        // Respond with the new token
+        res.status(200).json({ token, message: "New token generated successfully." });
+    } catch (err) {
+        console.error("Error generating token:", err);
+        res.status(500).json({ error: "Failed to generate token" });
     }
 };
 
-export const generateoath = async (req, res) => {
-    const { userId } = req.params;
-  
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
-  
-    try {
-      // Find the user in the database
-      const user = await User.findById(userId);
-  
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-  
-      // Check if the user already has a token and if it is still valid
-      if (user.token && user.tokenExpiry > new Date()) {
-        return res.status(200).json({ token: user.token, message: 'Token already exists and is valid.' });
-      }
-  
-      // Generate a new token
-      const token = generateOAuthToken(userId);
-      const tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour expiration
-  
-      // Update the user record with the new token
-      user.token = token;
-      user.tokenExpiry = tokenExpiry;
-      await user.save();
-  
-      // Respond with the new token
-      res.status(200).json({ token, message: 'New token generated successfully.' });
-    } catch (err) {
-      console.error('Error generating token:', err);
-      res.status(500).json({ error: 'Failed to generate token' });
-    }
-  };
 export const getperform = async (req, res)=>{
     try{
         const users =await User.find({}, 'name performance'); // Get names and performance reviews

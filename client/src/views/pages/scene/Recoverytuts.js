@@ -4,6 +4,8 @@ import { usePostBackupMutation, usePostRestoreMutation } from '../../../state/ap
 
 const RecoveryTutorial = () => {
   const [timestamp, setTimestamp] = useState('');
+  const [filename, setFilename] = useState(''); // State for filename
+  const [databaseName, setDatabaseName] = useState(''); // New state for database name
   const [postBackup, { isLoading: backupLoading }] = usePostBackupMutation();
   const [postRestore, { isLoading: restoreLoading }] = usePostRestoreMutation();
 
@@ -17,21 +19,19 @@ const RecoveryTutorial = () => {
   };
 
   const handleRestore = async () => {
-    if (!timestamp) {
-      alert('Please enter a valid timestamp!');
+    if (!timestamp || !filename || !databaseName) {
+      alert('Please enter valid timestamp, filename, and database name!');
       return;
     }
   
     try {
-      // Directly pass the timestamp as a string (not wrapped in an object)
-      const response = await postRestore(timestamp).unwrap();
+      const response = await postRestore({ timestamp, filename, databaseName }).unwrap();
       alert(response.message);
     } catch (error) {
       console.error('Restore failed:', error);
       alert(error?.data?.message || 'Restore failed.');
     }
   };
-
   
   return (
     <CCard>
@@ -40,14 +40,26 @@ const RecoveryTutorial = () => {
       </CCardHeader>
       <CCardBody>
         <ol>
-          <li>Click &quot;Backup Now&quot; to create a database backup.</li>
-          <li>Enter a backup timestamp below and click &quot;Recover Now&quot; to restore a backup.</li>
+          <li>Click "Backup Now" to create a database backup.</li>
+          <li>Enter a backup timestamp, filename, and database name below, then click "Recover Now" to restore a backup.</li>
         </ol>
         <CFormInput
           type="text"
-          placeholder="Enter Backup Timestamp (e.g., 2024-11-22_02-00-00-PM)"
+          placeholder="Enter Backup Timestamp (e.g., 2024-11-22_02-00-00)"
           value={timestamp}
           onChange={(e) => setTimestamp(e.target.value)}
+        />
+        <CFormInput
+          type="text"
+          placeholder="Enter BSON File Name (e.g., activitylogs.bson)"
+          value={filename}
+          onChange={(e) => setFilename(e.target.value)}  // Update filename state
+        />
+        <CFormInput
+          type="text"
+          placeholder="Enter Database Name (e.g., adminis)"
+          value={databaseName}
+          onChange={(e) => setDatabaseName(e.target.value)}  // Update databaseName state
         />
         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
           <CButton

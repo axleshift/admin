@@ -1,7 +1,7 @@
 import express from "express";
 import {  
     getWorker,
-    generateoath,
+    generateOAuth,
     getCustomers,
     getperform, 
     changeUserRole, 
@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/worker", getWorker);
 
-router.post('/generate/:userId', generateoath);
+router.post('/generate/:userId', generateOAuth);
 
 router.get('/performance', getperform)
 // Route to update the role of a user

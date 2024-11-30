@@ -14,7 +14,6 @@ const ForgotPass = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Update the URL to match the backend port
     axios
       .post('http://localhost:5053/general/forgot-password', { email })
       .then((res) => {

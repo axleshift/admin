@@ -207,10 +207,18 @@ export const api = createApi({
       }),
     }),
     postRestore: build.mutation({
-      query: (timestamp) => ({
+      query: ({ timestamp, filename, databaseName }) => ({ 
         url: 'management/restore',
         method: 'POST',
-        body: { timestamp },  
+        body: { timestamp, filename, databaseName },  
+      }),
+    }),
+    
+    postForgotPassword: build.mutation({
+      query: (email) => ({
+        url: 'general/forgot-password', 
+        method: 'POST',
+        body: { email },
       }),
     }),
   }),
@@ -248,4 +256,5 @@ export const {
   usePostToFinanceMutation,
   usePostToCoreMutation,
   usePostToLogisticsMutation,
+  usePostForgotPasswordMutation 
 } = api;

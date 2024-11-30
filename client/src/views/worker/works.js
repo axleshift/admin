@@ -26,7 +26,7 @@ import {
   usePostToCoreMutation, 
   usePostToLogisticsMutation 
 } from '../../state/api';  // Adjust the import path based on your project structure
-
+import axios from 'axios'; 
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
   const [changeRole] = useChangeRoleMutation();
@@ -116,17 +116,20 @@ const Works = () => {
   };
 
   const filteredData = data.filter((item) => {
+    const username = item.username || ""; // Default to empty string if undefined
+    const email = item.email || ""; // Default to empty string if undefined
+  
     const matchesSearch =
-      item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchTerm.toLowerCase());
+      username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDepartment =
       selectedDepartment === 'all' || item.department === selectedDepartment;
     const matchesRole =
       selectedRoleFilter === 'all' || item.role === selectedRoleFilter;
-
+  
     return matchesSearch && matchesDepartment && matchesRole;
   });
-
+  
   const handleGenerateAndSend = async (userId, department) => {
     try {
       const tokenResponse = await postGenerate(userId).unwrap();
@@ -178,7 +181,18 @@ const Works = () => {
       handleGenerateAndSend(employee._id, selectedDepartment);
     });
   };
+   
 
+const handleResetPassword = async (userId) => {
+  try {
+    const user = data.find(user => user._id === userId);
+    const response = await axios.post('http://localhost:5053/general/forgot-password', { email: user.email });
+    alert(response.data.message);
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    alert('Failed to send reset password link.');
+  }
+};
   return (
     <CContainer m="1.5rem 2.5rem">
       <CRow>
@@ -304,6 +318,17 @@ const Works = () => {
                         Send to {item.department}
                       </CButton>
                     )}
+                  </CListGroupItem>
+                  <CListGroupItem>
+                    
+                      <CButton
+                        color="info"
+                        size="sm"
+                        onClick={() => handleResetPassword(item._id, item.email)}
+                      >
+                        Send link to reset password
+                      </CButton>
+                    
                   </CListGroupItem>
                 </CListGroup>
               </CCardBody>

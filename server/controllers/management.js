@@ -9,7 +9,7 @@ import User from '../model/User.js';
 const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   
-  const BACKUP_DIR = path.resolve(__dirname, 'C:/Users/ryans/OneDrive/Desktop/capstone/system/backup');
+  const BACKUP_DIR = path.resolve(__dirname, 'C:/Users/ryans/OneDrive/Desktop/capstone/shesh/admin/backup');
 
 
 
@@ -103,7 +103,6 @@ export const sendToHR = async (req, res) => {
   
 
 
-  //backup and recovery
   export const createBackup = (req, res) => {
     // Get the current date and time
     const now = new Date();
@@ -138,51 +137,53 @@ export const sendToHR = async (req, res) => {
 
 
   export const restoreBackup = (req, res) => {
-    const { timestamp } = req.body;
+    const { timestamp, filename, databaseName } = req.body;
   
-    // Log the type and value of timestamp to help with debugging
+    console.log('Received body:', req.body);
     console.log('Received timestamp:', timestamp);
-    console.log('Type of timestamp:', typeof timestamp);
+    console.log('Received filename:', filename);
+    console.log('Received databaseName:', databaseName);
   
-    // Ensure timestamp is a string
-    if (typeof timestamp !== 'string') {
-      console.error('Invalid timestamp: Not a string');
-      return res.status(400).json({ message: 'Invalid timestamp format. Please provide a string timestamp.' });
+    // Validate input types
+    if (typeof timestamp !== 'string' || typeof filename !== 'string' || typeof databaseName !== 'string') {
+      return res.status(400).json({ message: 'Invalid input format. Please provide timestamp, filename, and databaseName as strings.' });
     }
   
     // Validate timestamp format
     const timestampRegex = /^\d{4}-\d{2}-\d{2}_[0-1]?[0-9]-[0-5]?[0-9]-[0-5]?[0-9]-[AP]{1}[M]{1}$/;
     if (!timestamp.match(timestampRegex)) {
-      console.error('Invalid timestamp format:', timestamp);
       return res.status(400).json({ message: 'Invalid timestamp format. Please use YYYY-MM-DD_HH-MM-SS format.' });
     }
   
-    const restorePath = path.join(BACKUP_DIR, timestamp);
+    // Build the path to the backup file
+    const restorePath = path.join(BACKUP_DIR, timestamp, databaseName);
+    const filePath = path.join(restorePath, filename);
   
-    // Check if backup directory exists
+    // Check if the directory and file exist
     if (!fs.existsSync(restorePath)) {
-      console.error(`Backup directory not found at ${restorePath}`);
-      return res.status(400).json({ message: `Backup not found at ${restorePath}` });
+      return res.status(400).json({ message: `Backup directory not found at ${restorePath}` });
+    }
+    if (!fs.existsSync(filePath)) {
+      return res.status(400).json({ message: `Backup file not found at ${filePath}` });
     }
   
     const mongoUri = process.env.MONGO_URL;
     if (!mongoUri) {
-      console.error('Mongo URI is not set correctly!');
       return res.status(500).json({ message: 'Mongo URI is not set correctly!' });
     }
   
-    console.log(`Restoring from backup at: ${restorePath}`);
+    // Execute the mongorestore command
     exec(
-      `mongorestore --uri="${mongoUri}" --dir="${restorePath}" --drop`,
+      `mongorestore --uri="${mongoUri}" --db="${databaseName}" --drop "${filePath}"`,  // Correct command
       (error, stdout, stderr) => {
         if (error) {
           console.error('Error during restore:', error);
           console.error('stderr:', stderr);
           return res.status(500).json({ message: `Restore failed! ${stderr}` });
         }
+  
         console.log(`Restore completed: ${stdout}`);
-        return res.json({ message: `Database restored from ${restorePath}` });
+        return res.json({ message: `Database ${databaseName} restored from ${filePath}` });
       }
     );
   };
-  

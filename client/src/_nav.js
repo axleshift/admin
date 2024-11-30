@@ -2,7 +2,7 @@ import React from 'react'
 import '../src/scss/_custom.scss'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTruckFast, faUser, faListCheck, faChartSimple, faCartShopping, faUserGroup, faHouse, faCoins, faCalendar, faCalendarDays, faCheck, faPieChart } from '@fortawesome/free-solid-svg-icons'
+import { faTruckFast, faUser, faListCheck, faChartSimple, faCartShopping, faUserGroup, faHouse, faCoins, faCalendar, faCalendarDays, faCheck, faPieChart, faWindowRestore } from '@fortawesome/free-solid-svg-icons'
 
 // Define the navigation items based on the user role
 const _nav = (userRole) => [
@@ -89,7 +89,7 @@ const _nav = (userRole) => [
         {
           component: CNavItem,
           name: 'Backup & Restore',
-          icon: <FontAwesomeIcon icon={faCheck} style={{ marginRight: '8px' }} />,
+          icon: <FontAwesomeIcon icon={faWindowRestore} style={{ marginRight: '8px' }} />,
           
           to: '/recovery',
         },

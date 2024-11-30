@@ -23,7 +23,7 @@ import {
 } from '@coreui/icons'
 import avatar8 from './../../assets/images/avatars/8.jpg'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -43,10 +43,10 @@ const AppHeaderDropdown = () => {
 
   return (
     <CDropdown variant="nav-item">
-      <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
-        <CAvatar src={avatar8} size="md" />
-        <span className="ms-2">{name ? `Welcome, ${name}` : 'Welcome, Guest'}</span>
-      </CDropdownToggle>
+    <CDropdownToggle>
+      <FontAwesomeIcon icon={faUser} size="lg" className="me-2" />
+      <span className="ms-2" style={{ position: 'relative', top: '2px' }} >{name ? `Welcome, ${name}` : 'Welcome, Guest'}</span>
+    </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
         <CDropdownItem href="#">

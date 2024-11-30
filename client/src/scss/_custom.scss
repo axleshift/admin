@@ -23,3 +23,25 @@
   font-size: 1.2rem; // Adjust this size as desired
   font-weight: bold; // Optional, adds emphasis to the title
 }
+
+@keyframes strip-and-disappear {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-5px);
+    clip-path: polygon(0 0, 100% 5%, 100% 95%, 0 100%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+.strip-effect {
+  animation: strip-and-disappear 0.5s forwards;
+  pointer-events: none; /* Prevent interaction during the animation */
+}

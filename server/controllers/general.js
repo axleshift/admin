@@ -23,18 +23,32 @@ export const getUser = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
+
     try {
+        console.log("Received email:", email); // Debug email
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
+        console.log("Generated token:", token); // Debug token
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.EMAIL_USER,
+                user: process.env.EMAIL_USER, // Use env variables
                 pass: process.env.EMAIL_PASS,
             },
+        });
+
+        // Verify transporter configuration
+        transporter.verify((error, success) => {
+            if (error) {
+                console.error("Email server configuration error:", error);
+                return res.status(500).json({ message: "Email server error", error: error.message });
+            }
         });
 
         const mailOptions = {
@@ -45,12 +59,13 @@ export const forgotPassword = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
+        console.log("Email sent successfully"); // Debug email sent
         res.status(200).json({ message: "Reset link sent to your email" });
     } catch (err) {
+        console.error("Server error:", err); // Log error
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
-
 export const resetPassword = async (req, res) => {
     const { id, token } = req.params;
     const { password } = req.body;
