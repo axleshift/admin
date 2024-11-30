@@ -51,6 +51,11 @@ const Works = () => {
   const handleEmployeeClick = (id) => {
     setSelectedEmployeeId((prevId) => (prevId === id ? null : id));
   };
+  
+  // Prevent event propagation when clicking inside the employee details
+  const stopPropagation = (e) => {
+    e.stopPropagation();
+  };
 
   const handleRoleChange = async (userId) => {
     const newRole = selectedRole[userId] || '';
@@ -262,77 +267,87 @@ const handleResetPassword = async (userId) => {
               </h4>
             </CCardHeader>
             {selectedEmployeeId === item._id && (
-              <CCardBody>
-                <CListGroup>
-                  <CListGroupItem>Email: {item.email}</CListGroupItem>
-                  <CListGroupItem>
-                    Phone Number: {item.phoneNumber || 'N/A'}
-                  </CListGroupItem>
-                  <CListGroupItem>Country: {item.country}</CListGroupItem>
-                  <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
-                  <CListGroupItem>Role: {item.role}</CListGroupItem>
-                  <CListGroupItem>
-                    Department: {item.department}
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    <CFormSelect
-                      value={selectedRole[item._id] || ''}
-                      onChange={(e) =>
-                        setSelectedRole({
-                          ...selectedRole,
-                          [item._id]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Role</option>
-                      <option value="admin">Admin</option>
-                      <option value="manager">Manager</option>
-                      <option value="employee">Employee</option>
-                    </CFormSelect>
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    <CButton
-                      color="primary"
-                      size="sm"
-                      onClick={() => handleRoleChange(item._id)}
-                    >
-                      Change Role
-                    </CButton>
-                    <CButton
-                      color="danger"
-                      size="sm"
-                      className="ms-2"
-                      onClick={() => handleDeleteUser(item._id)}
-                    >
-                      Fire User
-                    </CButton>
-                  </CListGroupItem>
-                  {/* Conditional rendering for the Generate Token button */}
-                  <CListGroupItem>
-                    {item.department !== 'Administrative' && (
-                      <CButton
-                        color="info"
-                        size="sm"
-                        onClick={() => handleGenerateAndSend(item._id, item.department)}
-                      >
-                        Send to {item.department}
-                      </CButton>
-                    )}
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    
-                      <CButton
-                        color="info"
-                        size="sm"
-                        onClick={() => handleResetPassword(item._id, item.email)}
-                      >
-                        Send link to reset password
-                      </CButton>
-                    
-                  </CListGroupItem>
-                </CListGroup>
-              </CCardBody>
-            )}
+  <CCardBody onClick={stopPropagation}>
+    <CListGroup>
+      <CListGroupItem>Email: {item.email}</CListGroupItem>
+      <CListGroupItem>
+        Phone Number: {item.phoneNumber || 'N/A'}
+      </CListGroupItem>
+      <CListGroupItem>Country: {item.country}</CListGroupItem>
+      <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
+      <CListGroupItem>Role: {item.role}</CListGroupItem>
+      <CListGroupItem>
+        Department: {item.department}
+      </CListGroupItem>
+      <CListGroupItem>
+        <CFormSelect
+          value={selectedRole[item._id] || ''}
+          onClick={stopPropagation}
+          onChange={(e) =>
+            setSelectedRole({
+              ...selectedRole,
+              [item._id]: e.target.value,
+            })
+          }
+        >
+          <option value="">Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="manager">Manager</option>
+          <option value="employee">Employee</option>
+        </CFormSelect>
+      </CListGroupItem>
+      <CListGroupItem>
+        <CButton
+          color="primary"
+          size="sm"
+          onClick={(e) => {
+            stopPropagation(e);
+            handleRoleChange(item._id);
+          }}
+        >
+          Change Role
+        </CButton>
+        <CButton
+          color="danger"
+          size="sm"
+          className="ms-2"
+          onClick={(e) => {
+            stopPropagation(e);
+            handleDeleteUser(item._id);
+          }}
+        >
+          Fire User
+        </CButton>
+      </CListGroupItem>
+      <CListGroupItem>
+        {item.department !== 'Administrative' && (
+          <CButton
+            color="info"
+            size="sm"
+            onClick={(e) => {
+              stopPropagation(e);
+              handleGenerateAndSend(item._id, item.department);
+            }}
+          >
+            Send to {item.department}
+          </CButton>
+        )}
+      </CListGroupItem>
+      <CListGroupItem>
+        <CButton
+          color="info"
+          size="sm"
+          onClick={(e) => {
+            stopPropagation(e);
+            handleResetPassword(item._id);
+          }}
+        >
+          Send link to reset password
+        </CButton>
+      </CListGroupItem>
+    </CListGroup>
+  </CCardBody>
+)}
           </CCard>
         ))}
       </CRow>
