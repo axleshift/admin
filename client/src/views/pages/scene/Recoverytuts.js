@@ -40,8 +40,8 @@ const RecoveryTutorial = () => {
       </CCardHeader>
       <CCardBody>
         <ol>
-          <li>Click "Backup Now" to create a database backup.</li>
-          <li>Enter a backup timestamp, filename, and database name below, then click "Recover Now" to restore a backup.</li>
+          <li>Click &quot;Backup Now&quot; to create a database backup.</li>
+          <li>Enter a backup timestamp, filename, and database name below, then click &quot;Recover Now&quot; to restore a backup.</li>
         </ol>
         <CFormInput
           type="text"
