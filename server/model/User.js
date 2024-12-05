@@ -75,6 +75,67 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null, // Default value is null if no expiration is set
     },
+
+    // Payroll Details
+    payroll: {
+      salary: {
+        type: Number,
+        required: true,
+      },
+      payFrequency: {
+        type: String,
+        enum: ["weekly", "bi-weekly", "monthly"],
+        required: true,
+      },
+      lastPaymentDate: {
+        type: Date,
+        required: true,
+      },
+    },
+
+    // Compliance tracking
+    compliance: [
+      {
+        certification: {
+          type: String,
+          required: true,
+        },
+        issuedBy: {
+          type: String,
+        },
+        issueDate: {
+          type: Date,
+        },
+        expiryDate: {
+          type: Date,
+        },
+        status: {
+          type: String,
+          enum: ["valid", "expired", "pending"],
+          required: true,
+        },
+      },
+    ],
+
+    // Benefits Information
+    benefits: {
+      healthInsurance: {
+        type: Boolean,
+        default: false,
+      },
+      retirementPlan: {
+        type: Boolean,
+        default: false,
+      },
+      vacationDays: {
+        type: Number,
+        default: 0, // Number of vacation days available
+      },
+      sickLeave: {
+        type: Number,
+        default: 0, // Number of sick leave days available
+      },
+    },
   },
   { timestamps: true }
 );

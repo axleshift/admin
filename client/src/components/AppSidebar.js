@@ -1,3 +1,4 @@
+// src/components/AppSidebar.js
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -12,8 +13,6 @@ import CIcon from '@coreui/icons-react'
 import { AppSidebarNav } from './AppSidebarNav'
 import { logo } from 'src/assets/brand/logo'
 import { sygnet } from 'src/assets/brand/sygnet'
-
-// sidebar nav config
 import navigation from '../_nav'
 
 const AppSidebar = () => {
@@ -21,25 +20,32 @@ const AppSidebar = () => {
   const unfoldable = useSelector((state) => state.changeState.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
 
-  // Initialize role from Redux state or sessionStorage
   const reduxUserRole = useSelector((state) => state.changeState.auth?.role)
-  const [userRole, setUserRole] = useState(sessionStorage.getItem('userRole') || 'guest') // Start with session or guest
+  const reduxUserDepartment = useSelector((state) => state.changeState.auth?.department)
+  const [userRole, setUserRole] = useState(sessionStorage.getItem('role') || 'guest')
+  const [userDepartment, setUserDepartment] = useState(sessionStorage.getItem('department') || 'none')
 
   useEffect(() => {
-    // Check if the Redux user role is available, if not, fallback to sessionStorage
     if (reduxUserRole) {
-      setUserRole(reduxUserRole) // Update state if Redux role changes
-      sessionStorage.setItem('role', reduxUserRole) // Sync with sessionStorage for later use
+      setUserRole(reduxUserRole)
+      sessionStorage.setItem('role', reduxUserRole)
     } else {
-      const sessionRole = sessionStorage.getItem('role') // Fallback to sessionStorage if Redux is empty
+      const sessionRole = sessionStorage.getItem('role')
       if (sessionRole) {
-        setUserRole(sessionRole) // Set from sessionStorage
+        setUserRole(sessionRole)
       }
     }
-  }, [reduxUserRole])
 
-  // Debugging userRole
-  console.log('User Role in Sidebar:', userRole)
+    if (reduxUserDepartment) {
+      setUserDepartment(reduxUserDepartment)
+      sessionStorage.setItem('department', reduxUserDepartment)
+    } else {
+      const sessionDepartment = sessionStorage.getItem('department')
+      if (sessionDepartment) {
+        setUserDepartment(sessionDepartment)
+      }
+    }
+  }, [reduxUserRole, reduxUserDepartment])
 
   return (
     <CSidebar
@@ -64,8 +70,8 @@ const AppSidebar = () => {
         />
       </CSidebarHeader>
 
-      {/* Pass userRole to the navigation */}
-      <AppSidebarNav items={navigation(userRole)} />
+      {/* Pass userRole and userDepartment to navigation */}
+      <AppSidebarNav items={navigation(userRole, userDepartment)} />
 
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler
@@ -76,4 +82,5 @@ const AppSidebar = () => {
   )
 }
 
-export default React.memo(AppSidebar)
+// Default export
+export default AppSidebar

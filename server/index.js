@@ -10,15 +10,19 @@ import generalRoutes from "./routes/general.js";
 import managementRoutes from "./routes/management.js";
 import salesRoutes from "./routes/sales.js";
 import notificationsRoutes from './routes/notification.js'
-
+import hrRoutes from "./routes/hr.js";
+import coreRoutes from "./routes/core.js";
+import logisticsRoutes from "./routes/logistics.js";
+import financeRoutes from "./routes/finance.js";
 
 import session from "express-session";
 import MongoStore from "connect-mongo";
 
+import JobPosting from "./model/h2.js";
 import user from "./model/User.js"
 import Shipping from "./model/Shipping.js";
 import overall from "./model/overall.js";
-import { employee, mockLogisticsData ,users, transactions,overalldata} from "./data/index.js";
+import { employee, mockLogisticsData ,users, transactions,overalldata, jobPostings} from "./data/index.js";
 
 
 import { activityLogger } from "./middleware/activityLogger.js";
@@ -60,6 +64,12 @@ app.use("/general", generalRoutes);
 app.use("/management", managementRoutes);
 app.use("/sales", salesRoutes);
 
+//integration
+app.use('/hr',hrRoutes)
+app.use('/core',coreRoutes)
+app.use('/logistics',logisticsRoutes)
+app.use('/finance',financeRoutes)
+
 app.use('/notifications', notificationsRoutes);
 
 
@@ -76,5 +86,6 @@ mongoose
          //user.insertMany(users)
         //Shipping.insertMany(transactions)
         //overall.insertMany(overalldata)
+       //JobPosting.insertMany(jobPostings)
     })
     .catch((err) => console.log(`${err} did not connect`));

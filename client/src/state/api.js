@@ -37,25 +37,25 @@ export const api = createApi({
     }),
     // Fetch all workers
     getWorkers: build.query({
-      query: () => `client/worker/`,
+      query: () => `hr/worker/`,
       providesTags: ["Workers"],
     }),
 
     postgenerate: build.mutation({
       query: (userId) => ({
-        url: `client/generate/${userId}`, // Correctly matches the backend route
+        url: `hr/generate/${userId}`, // Correctly matches the backend route
         method: 'POST',
       }),
       invalidatesTags: ['Generate'],
     }),
     getPerformance: build.query({
-      query: () => 'client/performance',
+      query: () => 'hr/performance',
     }),
 
     // Change role of a worker
     changeRole: build.mutation({
       query: ({ userId, newRole }) => ({
-        url: `client/worker/${userId}/role`,
+        url: `hr/worker/${userId}/role`,
         method: "PUT",
         body: { newRole },
       }),
@@ -64,7 +64,7 @@ export const api = createApi({
     // Fire (delete) a user
     fireUser: build.mutation({
       query: ({ userId }) => ({
-        url: `client/worker/${userId}`,
+        url: `hr/worker/${userId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Workers"],
@@ -221,6 +221,16 @@ export const api = createApi({
         body: { email },
       }),
     }),
+    //hr
+    getJobPostings: build.query({
+      query: () => 'hr/job-posting',
+    }),
+    getJobPostingById: build.query({
+      query: (id) => `hr/job-postings/${id}`, 
+    }),
+    getpayroll:build.query({
+      query: (id) => `hr/payroll`,
+    })
   }),
 });
 
@@ -256,5 +266,8 @@ export const {
   usePostToFinanceMutation,
   usePostToCoreMutation,
   usePostToLogisticsMutation,
-  usePostForgotPasswordMutation 
+  usePostForgotPasswordMutation ,
+  useGetJobPostingsQuery, 
+  useGetJobPostingByIdQuery,
+  useGetpayrollQuery
 } = api;

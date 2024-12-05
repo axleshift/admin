@@ -26,59 +26,44 @@ const Login = () => {
   const navigate = useNavigate()
 
   const loginUser = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    // Validate data before sending request
     if (!data.identifier || !data.password) {
-      setErrorMessage('Both fields are required.')
-      return
+        setErrorMessage('Both fields are required.');
+        return;
     }
 
     try {
-      // Send a POST request to your backend's login endpoint
-      const response = await axios.post('http://localhost:5053/client/login', data, {
-        withCredentials: true,
-      })
+        const response = await axios.post('http://localhost:5053/client/login', data, {
+            withCredentials: true,
+        });
 
-      // Check if login was successful
-      if (response.data.token) {
-        // Fetch the user data if login is successful
-        const userResponse = await axios.get('http://localhost:5053/client/user', {
-          withCredentials: true,
-        })
+        if (response.data.token) {
+            const userResponse = await axios.get('http://localhost:5053/client/user', {
+                withCredentials: true,
+            });
 
-        // Debugging: log full user response
-        console.log('User response after login:', userResponse.data)
+            if (userResponse.data.user) {
+                const { name, role, email, username, department } = userResponse.data.user;
 
-        if (userResponse.data.user) {
-          const name = userResponse.data.user.name || ''
-          const role = userResponse.data.user.role || ''
-          const email = userResponse.data.user.email || ''
-          const username = userResponse.data.user.username || ''
+                sessionStorage.setItem('name', name || '');
+                sessionStorage.setItem('role', role || '');
+                sessionStorage.setItem('email', email || '');
+                sessionStorage.setItem('username', username || '');
+                sessionStorage.setItem('department', department || ''); // Save department
 
-          // Save the user's name and role in session storage
-          sessionStorage.setItem('name', name)
-          sessionStorage.setItem('role', role)
-          sessionStorage.setItem('email', email)
-          sessionStorage.setItem('username', username)
-
-          // Debugging: log saved role
-          console.log('Saved User Role in session:', sessionStorage.getItem('role'))
-
-          // Navigate to dashboard
-          navigate('/employeedash')
+                navigate('/employeedash');
+            }
         }
-      }
     } catch (error) {
-      console.error('Login error:', error)
-      if (error.response) {
-        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.')
-      } else {
-        setErrorMessage('An error occurred. Please try again later.')
-      }
+        console.error('Login error:', error);
+        if (error.response) {
+            setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
+        } else {
+            setErrorMessage('An error occurred. Please try again later.');
+        }
     }
-  }
-
+};
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>

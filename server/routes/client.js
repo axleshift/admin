@@ -1,11 +1,7 @@
 import express from "express";
 import {  
-    getWorker,
-    generateOAuth,
+ 
     getCustomers,
-    getperform, 
-    changeUserRole, 
-    deleteUser, 
     registerUser, 
     loginUser, 
     registerCustomer, 
@@ -14,21 +10,7 @@ import {
 
 const router = express.Router();
 
-router.get("/worker", getWorker);
-
-router.post('/generate/:userId', generateOAuth);
-
-router.get('/performance', getperform)
-// Route to update the role of a user
-router.put("/worker/:id/role", changeUserRole);
-
-// Route to delete a user
-router.delete("/worker/:id", deleteUser);
-
-
-
 router.get('/customers', getCustomers);
-
 // Register
 router.post("/register", registerUser);
 

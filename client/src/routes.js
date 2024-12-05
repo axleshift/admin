@@ -1,8 +1,15 @@
 import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'))
-const Worker = React.lazy(() => import('./views/worker/works'))
-const Performance = React.lazy(() => import('./views/worker/perform'))
+//hr
+const Worker = React.lazy(() => import('./views/pages/hr/works'))
+const jobpost = React.lazy(()=> import('./views/pages/hr/jobposting'))
+const Payroll = React.lazy(()=> import('./views/pages/hr/payroll'))
+//core
+
+//finance
+
+//logistics
 const Customers = React.lazy(() => import('./views/customers/index'))
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'))
 const AddCustomer = React.lazy(() => import('./views/customers/add'))
@@ -33,8 +40,12 @@ const routes = [
   { path: '/employeedash', name: 'Dashboard', element: Dashboard },
   { path: '/customer', name: 'Customer', element: Customers },
   { path: '/add', name: 'Add Customer', element: AddCustomer },
+
   { path: '/worker', name: 'Employees', element: Worker },
-  { path: '/perform', name: 'Employees Performance', element: Performance },
+  { path: '/jobposting', name: 'Job Posting', element: jobpost },
+  { path: '/payroll', name: 'Payroll', element: Payroll },
+
+
   { path: '/profile', name: 'Profile Page', element: Profile },
   { path: '/freight/land', name: 'Freight Land', element: Land },
   { path: '/freight/transaction', name: 'Freight transaction', element: transaction },

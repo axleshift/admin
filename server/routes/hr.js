@@ -1,0 +1,31 @@
+import express from "express";
+import {  
+    getWorker,
+    generateOAuth,
+    getperform, 
+    changeUserRole, 
+    deleteUser, 
+    getJobPostings, 
+    getJobPostingById,
+    getpayroll
+  } from "../controllers/hr.js";
+
+const router = express.Router();
+router.get("/worker", getWorker);
+
+router.post('/generate/:userId', generateOAuth);
+
+router.get('/performance', getperform)
+// Route to update the role of a user
+router.put("/worker/:id/role", changeUserRole);
+
+// Route to delete a user
+router.delete("/worker/:id", deleteUser);
+
+//hr2
+router.get('/job-posting',getJobPostings)
+
+router.get("/job-postings/:id", getJobPostingById);
+
+router.get("/payroll", getpayroll);
+export default router;
