@@ -1,49 +1,47 @@
-import React, { useState } from 'react';
-import { useGetNotifQuery } from '../../../state/api';
+import React, { useEffect, useState } from "react";
+import socket from "../../../util/socket"; // Import the socket instance
+import { CToast, CToastHeader, CToastBody, CToaster } from "@coreui/react";
 
-const NotificationBar = () => {
-  const { data: notifications, error, isLoading } = useGetNotifQuery(); // Fetch notifications with RTK Query
-  const [showNotifications, setShowNotifications] = useState(false);
+const NotificationToast = () => {
+  const [toast, setToast] = useState(null);
 
-  if (isLoading) return <p>Loading notifications...</p>;
-  if (error) return <p>Error loading notifications: {error.message}</p>;
+  useEffect(() => {
+    // Listen for 'newUserRegistered' event from backend
+    socket.on("newUserRegistered", (data) => {
+      console.log("New user registered:", data);
 
-  return (
-    <div>
-      {/* Button to toggle notifications */}
-      <button onClick={() => setShowNotifications(!showNotifications)}>
-        <i className="bell-icon"></i>
-      </button>
+      // Create toast message
+      setToast(
+        <CToast autohide={true} visible={true}>
+          <CToastHeader closeButton>
+            <svg
+              className="rounded me-2"
+              width="20"
+              height="20"
+              xmlns="http://www.w3.org/2000/svg"
+              preserveAspectRatio="xMidYMid slice"
+              focusable="false"
+              role="img"
+            >
+              <rect width="100%" height="100%" fill="#007aff"></rect>
+            </svg>
+            <strong className="me-auto">New Registration</strong>
+            <small>Just now</small>
+          </CToastHeader>
+          <CToastBody>
+            <strong>{data.user.name}</strong> has registered as {data.user.role}.
+          </CToastBody>
+        </CToast>
+      );
+    });
 
-      {/* Notifications Container */}
-      {showNotifications && (
-        <div className="position-relative">
-          <div className="toast-container top-0 end-0 p-3">
-            {notifications?.data?.map((notification, index) => (
-              <div key={index} className="toast show" role="alert">
-                <div className="toast-header">
-                  <strong className="toast-title">
-                    {notification.title || "Notification Title"}
-                  </strong>
-                  <small className="text-muted">
-                    {notification.createdAt
-                      ? new Date(notification.createdAt).toLocaleTimeString()
-                      : "Just now"}
-                  </small>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    aria-label="Close"
-                  ></button>
-                </div>
-                <div className="toast-body">{notification.message}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    // Cleanup the listener when the component unmounts
+    return () => {
+      socket.off("newUserRegistered");
+    };
+  }, []);
+
+  return <CToaster placement="top-end">{toast}</CToaster>;
 };
 
-export default NotificationBar;
+export default NotificationToast;

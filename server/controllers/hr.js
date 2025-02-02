@@ -2,6 +2,8 @@ import User from "../model/User.js";
 import { generateUsername } from "../UTIL/generateCode.js";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
+import { getCustomers } from "./client.js";
+
 
 
   
@@ -9,7 +11,7 @@ import JobPosting from "../model/h2.js";
 
 export const getWorker = async (req, res) => {
     try {
-      const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
+      const workers = await User.find({ role: { $in: ["manager", 'superadmin',"admin", "employee"] } }).select("-password");
   
       // Ensure consistent data
       const sanitizedWorkers = workers.map((worker) => ({
@@ -153,3 +155,21 @@ export const getJobPostings = async (req, res) => {
       res.status(500).json({ message: "Failed to fetch Payroll" });
     }
   };
+
+
+export const getHrDashStats = async (req,res)=>{
+  try{
+    const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
+
+
+    const totalWorkers = workers.length;
+
+    const hrStats = {
+      totalWorkers,}
+      res.status(200).json(hrStats);
+    } catch (error) {
+        console.error("Error fetching HR Dashboard stats:", error);
+        res.status(500).json({ message: "Failed to fetch HR Dashboard stats" });
+    }
+  }
+   

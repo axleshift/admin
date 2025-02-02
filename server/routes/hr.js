@@ -7,7 +7,8 @@ import {
     deleteUser, 
     getJobPostings, 
     getJobPostingById,
-    getpayroll
+    getpayroll,
+    getHrDashStats
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -28,4 +29,6 @@ router.get('/job-posting',getJobPostings)
 router.get("/job-postings/:id", getJobPostingById);
 
 router.get("/payroll", getpayroll);
+
+router.get('/hrdash', getHrDashStats)
 export default router;

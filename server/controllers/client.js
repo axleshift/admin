@@ -1,7 +1,10 @@
-import Product from "../model/Product.js";
+
+import Log from '../model/Log.js';
+import { createLog } from '../controllers/try.js';  
+
 import Customer from "../model/Customer.js";
+
 import User from "../model/User.js";
-import UserActivity from "../model/useractivity.js";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -9,7 +12,7 @@ import { generateUsername } from "../UTIL/generateCode.js";
 import Joi from "joi";
 import PasswordComplexity from "joi-password-complexity";
 import {generateOAuthToken }from '../UTIL/jwt.js'
-
+import { io } from "../index.js"; // Import Socket.IO instance
 
   
 const passwordComplexityOptions = {
@@ -28,71 +31,78 @@ const passwordComplexityOptions = {
 
 // Register User
 
+
 export const registerUser = async (req, res) => {
-    const { name, email, password, phoneNumber, role, adminUsername, department } = req.body;
-    console.log("Received registration data:", req.body);
-
-    // Validate input
+    const { name, email, password, phoneNumber, role, department } = req.body;
+  
+    // Validate the request payload
     const schema = Joi.object({
-        name: Joi.string().required(),
-        email: Joi.string().email().required(),
-        password: Joi.string()
-            .min(8)
-            .pattern(/[a-z]/, "lowercase")
-            .pattern(/[A-Z]/, "uppercase")
-            .pattern(/[0-9]/, "numbers")
-            .pattern(/[@$!%*?&#]/, "special characters")
-            .required(),
-        phoneNumber: Joi.string().optional(),
-        role: Joi.string().valid("admin", "manager", "employee", "user").required(),
-        adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
-        department: Joi.string().required() // New field for department
+      name: Joi.string().required(),
+      email: Joi.string().email().required(),
+      password: Joi.string()
+        .min(8)
+        .pattern(/[a-z]/, "lowercase")
+        .pattern(/[A-Z]/, "uppercase")
+        .pattern(/[0-9]/, "numbers")
+        .pattern(/[@$!%*?&#]/, "special characters")
+        .required(),
+      phoneNumber: Joi.string().optional(),
+      role: Joi.string().valid("admin", "manager", "superadmin").required(),
+      department: Joi.string().valid("HR", "Core", "Logistics", "Finance", "Administrative").required(),
     });
-
-    const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername, department });
+  
+    const { error } = schema.validate({ name, email, password, phoneNumber, role, department });
     if (error) {
-        return res.status(400).json({ error: error.details[0].message });
+      return res.status(400).json({ error: error.details[0].message });
     }
-
+  
     try {
-        // Check for existing user
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: "Email already exists" });
-        }
-
-        // Check for admin username if applicable
-        if (["admin", "manager", "employee"].includes(role)) {
-            const existingAdmin = await User.findOne({ username: adminUsername, role: "admin" });
-            if (!existingAdmin) {
-                return res.status(400).json({ error: "Invalid admin username" });
-            }
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Save user
-        const newUser = new User({
-            name,
-            email,
-            password: hashedPassword,
-            phoneNumber,
-            role,
-            department, // Save the department
-            username: generateUsername(role), // Example username generation
-        });
-
-        const savedUser = await newUser.save();
-        const userResponse = savedUser.toObject();
-        delete userResponse.password; // Don't send password back to client
-
-        res.status(201).json(userResponse);
+      // Check if the email already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+  
+      // Generate a hashed password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const username = generateUsername(role);
+  
+      // Create the new user
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        phoneNumber,
+        role,
+        department,
+        username,
+      });
+  
+      // Save the user in the database
+      const savedUser = await newUser.save();
+      const userResponse = savedUser.toObject();
+      delete userResponse.password;
+  
+      // Emit event via Socket.IO
+      io.emit("newUserRegistered", {
+        message: "A new user has registered!",
+        user: {
+          id: savedUser._id,
+          name: savedUser.name,
+          email: savedUser.email,
+          role: savedUser.role,
+          department: savedUser.department,
+        },
+      });
+  
+      res.status(201).json(userResponse);
     } catch (error) {
-        console.error("Registration error:", error.message);
-        res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
+      console.error("Registration error:", error.message);
+      res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
     }
-};
+  };
+
+  
 // Login endpoint
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
@@ -113,35 +123,75 @@ export const loginUser = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        // Generate JWT Access Token
+        const accessToken = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" } // Short-lived access token
+        );
 
+        // Generate Refresh Token
+        const refreshToken = jwt.sign(
+            { id: user._id },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: "7d" } // Long-lived refresh token
+        );
+
+        // Save the refresh token in the database
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        // Set session data
         req.session.user = { 
             id: user._id, 
             username: user.username, 
             name: user.name, 
             role: user.role, 
-            department: user.department // Include department in the session
+            department: user.department,
         };
 
-        // Log login activity
-        const loginActivity = new UserActivity({
-            userId: user._id,
-            route: "User Login",
-            timestamp: new Date()
-        });
-        await loginActivity.save();
+        // Log the login action
+        await createLog(req.session.user, 'Login', 'User logged into the system');
 
+        // Send tokens and user info
         res.status(200).json({
-            token,
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                department: user.department, // Include department in the response
+                department: user.department,
             },
         });
     } catch (error) {
+        console.error("Login error:", error); // Log the error for debugging
         res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+
+export const refreshToken = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(400).json({ message: 'Invalid refresh token' });
+        }
+
+        const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+        res.status(200).json({ accessToken });
+    } catch (error) {
+        console.error("Refresh token error:", error); // Log the error for debugging
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 };
 
@@ -218,20 +268,3 @@ export const changePassword = async (req, res) => {
     }
 };
 
-export const logUserActivity = async (req, res) => {
-    try {
-      const { userId, action, route } = req.body;
-  
-      const userActivity = new UserActivity({
-        userId,
-        action,
-        route,
-      });
-  
-      await userActivity.save();
-      res.status(200).json({ message: 'User activity logged successfully' });
-    } catch (error) {
-      console.error(error); // Log the error for debugging
-      res.status(500).json({ error: 'Error logging user activity' });
-    }
-  };

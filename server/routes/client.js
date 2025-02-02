@@ -6,7 +6,8 @@ import {
     loginUser, 
     registerCustomer, 
     changePassword,
-    logUserActivity } from "../controllers/client.js";
+    refreshToken
+ } from "../controllers/client.js";
 
 const router = express.Router();
 
@@ -17,6 +18,8 @@ router.post("/register", registerUser);
 // Login
 router.post("/login", loginUser);
 
+
+router.post('/refresh-token', refreshToken);
 // Register a customer
 router.post("/registercustomer", registerCustomer);
 
@@ -32,6 +35,5 @@ router.get("/user", (req, res) => {
 // Change password
 router.put("/change-password", changePassword);
 
-router.post('/logUserActivity', logUserActivity);
 
 export default router;

@@ -1,12 +1,13 @@
 import React from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { CBreadcrumb, CBreadcrumbItem, CButton } from '@coreui/react'
 
 import routes from '../routes'
-
-import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
+import '../scss/breadcrumb.scss'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
+  const navigate = useNavigate() // For dynamic button routing
 
   const getRouteName = (pathname, routes) => {
     const currentRoute = routes.find((route) => route.path === pathname)
@@ -32,19 +33,25 @@ const AppBreadcrumb = () => {
   const breadcrumbs = getBreadcrumbs(currentLocation)
 
   return (
-    <CBreadcrumb className="my-0">
-      <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
-      {breadcrumbs.map((breadcrumb, index) => {
-        return (
+    <div className="breadcrumb-wrapper">
+      <CBreadcrumb className="breadcrumb-items">
+        <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
+        {breadcrumbs.map((breadcrumb, index) => (
           <CBreadcrumbItem
             {...(breadcrumb.active ? { active: true } : { href: breadcrumb.pathname })}
             key={index}
           >
             {breadcrumb.name}
           </CBreadcrumbItem>
-        )
-      })}
-    </CBreadcrumb>
+        ))}
+      </CBreadcrumb>
+      <CButton
+        className="breadcrumb-button"
+        onClick={() => navigate('/register')} // Navigate to the route dynamically
+      >
+        Register an Admin
+      </CButton>
+    </div>
   )
 }
 

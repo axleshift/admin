@@ -1,0 +1,25 @@
+.breadcrumb-wrapper {
+  display: flex;
+  justify-content: space-between; /* Space out breadcrumbs and the button */
+  align-items: center; /* Align items vertically */
+  width: 100%; /* Ensure full-width container */
+}
+
+.breadcrumb-items {
+  flex-grow: 1; /* Breadcrumbs take up maximum available space */
+  display: flex; /* Align breadcrumbs properly */
+  align-items: center; /* Ensure breadcrumbs are vertically aligned */
+  gap: 0.5rem; /* Add spacing between breadcrumb items */
+  margin: 0; /* Reset margins from CBreadcrumb */
+  padding: 0; /* Reset padding from CBreadcrumb */
+}
+
+.breadcrumb-button {
+  margin-left: auto; /* Push the button to the far right */
+  white-space: nowrap; /* Prevent text wrapping */
+  padding: 0.5rem 1rem; /* Button padding */
+  font-size: 1rem; /* Ensure consistent font size */
+  height: auto; /* Ensure the height matches the breadcrumb height */
+  display: flex;
+  align-items: center; /* Center-align the button text */
+}

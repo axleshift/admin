@@ -18,20 +18,46 @@ import {
   CModalFooter,
 } from '@coreui/react';
 import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../state/api'; // Path to the RTK query API slice
+import ActivityTracker from '../../../util/ActivityTracker'; // Import ActivityTracker
 
 const RecruitmentModule = () => {
   const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [activityTracked, setActivityTracked] = useState({ jobId: null, jobTitle: null, jobDepartment: null }); // State for tracking activity
 
   const { data: jobDetails, isLoading: isJobLoading } = useGetJobPostingByIdQuery(selectedJobId, {
     skip: !selectedJobId, // Only fetch details when a job is selected
   });
 
+  const trackActivity = (jobId, action) => {
+    const job = jobPostings.find((job) => job._id === jobId);
+    const jobTitle = job ? job.title : 'Unknown Job';
+    const jobDepartment = job ? job.department : 'Unknown Department';
+
+    // Track the activity
+    setActivityTracked({ jobId, jobTitle, jobDepartment });
+
+    // Log the action (optional, for debugging)
+    console.log(`${action} job: ${jobTitle}`);
+  };
 
   const viewApplications = (jobId) => {
     setSelectedJobId(jobId);
     setModalVisible(true);
+    trackActivity(jobId, 'View');
+  };
+
+  const editJob = (jobId) => {
+    trackActivity(jobId, 'Edit');
+    // Add your edit logic here
+    console.log(`Editing job: ${jobId}`);
+  };
+
+  const deleteJob = (jobId) => {
+    trackActivity(jobId, 'Delete');
+    // Add your delete logic here
+    console.log(`Deleting job: ${jobId}`);
   };
 
   const closeModal = () => {
@@ -63,7 +89,7 @@ const RecruitmentModule = () => {
               </CTableHead>
               <CTableBody>
                 {jobPostings.map((job) => (
-                  <CTableRow key={job._id}> {/* Make sure job.id is correct */}
+                  <CTableRow key={job._id}>
                     <CTableDataCell>{job.title}</CTableDataCell>
                     <CTableDataCell>{job.department}</CTableDataCell>
                     <CTableDataCell>{job.location}</CTableDataCell>
@@ -74,6 +100,7 @@ const RecruitmentModule = () => {
                         View
                       </CButton>
                     </CTableDataCell>
+                    
                   </CTableRow>
                 ))}
               </CTableBody>
@@ -81,6 +108,14 @@ const RecruitmentModule = () => {
           )}
         </CCardBody>
       </CCard>
+
+      {/* Track Activity */}
+      {activityTracked.jobId && (
+        <ActivityTracker
+          action={`Interacted with ${activityTracked.jobTitle}`}
+          description={`Interacted with job: ${activityTracked.jobTitle} in the ${activityTracked.jobDepartment} department`}
+        />
+      )}
 
       {/* Modal to view applications */}
       <CModal visible={modalVisible} onClose={closeModal}>
@@ -103,7 +138,7 @@ const RecruitmentModule = () => {
                   </CTableHead>
                   <CTableBody>
                     {jobDetails.applications.map((application) => (
-                      <CTableRow key={application._id}> {/* Ensure each application has a unique ID */}
+                      <CTableRow key={application._id}>
                         <CTableDataCell>{application.applicantName}</CTableDataCell>
                         <CTableDataCell>{application.status}</CTableDataCell>
                       </CTableRow>

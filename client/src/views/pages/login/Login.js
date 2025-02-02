@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   CButton,
   CCard,
@@ -13,57 +13,95 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser } from '@coreui/icons'
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilLockLocked, cilUser } from '@coreui/icons';
+import Loader from '../../../components/Loader';
 
 const Login = () => {
   const [data, setData] = useState({
     identifier: '',
     password: '',
-  })
-  const [errorMessage, setErrorMessage] = useState(null)
-  const navigate = useNavigate()
+  });
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const loginUser = async (e) => {
     e.preventDefault();
-
+  
     if (!data.identifier || !data.password) {
-        setErrorMessage('Both fields are required.');
-        return;
+      setErrorMessage('Both fields are required.');
+      return;
     }
-
+  
+    setLoading(true);
+  
     try {
-        const response = await axios.post('http://localhost:5053/client/login', data, {
-            withCredentials: true,
+      const response = await axios.post('http://localhost:5053/client/login', data, {
+        withCredentials: true,
+      });
+  
+      if (response.data.accessToken) {
+        // Store tokens in localStorage for persistent login
+        localStorage.setItem('accessToken', response.data.accessToken);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+  
+        const userResponse = await axios.get('http://localhost:5053/client/user', {
+          headers: {
+            Authorization: `Bearer ${response.data.accessToken}`,
+          },
+          withCredentials: true,
         });
-
-        if (response.data.token) {
-            const userResponse = await axios.get('http://localhost:5053/client/user', {
-                withCredentials: true,
-            });
-
-            if (userResponse.data.user) {
-                const { name, role, email, username, department } = userResponse.data.user;
-
-                sessionStorage.setItem('name', name || '');
-                sessionStorage.setItem('role', role || '');
-                sessionStorage.setItem('email', email || '');
-                sessionStorage.setItem('username', username || '');
-                sessionStorage.setItem('department', department || ''); // Save department
-
-                navigate('/employeedash');
-            }
+  
+        if (userResponse.data.user) {
+          const { name, role, email, username, department } = userResponse.data.user;
+  
+          // Store user data in sessionStorage
+          sessionStorage.setItem('name', name || '');
+          sessionStorage.setItem('role', role || '');
+          sessionStorage.setItem('email', email || '');
+          sessionStorage.setItem('username', username || '');
+          sessionStorage.setItem('department', department || '');
+  
+          // Redirect user to the appropriate dashboard based on their department
+          switch (department.toLowerCase()) {
+            case 'administrative':
+              navigate('/employeedash');
+              break;
+            case 'hr':
+              navigate('/hrdash');
+              break;
+            case 'core':
+              navigate('/coredash');
+              break;
+            case 'finance':
+              navigate('/financedash');
+              break;
+            case 'logistic':
+              navigate('/logisticdash');
+              break;
+            default:
+              setErrorMessage('Invalid department or access rights.');
+          }
         }
+      }
     } catch (error) {
-        console.error('Login error:', error);
-        if (error.response) {
-            setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
-        } else {
-            setErrorMessage('An error occurred. Please try again later.');
-        }
+      console.error('Login error:', error);
+      if (error.response) {
+        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.');
+      } else {
+        setErrorMessage('An error occurred. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
     }
-};
+  };
+  
+  if (loading) {
+    return <Loader />;
+  }
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -147,7 +185,7 @@ const Login = () => {
         </CRow>
       </CContainer>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

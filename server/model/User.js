@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["admin", "manager", "employee"], // Restrict roles to these options
+      enum: ["admin", "manager", "superadmin"], // Restrict roles to these options
     },
     username: {
       type: String,
@@ -81,15 +81,18 @@ const userSchema = new mongoose.Schema(
       salary: {
         type: Number,
         required: true,
+        default: 0,
       },
       payFrequency: {
         type: String,
         enum: ["weekly", "bi-weekly", "monthly"],
         required: true,
+        default: 'monthly',
       },
       lastPaymentDate: {
         type: Date,
         required: true,
+        default: 0,
       },
     },
 
@@ -136,6 +139,9 @@ const userSchema = new mongoose.Schema(
         default: 0, // Number of sick leave days available
       },
     },
+    accessToken:{ type:String}, 
+    refreshToken: { type: String },
+    backupDirectory: { type: String},
   },
   { timestamps: true }
 );

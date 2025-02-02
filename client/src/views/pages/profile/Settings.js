@@ -17,7 +17,9 @@ const Settings = () => {
   // Retrieve the user's data from session storage
   const name = sessionStorage.getItem('name')
   const email = sessionStorage.getItem('email')
+  console.log('email',email)
   const role = sessionStorage.getItem('role')
+  const department = sessionStorage.getItem('department')
 
   return (
     <div>
@@ -38,6 +40,12 @@ const Settings = () => {
                     <FontAwesomeIcon icon={faEnvelope} />
                   </CInputGroupText>
                   <span className="ms-2">{email ? `Email: ${email}` : 'No email available'}</span>
+                </CInputGroup>
+                <CInputGroup className="mb-3">
+                  <CInputGroupText>
+                    <FontAwesomeIcon icon={faEnvelope} />
+                  </CInputGroupText>
+                  <span className="ms-2">{department ? `Department: ${department}` : 'No Department available'}</span>
                 </CInputGroup>
                 <CInputGroup className="mb-3">
                   <CInputGroupText>
