@@ -1,7 +1,6 @@
-
-import React, { useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
+import React, { useEffect, useRef, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   CContainer,
   CDropdown,
@@ -14,8 +13,8 @@ import {
   CNavLink,
   CNavItem,
   useColorModes,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
 import {
   cilBell,
   cilContrast,
@@ -24,33 +23,59 @@ import {
   cilMenu,
   cilMoon,
   cilSun,
-} from '@coreui/icons'
+} from '@coreui/icons';
 
-import { AppBreadcrumb } from './index'
-import { AppHeaderDropdown } from './header/index'
-
+import { AppBreadcrumb } from './index';
+import { AppHeaderDropdown } from './header/index';
+import { toast, ToastContainer } from 'react-toastify'; // Import ToastContainer
+import 'react-toastify/dist/ReactToastify.css';
+import socket from '../util/socket'
 const AppHeader = () => {
-  const headerRef = useRef()
-  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const headerRef = useRef();
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme');
+  const dispatch = useDispatch();
+  const sidebarShow = useSelector((state) => state.changeState.sidebarShow);
 
-  const dispatch = useDispatch()
-  const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
       headerRef.current &&
-        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
-    })
-  }, [])
+        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0);
+    });
+
+    const handleNewNotification = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: (
+          <>
+            <strong>{data?.user?.name || "A user"}</strong> has registered as {data?.user?.role || "a user"}
+          </>
+        ),
+      };
+
+      setNotifications((prevNotifications) => [newNotification, ...prevNotifications]);
+      toast(newNotification.message);
+    };
+
+ 
+    socket.on("newUserRegistered", handleNewNotification); // Replace "newUserRegistered" with your actual event name
+
+    return () => {
+      socket.off("newUserRegistered", handleNewNotification);
+    };
+  }, []);
+
+  const handleBellClick = () => {
+    setShowDropdown(!showDropdown);
+  };
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
-          onClick={() => {
-            console.log('Toggling sidebar:', !sidebarShow) // Debugging log
-            dispatch({ type: 'set', payload: { sidebarShow: !sidebarShow } }) // Dispatch toggle action
-          }}
+          onClick={() => dispatch({ type: 'set', payload: { sidebarShow: !sidebarShow } })}
           style={{ marginInlineStart: '-14px' }}
         >
           <CIcon icon={cilMenu} size="lg" />
@@ -70,10 +95,27 @@ const AppHeader = () => {
         </CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
-            <CNavLink href="#">
+            <CNavLink onClick={handleBellClick} style={{ cursor: 'pointer' }}>
               <CIcon icon={cilBell} size="lg" />
             </CNavLink>
           </CNavItem>
+          <CDropdown
+            visible={showDropdown}
+            onVisibleChange={setShowDropdown}
+            placement="bottom-end"
+          >
+            <CDropdownMenu className="mt-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {notifications.length === 0 ? (
+                <CDropdownItem>No new notifications</CDropdownItem>
+              ) : (
+                notifications.map((notification) => (
+                  <CDropdownItem key={notification.id}>
+                    {notification.message}
+                  </CDropdownItem>
+                ))
+              )}
+            </CDropdownMenu>
+          </CDropdown>
           <CNavItem>
             <CNavLink href="#">
               <CIcon icon={cilList} size="lg" />
@@ -138,8 +180,9 @@ const AppHeader = () => {
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
+      <ToastContainer position="top-end" autoClose={5000} /> {/* Add ToastContainer */}
     </CHeader>
-  )
-}
+  );
+};
 
-export default AppHeader
+export default AppHeader;
