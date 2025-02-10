@@ -127,19 +127,22 @@ export const loginUser = async (req, res) => {
         const accessToken = jwt.sign(
             { id: user._id },
             process.env.JWT_SECRET,
-            { expiresIn: "15m" } // Short-lived access token
+            { expiresIn: "15m" }
         );
 
         // Generate Refresh Token
         const refreshToken = jwt.sign(
             { id: user._id },
             process.env.JWT_REFRESH_SECRET,
-            { expiresIn: "7d" } // Long-lived refresh token
+            { expiresIn: "7d" }
         );
 
         // Save the refresh token in the database
         user.refreshToken = refreshToken;
         await user.save();
+
+        // ✅ Log User Data Before Setting Session
+        console.log("User Object Before Session Set:", user);
 
         // Set session data
         req.session.user = { 
@@ -148,27 +151,26 @@ export const loginUser = async (req, res) => {
             name: user.name, 
             role: user.role, 
             department: user.department,
+            permissions: user.permissions
         };
+
 
         // Log the login action
         await createLog(req.session.user, 'Login', 'User logged into the system');
 
-        // Send tokens and user info
+        // ✅ Return session data along with tokens
         res.status(200).json({
             accessToken,
             refreshToken,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                department: user.department,
-            },
+            user: req.session.user, // Return session data
         });
+
     } catch (error) {
-        console.error("Login error:", error); // Log the error for debugging
+        console.error("Login error:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 
 export const refreshToken = async (req, res) => {

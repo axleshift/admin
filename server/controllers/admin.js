@@ -2,9 +2,12 @@
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let backupDir = ''; // The base directory for backups
 const mongoURL = process.env.MONGO_URL || 'your-default-mongo-uri-here';
+
 
 export const setBackupDirectory = (req, res) => {
     const { directory } = req.body;
@@ -76,4 +79,31 @@ export const restoreDatabase = (req, res) => {
         }
         res.json({ message: `Collection '${collectionName}' restored successfully into database '${databaseName}' from ${filePath}` });
     });
+};
+
+
+export const generateAnnouncement = async (req, res) => {
+    try {
+        const { input, type } = req.body;
+
+        let prompt = "";
+        if (type === "achievement") {
+            prompt = `Write a short announcement about this achievement: ${input}`;
+        } else if (type === "event") {
+            prompt = `Write a short announcement about this event: ${input}`;
+        } else if (type === "product") {
+            prompt = `Write a short announcement about this product: ${input}`;
+        } else {
+            return res.status(400).json({ message: "Invalid type" });
+        }
+
+        const model = gemini.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(prompt);
+        const response = result.response.candidates[0].content.parts[0].text;
+
+        res.json({ announcement: response });
+    } catch (error) {
+        console.error("Gemini API Error", error);
+        res.status(500).json({ message: "An error occurred with the Gemini API", error: error.message });
+    }
 };

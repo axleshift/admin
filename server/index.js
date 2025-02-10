@@ -24,6 +24,8 @@ import MongoStore from "connect-mongo";
 import { Server } from "socket.io";
 import http from 'http';
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 import JobPosting from "./model/h2.js";
 import user from "./model/User.js"
 import Shipping from "./model/Shipping.js";
@@ -53,11 +55,11 @@ app.use(
     session({
         secret: process.env.SESSION_SECRET,
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URL,
         }),
-        cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 1 day
+        cookie: { secure: false, httpOnly:true }, // 1 day
     })
 );
 
@@ -76,6 +78,8 @@ app.use('/logistics', logisticsRoutes);
 app.use('/finance', financeRoutes);
 
 app.use('/notifications', notificationsRoutes);
+
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const server = http.createServer(app);
 const io = new Server(server);

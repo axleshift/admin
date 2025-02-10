@@ -173,3 +173,54 @@ export const getHrDashStats = async (req,res)=>{
     }
   }
    
+  export const getUserPermissions = async (req, res) => {
+    try {
+        const { userId } = req.params;
+  
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        console.log("🔹 Sending user permissions:", user.permissions || []);
+  
+        res.json({ permissions: user.permissions || [] });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching permissions', error });
+    }
+};
+
+  
+  export const access = async (req, res) => {
+    try {
+        const { userId, newPermissions } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Ensure `permissions` exists and add new unique permissions
+        user.permissions = [...new Set([...(user.permissions || []), ...newPermissions])];
+        
+        // 🔹 Use `findByIdAndUpdate` to save the changes
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { permissions: user.permissions },
+            { new: true, runValidators: true }
+        );
+
+        console.log("✅ Updated permissions:", updatedUser.permissions);
+        res.json({ message: 'Permissions updated successfully', permissions: updatedUser.permissions });
+    } catch (error) {
+        console.error("❌ Error granting access:", error);
+        res.status(500).json({ message: 'Error granting access', error });
+    }
+};
+
+
+
+
+  

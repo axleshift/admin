@@ -23,16 +23,20 @@ export const createLog = async (user, action, description, route ) => {
 export const logRouteVisit = async (req, res, next) => {
     if (req.session.user) {
         const { username, name, department, role } = req.session.user;
-        const route = req.originalUrl; // Get the route the user is visiting
+        const route = req.originalUrl;
         const description = `User visited ${route}`;
 
-        try {
-            await createLog({ username, name, department, role }, 'Route Visit', description);
-        } catch (error) {
-            console.error('Error logging route visit:', error);
+        // Exclude logging for /logs/activity route
+        if (route !== '/try/logs/activity') { // <- This is the crucial change
+            try {
+                await createLog({ username, name, department, role }, 'Route Visit', description, route);
+            } catch (error) {
+                console.error('Error logging route visit:', error);
+            }
         }
+
     }
-    next(); // Continue to the next middleware or route handler
+    next();
 };
 
 // Fetch all logs

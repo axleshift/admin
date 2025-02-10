@@ -43,47 +43,46 @@ const Login = () => {
       });
   
       if (response.data.accessToken) {
-        // Store tokens in localStorage for persistent login
+        // ✅ Debugging: Log the permissions in the response
+        console.log("Permissions from Response:", response.data.user.permissions);
+  
+        // ✅ Store tokens in localStorage for persistent login
         localStorage.setItem('accessToken', response.data.accessToken);
         localStorage.setItem('refreshToken', response.data.refreshToken);
   
-        const userResponse = await axios.get('http://localhost:5053/client/user', {
-          headers: {
-            Authorization: `Bearer ${response.data.accessToken}`,
-          },
-          withCredentials: true,
-        });
+        // ✅ Store user data from login response (NO need for another API call)
+        const { id, name, role, email, username, department, permissions } = response.data.user;
   
-        if (userResponse.data.user) {
-          const { name, role, email, username, department } = userResponse.data.user;
+        sessionStorage.setItem('userId', id); // ✅ Fix: Store userId properly
+        sessionStorage.setItem('name', name || '');
+        sessionStorage.setItem('role', role || '');
+        sessionStorage.setItem('email', email || '');
+        sessionStorage.setItem('username', username || '');
+        sessionStorage.setItem('department', department || '');
+        sessionStorage.setItem('permissions', JSON.stringify(permissions || []));
   
-          // Store user data in sessionStorage
-          sessionStorage.setItem('name', name || '');
-          sessionStorage.setItem('role', role || '');
-          sessionStorage.setItem('email', email || '');
-          sessionStorage.setItem('username', username || '');
-          sessionStorage.setItem('department', department || '');
+        // ✅ Log the stored permissions from sessionStorage
+        console.log("Stored Permissions in sessionStorage:", sessionStorage.getItem('permissions'));
   
-          // Redirect user to the appropriate dashboard based on their department
-          switch (department.toLowerCase()) {
-            case 'administrative':
-              navigate('/employeedash');
-              break;
-            case 'hr':
-              navigate('/hrdash');
-              break;
-            case 'core':
-              navigate('/coredash');
-              break;
-            case 'finance':
-              navigate('/financedash');
-              break;
-            case 'logistic':
-              navigate('/logisticdash');
-              break;
-            default:
-              setErrorMessage('Invalid department or access rights.');
-          }
+        // ✅ Redirect user based on department
+        switch (department.toLowerCase()) {
+          case 'administrative':
+            navigate('/employeedash');
+            break;
+          case 'hr':
+            navigate('/hrdash');
+            break;
+          case 'core':
+            navigate('/coredash');
+            break;
+          case 'finance':
+            navigate('/financedash');
+            break;
+          case 'logistic':
+            navigate('/logisticdash');
+            break;
+          default:
+            setErrorMessage('Invalid department or access rights.');
         }
       }
     } catch (error) {
@@ -97,6 +96,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+  
   
   if (loading) {
     return <Loader />;

@@ -22,7 +22,11 @@ const LogsPage = () => {
     const fetchLogs = async () => {
         try {
             const response = await axios.get('http://localhost:5053/try/logs');
-            setLogs(response.data);
+
+            // Filter out logs related to '/logs/activity'
+            const filteredLogs = response.data.filter(log => log.route !== '/logs/activity');
+
+            setLogs(filteredLogs);
         } catch (error) {
             console.error('Error fetching logs:', error);
         }
@@ -41,7 +45,7 @@ const LogsPage = () => {
                             <CTableHeaderCell>Name</CTableHeaderCell>
                             <CTableHeaderCell>Department</CTableHeaderCell>
                             <CTableHeaderCell>Role</CTableHeaderCell>
-                            <CTableHeaderCell>Route</CTableHeaderCell> {/* New column for route */}
+                            <CTableHeaderCell>Route</CTableHeaderCell> 
                             <CTableHeaderCell>Action</CTableHeaderCell>
                             <CTableHeaderCell>Description</CTableHeaderCell>
                             <CTableHeaderCell>Timestamp</CTableHeaderCell>
@@ -54,7 +58,7 @@ const LogsPage = () => {
                                 <CTableDataCell>{log.name}</CTableDataCell>
                                 <CTableDataCell>{log.department}</CTableDataCell>
                                 <CTableDataCell>{log.role}</CTableDataCell>
-                                <CTableDataCell>{log.route}</CTableDataCell> {/* Show the route */}
+                                <CTableDataCell>{log.route}</CTableDataCell>
                                 <CTableDataCell>{log.action}</CTableDataCell>
                                 <CTableDataCell>{log.description}</CTableDataCell>
                                 <CTableDataCell>{new Date(log.timestamp).toLocaleString()}</CTableDataCell>

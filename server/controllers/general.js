@@ -89,8 +89,6 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-// Controller to get all user activities
-
 
 
 export const getDashboardStats = async (req, res) => {
@@ -138,3 +136,5 @@ export const getDashboardStats = async (req, res) => {
       res.status(404).json({ message: error.message });
     }
   };
+
+

@@ -9,14 +9,14 @@ const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
 
-const Button = React.lazy(() => import('./views/pages/scene/button'));
-const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
+const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
+const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
 
 const Register = React.lazy(() => import('./views/pages/register/Register'));
 // hr
-const Worker = React.lazy(() => import('./views/pages/hr/works'));
-const Jobpost = React.lazy(() => import('./views/pages/hr/jobposting'));
-const Payroll = React.lazy(() => import('./views/pages/hr/payroll'));
+const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
+const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
+const Payroll = React.lazy(() => import('./views/pages/integrate/hr/payroll'));
 // core
 
 // finance
@@ -42,8 +42,13 @@ const Settings = React.lazy(() => import('./views/pages/profile/Settings'));
 const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
 
 // logistic
-const Logistic1 = React.lazy(() => import('./views/pages/logistic1/index'));
-const Pin = React.lazy(() => import('./views/pages/logistic1/pin.js'));
+const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/index'));
+const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
+
+//trial
+
+const Button = React.lazy(() => import('./views/pages/scene/button'));
+const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -55,7 +60,8 @@ const routes = [
   { path: '/coredash', name: 'Dashboard', element: <ProtectedRoute><CoreDash /></ProtectedRoute> },
   { path: '/financedash', name: 'Dashboard', element: <ProtectedRoute><FinanceDash /></ProtectedRoute> },
 
-  { path: '/tack' , name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
+  { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
+  { path: '/chatbox' , name:'chatbox', element: <ProtectedRoute><Chatbox/></ProtectedRoute>},
 
   { path: '/register', name: 'Register', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
@@ -81,7 +87,10 @@ const routes = [
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },
   { path: '/logistic1/pin', name: 'Track', element: <ProtectedRoute><Pin /></ProtectedRoute> },
 
+  //trial
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
+  { path: '/tack' , name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
+
 ];
 
 export default routes;

@@ -8,6 +8,7 @@ import './scss/style.scss';
 import Loader from './components/Loader';
 import ActivityTracker from './util/ActivityTracker';
 import NotificationToast from './views/pages/scene/notification'
+import ChatContainer from './views/pages/scene/chatbox';
 
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'));
 const Login = React.lazy(() => import('./views/pages/login/Login'));
@@ -28,6 +29,7 @@ const RouterWrapper = () => {
       <ActivityTracker path={location.pathname} />
 
       <NotificationToast />
+      <ChatContainer />
       <Routes>
         <Route exact path="/login" name="Login Page" element={<Login />} />
         <Route exact path="/systemlogin" name="System Login Page" element={<SystemLogin />} />

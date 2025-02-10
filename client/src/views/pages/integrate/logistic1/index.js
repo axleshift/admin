@@ -12,7 +12,7 @@ import {
   CTableHead,
   CSpinner,
 } from '@coreui/react'
-import { useGetLogisticsQuery } from '../../../state/api'
+import { useGetLogisticsQuery } from '../../../../state/api'
 import { useNavigate } from 'react-router-dom' // Import useNavigate
 
 const LogisticsDashboard = () => {

@@ -142,6 +142,7 @@ const userSchema = new mongoose.Schema(
     accessToken:{ type:String}, 
     refreshToken: { type: String },
     backupDirectory: { type: String},
+    permissions: { type: [String], default: [] }
   },
   { timestamps: true }
 );

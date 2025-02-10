@@ -1,20 +1,19 @@
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import StatBox from '../pages/scene/statbox';
-import CustomHeader from '../../components/header/customhead';
-import { CContainer, CRow, CCol, CCard } from '@coreui/react';
-import { useGethrdashQuery, useGetJobPostingsQuery, useGetpayrollQuery } from '../../state/api';
+import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import StatBox from "../pages/scene/statbox";
+import CustomHeader from "../../components/header/customhead";
+import { CContainer, CRow, CCol, CCard } from "@coreui/react";
+import { useGethrdashQuery, useGetJobPostingsQuery, useGetpayrollQuery } from "../../state/api";
+import AnnouncementBox from "../pages/scene/announce";
 
 const Hrdash = () => {
   const { data: dashboardData, error: dashboardError, isLoading: dashboardLoading } = useGethrdashQuery();
   const { data: jobPostings, error: jobPostingsError, isLoading: jobPostingsLoading } = useGetJobPostingsQuery();
   const { data: payrollData, error: payrollError, isLoading: payrollLoading } = useGetpayrollQuery();
 
-  // Debugging: Log payroll data
-  console.log('Payroll Data:', payrollData);
+  console.log("Payroll Data:", payrollData); // Debugging
 
-  // Loading or error states
   if (dashboardLoading || jobPostingsLoading || payrollLoading) return <p>Loading...</p>;
   if (dashboardError || jobPostingsError || payrollError) return <p>Error fetching data</p>;
 
@@ -23,19 +22,21 @@ const Hrdash = () => {
       <CRow>
         <CCol xs={12}>
           <CustomHeader title="HR Dashboard" subtitle="Welcome to the HR Dashboard" />
+
+          {/* Place Announcement Box within content flow */}
+          <AnnouncementBox message="🚀 New HR Features Released! Check them out!" autoClose={false} />
         </CCol>
       </CRow>
 
       {/* StatBox and Job Postings Side by Side */}
       <CRow className="my-3">
-        {/* StatBox Section */}
         <CCol xs={12} lg={6} className="mb-3">
           <StatBox
             title="Total Employees"
             value={dashboardData?.totalWorkers}
             increase="+14%"
             description="Since last month"
-            icon={<FontAwesomeIcon icon={faEnvelope} style={{ fontSize: '20px', color: '#ffc107' }} />}
+            icon={<FontAwesomeIcon icon={faEnvelope} style={{ fontSize: "20px", color: "#ffc107" }} />}
           />
         </CCol>
 
@@ -43,8 +44,7 @@ const Hrdash = () => {
         <CCol xs={12} lg={6}>
           <CCard>
             <h5 className="p-3">Job Postings</h5>
-            {/* Responsive Table */}
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: "auto" }}>
               <table className="table table-striped table-bordered table-hover">
                 <thead>
                   <tr>
@@ -75,7 +75,7 @@ const Hrdash = () => {
         <CCol xs={12}>
           <CCard>
             <h5 className="p-3">Payroll</h5>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: "auto" }}>
               <table className="table table-striped table-bordered table-hover">
                 <thead>
                   <tr>
@@ -86,8 +86,8 @@ const Hrdash = () => {
                 <tbody>
                   {payrollData?.map((user, index) => (
                     <tr key={user._id || index}>
-                      <td>{user.name}</td> {/* Display the user's name */}
-                      <td>{user.payroll?.salary || 'N/A'}</td> {/* Access salary from payroll */}
+                      <td>{user.name}</td>
+                      <td>{user.payroll?.salary || "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>
