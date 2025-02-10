@@ -189,35 +189,45 @@ export const getHrDashStats = async (req,res)=>{
 };
 
   
-  export const access = async (req, res) => {
-    try {
-        const { userId, newPermissions } = req.body;
-        
-        if (!userId) {
-            return res.status(400).json({ message: 'User ID is required' });
-        }
+export const access = async (req, res) => {
+  try {
+      const { userId, newPermissions } = req.body;
+      
+      if (!userId || !newPermissions || !Array.isArray(newPermissions)) {
+          return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+      }
 
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
 
-        // Ensure `permissions` exists and add new unique permissions
-        user.permissions = [...new Set([...(user.permissions || []), ...newPermissions])];
-        
-        // 🔹 Use `findByIdAndUpdate` to save the changes
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { permissions: user.permissions },
-            { new: true, runValidators: true }
-        );
+      const now = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(now.getDate() + 1); // Expiry set to 1 day from now
 
-        console.log("✅ Updated permissions:", updatedUser.permissions);
-        res.json({ message: 'Permissions updated successfully', permissions: updatedUser.permissions });
-    } catch (error) {
-        console.error("❌ Error granting access:", error);
-        res.status(500).json({ message: 'Error granting access', error });
-    }
+      // Update permissions and expiry dates
+      const updatedPermissions = new Set(user.permissions || []);
+      const updatedExpiryMap = new Map(user.expiryMap || {});
+
+      newPermissions.forEach(perm => {
+          updatedPermissions.add(perm);
+          updatedExpiryMap.set(perm, expiryDate); // Store expiry
+      });
+
+      // Convert Set to array & Map to object before saving
+      user.permissions = [...updatedPermissions];
+      user.expiryMap = Object.fromEntries(updatedExpiryMap);
+
+      await user.save();
+
+      console.log("✅ Updated Permissions:", user.permissions);
+      console.log("📅 Expiry Dates:", user.expiryMap);
+      res.json({ message: 'Permissions granted successfully', permissions: user.permissions, expiryMap: user.expiryMap });
+  } catch (error) {
+      console.error("❌ Error granting access:", error);
+      res.status(500).json({ message: 'Error granting access', error });
+  }
 };
 
 

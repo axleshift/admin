@@ -40,20 +40,16 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
   // Grant Access API Call
   const handleGrant = async () => {
     if (!userId) {
-      alert("❌ Error: User ID is missing!");
       console.error("❌ Error: userId is null before making the API request.");
       return;
     }
-
-    console.log("📤 Sending request with userId:", userId);
-    console.log("📤 New permissions:", selectedPermissions);
-
+  
     try {
       const response = await axios.post('http://localhost:5053/hr/user/grant-access', {
         userId,
-        newPermissions: selectedPermissions,
+        newPermissions: selectedPermissions, // Only permission names are sent
       });
-
+  
       console.log("✅ Access granted:", response.data);
       alert('Permissions granted successfully');
       onClose();
@@ -62,6 +58,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
       alert("Failed to grant access.");
     }
   };
+  
 
   return (
     <CModal visible={visible} onClose={onClose} onClick={handleModalClick}>

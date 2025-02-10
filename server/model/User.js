@@ -142,7 +142,8 @@ const userSchema = new mongoose.Schema(
     accessToken:{ type:String}, 
     refreshToken: { type: String },
     backupDirectory: { type: String},
-    permissions: { type: [String], default: [] }
+    permissions: { type: [String], default: [] }, // Store only permission names
+    expiryMap: { type: Map, of: Date, default: {} }, // Map permission name → expiry date
   },
   { timestamps: true }
 );

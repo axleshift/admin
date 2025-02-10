@@ -34,6 +34,6 @@ router.get("/payroll", getpayroll);
 
 router.get('/hrdash', getHrDashStats)
 
-router.post('/user/grant-access',access)
-router.get('/user/:userId/permissions',getUserPermissions)
+router.post('/user/grant-access', access);
+router.get('/user/:userId/permissions', getUserPermissions);
 export default router;
