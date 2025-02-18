@@ -4,6 +4,8 @@ import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
 import { getCustomers } from "./client.js";
 
+import {io}  from '../index.js'
+
 
 
   
@@ -188,49 +190,112 @@ export const getHrDashStats = async (req,res)=>{
     }
 };
 
-  
 export const access = async (req, res) => {
   try {
-      const { userId, newPermissions } = req.body;
-      
-      if (!userId || !newPermissions || !Array.isArray(newPermissions)) {
-          return res.status(400).json({ message: 'User ID and valid permissions array are required' });
-      }
+    const { userId, newPermissions, grantedBy } = req.body; // Add 'grantedBy' to track the user who granted access
 
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
+    if (!userId || !newPermissions || !Array.isArray(newPermissions)) {
+      return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+    }
 
-      const now = new Date();
-      const expiryDate = new Date();
-      expiryDate.setDate(now.getDate() + 1); // Expiry set to 1 day from now
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-      // Update permissions and expiry dates
-      const updatedPermissions = new Set(user.permissions || []);
-      const updatedExpiryMap = new Map(user.expiryMap || {});
+    const now = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(now.getDate() + 1);
 
-      newPermissions.forEach(perm => {
-          updatedPermissions.add(perm);
-          updatedExpiryMap.set(perm, expiryDate); // Store expiry
-      });
+    const updatedPermissions = new Set(user.permissions || []);
+    const updatedExpiryMap = new Map(user.expiryMap || {});
 
-      // Convert Set to array & Map to object before saving
-      user.permissions = [...updatedPermissions];
-      user.expiryMap = Object.fromEntries(updatedExpiryMap);
+    newPermissions.forEach((perm) => {
+      updatedPermissions.add(perm);
+      updatedExpiryMap.set(perm, expiryDate);
+    });
 
-      await user.save();
+    user.permissions = [...updatedPermissions];
+    user.expiryMap = Object.fromEntries(updatedExpiryMap);
 
-      console.log("✅ Updated Permissions:", user.permissions);
-      console.log("📅 Expiry Dates:", user.expiryMap);
-      res.json({ message: 'Permissions granted successfully', permissions: user.permissions, expiryMap: user.expiryMap });
+    await user.save();
+
+    // Emit an event through the socket, including the granted permissions
+    io.emit('permissionUpdated', {
+      userId,
+      grantedBy,
+      name: user.name,
+      permissions: newPermissions, // Include granted permissions
+    });
+
+    res.json({
+      message: 'Permissions granted successfully',
+      permissions: user.permissions,
+      expiryMap: user.expiryMap,
+    });
   } catch (error) {
-      console.error("❌ Error granting access:", error);
-      res.status(500).json({ message: 'Error granting access', error });
+    console.error("❌ Error granting access:", error);
+    res.status(500).json({ message: 'Error granting access', error });
   }
 };
 
 
+export const revokeAccess = async (req, res) => {
+  try {
+    const { userId, permissionsToRemove } = req.body;
 
+    if (!userId || !permissionsToRemove || !Array.isArray(permissionsToRemove)) {
+      return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log("❌ User not found:", userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Debug before updating
+    console.log("🔹 User Permissions Before:", user.permissions);
+
+    // Remove permissions from the user
+    user.permissions = (user.permissions || []).filter(
+      (perm) => !permissionsToRemove.includes(perm)
+    );
+
+    // Remove from expiryMap
+    const updatedExpiryMap = new Map(user.expiryMap || {});
+    permissionsToRemove.forEach((perm) => {
+      updatedExpiryMap.delete(perm);
+    });
+    user.expiryMap = Object.fromEntries(updatedExpiryMap);
+
+    // Debug after updating
+    console.log("🔹 User Permissions After:", user.permissions);
+
+    await user.save();
+
+    // Emit an event for revoked permissions
+    console.log("📢 Emitting permissionRevoked event:", {
+      userId,
+      name: user.name,
+      revokedPermissions: permissionsToRemove,
+    });
+
+    io.emit('permissionRevoked', {
+      userId,
+      name: user.name,
+      revokedPermissions: permissionsToRemove,
+    });
+
+    res.json({
+      message: 'Permissions revoked successfully',
+      permissions: user.permissions,
+      expiryMap: user.expiryMap,
+    });
+  } catch (error) {
+    console.error("❌ Error revoking access:", error);
+    res.status(500).json({ message: 'Error revoking access', error });
+  }
+};
 
   

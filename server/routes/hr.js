@@ -10,7 +10,8 @@ import {
     getpayroll,
     getHrDashStats,
     access,
-    getUserPermissions
+    getUserPermissions,
+    revokeAccess,
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -35,5 +36,6 @@ router.get("/payroll", getpayroll);
 router.get('/hrdash', getHrDashStats)
 
 router.post('/user/grant-access', access);
-router.get('/user/:userId/permissions', getUserPermissions);
+router.get('/user/permissions/:userId', getUserPermissions);
+router.post('/user/revoke-access',revokeAccess);
 export default router;

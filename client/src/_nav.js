@@ -17,20 +17,25 @@ import {
 
 const _nav = () => {
   // Fetch user details from sessionStorage
-  const userRole = sessionStorage.getItem('role'); // e.g., 'superadmin'
-  const userDepartment = sessionStorage.getItem('department'); // e.g., 'HR'
-  const userUsername = sessionStorage.getItem('username'); 
-  const userId = sessionStorage.getItem('userId'); // Declare userId properly
-  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
-  const [allowedRoutes, setAllowedRoutes] = useState([]);
+// Retrieve user details from sessionStorage
+const userRole = sessionStorage.getItem('role'); // e.g., 'superadmin'
+const userDepartment = sessionStorage.getItem('department'); // e.g., 'HR'
+const userUsername = sessionStorage.getItem('username'); 
+const userId = sessionStorage.getItem('userId'); // Declare userId properly
+const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+const userEmail = sessionStorage.getItem('email');
 
-  // Debug log for dynamic data
-  console.log("User Role:", userRole);
-  console.log("User Department:", userDepartment);
-  console.log("User username:", userUsername);
-  console.log("✅ Retrieved Permissions from sessionStorage:", userPermissions);
+// Console log all retrieved sessionStorage values
+console.log("✅ Session Storage Values:");
+console.log("Role:", userRole);
+console.log("Department:", userDepartment);
+console.log("Username:", userUsername);
+console.log("User ID:", userId);
+console.log("Permissions:", userPermissions);
+console.log("Email:", userEmail);
 
-
+// State for allowed routes
+const [allowedRoutes, setAllowedRoutes] = useState([]);
   useEffect(() => {
     if (!userId) {
       console.error('❌ No userId found in sessionStorage');
@@ -39,7 +44,7 @@ const _nav = () => {
 
     const fetchUserPermissions = async () => {
       try {
-        const response = await axios.get(`http://localhost:5053/hr/user/${userId}/permissions`);
+        const response = await axios.get(`http://localhost:5053/hr/user/permissions/${userId}`);
 
         console.log('✅ API Response:', response.data);
         

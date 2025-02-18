@@ -1,0 +1,68 @@
+.container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.message-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  
+  .message-content {
+    white-space: pre-line;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    
+    .message-line {
+      margin: 0.5rem 0;
+      padding: 0 0.5rem;
+      
+      &:first-child {
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+    }
+  }
+  
+  .message-timestamp {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+    padding: 0 0.5rem;
+  }
+  
+  .button-container {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+.alert {
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  
+  &.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+  }
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}

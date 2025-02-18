@@ -149,12 +149,13 @@ export const loginUser = async (req, res) => {
             id: user._id, 
             username: user.username, 
             name: user.name, 
+            email: user.email,
             role: user.role, 
             department: user.department,
             permissions: user.permissions
         };
-
-
+        
+        console.log("✅ Session Data Set:", req.session.user);
         // Log the login action
         await createLog(req.session.user, 'Login', 'User logged into the system');
 

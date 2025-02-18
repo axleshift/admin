@@ -3,11 +3,14 @@ import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Message from '../model/message.js'
+import User from '../model/User.js'
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let backupDir = ''; // The base directory for backups
 const mongoURL = process.env.MONGO_URL || 'your-default-mongo-uri-here';
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export const setBackupDirectory = (req, res) => {
     const { directory } = req.body;
@@ -107,3 +110,370 @@ export const generateAnnouncement = async (req, res) => {
         res.status(500).json({ message: "An error occurred with the Gemini API", error: error.message });
     }
 };
+
+export const chatbox = async (req, res) => {
+  const { message, conversationHistory } = req.body;
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Message cannot be empty' });
+  }
+
+  try {
+    // Simple response logic based on input
+    let botReply;
+    const userMessage = message.toLowerCase().trim();
+
+    // Check if the message is a request status check
+    if (userMessage.includes('request status') || userMessage.includes('check status')) {
+      // Find pending requests for the user from the session
+      const username = req.session?.username;
+      if (!username) {
+        botReply = "Please log in to check your request status.";
+      } else {
+        // Query the Message collection for pending requests
+        const pendingRequests = await Message.find({
+          'metadata.requester': username,
+          status: { $in: ['pending', 'accepted', 'cancelled'] }
+        }).sort({ createdAt: -1 }).limit(5);
+
+        if (pendingRequests.length === 0) {
+          botReply = "You don't have any recent access requests.";
+        } else {
+          // Format the requests status
+          botReply = "Here are your recent requests:\n\n";
+          pendingRequests.forEach(request => {
+            const statusEmoji = {
+              'pending': '⏳',
+              'accepted': '✅',
+              'cancelled': '❌'
+            }[request.status];
+            
+            const pageName = request.metadata.pageName;
+            const requestDate = new Date(request.createdAt).toLocaleDateString();
+            
+            botReply += `${statusEmoji} ${pageName} - ${request.status.toUpperCase()} (${requestDate})\n`;
+            
+            if (request.status === 'accepted') {
+              const expiryDate = new Date(request.metadata.expiryDate).toLocaleDateString();
+              botReply += `   Access expires on: ${expiryDate}\n`;
+            }
+          });
+        }
+      }
+    } else if (userMessage.includes('hi') || userMessage.includes('hello')) {
+      botReply = "Hi there! How can I assist you today?";
+    } else if (userMessage.includes('help')) {
+      botReply = `I can help you with:
+1. Requesting access to pages
+2. Checking your request status (just say "check status")
+3. General assistance
+
+What would you like help with?`;
+    } else if (userMessage.includes('make a paragrap')) {
+      botReply = `
+        You have the following pending requests:
+
+        1. Grant access to the **Dashboard Page**.
+        2. Grant access to the **Admin Settings**.
+        3. Grant access to the **User Analytics Page**.
+
+        Please choose an option:
+        - Type the number of the request you want to process (e.g., "1" for Dashboard Page).
+        - Or type "Cancel" to dismiss all requests.
+      `;
+    } else if (["1", "2", "3"].includes(userMessage)) {
+      const responses = {
+        "1": "Access to the Dashboard Page has been granted.",
+        "2": "Access to Admin Settings has been granted.",
+        "3": "Access to the User Analytics Page has been granted.",
+      };
+      botReply = responses[userMessage];
+    } else if (userMessage === "cancel") {
+      botReply = "All pending requests have been dismissed.";
+    } else {
+      // Default response for unrecognized input
+      botReply = `You said: "${message}". If you need help, just ask!`;
+    }
+
+    // Optionally update conversation history
+    const updatedHistory = [
+      ...(conversationHistory || []),
+      { text: message, sender: 'user' },
+      { text: botReply, sender: 'gemini' },
+    ];
+
+    // Respond with the bot's reply and updated history
+    res.json({
+      response: botReply,
+      conversationHistory: updatedHistory,
+    });
+
+  } catch (error) {
+    console.error('Error in chatbox controller:', error);
+    res.status(500).json({
+      error: 'An error occurred while processing your message',
+      details: error.message
+    });
+  }
+};
+  
+export const getRequestStatus = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const updates = await Message.find({
+      'metadata.requester': username,
+      status: { $in: ['accepted', 'cancelled'] },
+      'responseMetadata.notified': { $ne: true }
+    });
+
+    // Mark updates as notified
+    await Message.updateMany(
+      { _id: { $in: updates.map(u => u._id) } },
+      { $set: { 'responseMetadata.notified': true } }
+    );
+
+    res.json({ success: true, updates });
+  } catch (error) {
+    console.error('Error fetching request status:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const handleStatusUpdate = async (req, res) => {
+  try {
+    const { userId, status, messageId, respondedBy } = req.body;
+    
+    // Get the socket ID for the specific user
+    const socketId = userSockets.get(userId);
+    
+    if (socketId) {
+      // Emit to specific user's room
+      io.to(userId).emit('requestStatusUpdate', {
+        userId,
+        status,
+        messageId,
+        respondedBy
+      });
+    }
+    
+    // Update the message in database
+    await Message.findByIdAndUpdate(messageId, {
+      status,
+      'responseMetadata.respondedBy': respondedBy,
+      'responseMetadata.responseTime': new Date()
+    });
+    
+    res.json({ success: true, message: 'Status update sent successfully' });
+  } catch (error) {
+    console.error('Error sending status update:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+  export const generateAccessRequestMessage = (username, name, department, pageName, details) => {
+    const timestamp = new Date().toLocaleString();
+    return `Access Request Details:
+  - Username: ${username}
+  - Full Name: ${name || 'N/A'}
+  - Department: ${department}
+  - Page Requested: ${pageName}
+  - Request Time: ${timestamp}
+  - Page URL: /${pageName.toLowerCase()}
+  
+  Please review this access request and either approve or deny it through the messaging system.`;
+  };
+  
+  export const sendMessage = async (req, res) => {
+    try {
+      const { requestType, pageName, name, department, username, requestDetails } = req.body;
+  
+      if (!requestType || !pageName || !department || !username) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields" 
+        });
+      }
+  
+      // Now correctly passing the name parameter
+      const messageContent = generateAccessRequestMessage(
+        username,
+        name,  // Passing name here
+        department,
+        pageName,
+        requestDetails
+      );
+  
+      const newMessage = new Message({
+        content: messageContent,
+        department,
+        targetRole: 'superadmin',
+        status: 'pending',
+        metadata: {
+          requestType,
+          pageName,
+          requester: username,
+          name: name,  // Storing name properly in metadata
+          requestDetails: {
+            ...requestDetails,
+            requestTime: new Date()
+          }
+        }
+      });
+  
+      await newMessage.save();
+  
+      res.json({ 
+        success: true, 
+        message: messageContent,
+        messageId: newMessage._id 
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to process message" 
+      });
+    }
+  };
+  
+  export const getDepartmentMessages = async (req, res) => {
+    try {
+      const { department } = req.params;
+      const { role } = req.query;
+  
+      console.log("Received request for messages:", { department, role });
+  
+      if (!department || role !== 'superadmin') {
+        console.log("Authorization failed:", { department, role });
+        return res.status(403).json({ 
+          success: false, 
+          error: "Unauthorized access" 
+        });
+      }
+  
+      const messages = await Message.find({ 
+        department,
+        targetRole: 'superadmin',
+        status: 'pending'
+      }).sort({ createdAt: -1 });
+  
+      console.log("Found messages:", messages);
+  
+      res.json({ 
+        success: true, 
+        messages 
+      });
+    } catch (error) {
+      console.error("Error in getDepartmentMessages:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to fetch messages" 
+      });
+    }
+  };
+  
+  export const updateMessageStatus = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, responderUsername } = req.body;
+  
+      // Validate inputs
+      if (!id || !status || !responderUsername) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields" 
+        });
+      }
+  
+      if (!['accepted', 'cancelled'].includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid status" 
+        });
+      }
+  
+      // Find the message first
+      const message = await Message.findById(id);
+      
+      if (!message) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Message not found" 
+        });
+      }
+  
+      // Update the message
+      message.status = status;
+      message.responseMetadata = {
+        respondedBy: responderUsername,
+        responseTime: new Date().toISOString()
+      };
+  
+      await message.save();
+  
+      // Handle access granting when message is accepted
+      if (status === 'accepted') {
+        try {
+          const userId = message.metadata.requester;
+          const pagePath = `/${message.metadata.pageName.toLowerCase()}`;
+          
+          // Find the user and update their permissions
+          const user = await User.findOne({ username: userId });
+          
+          if (!user) {
+            throw new Error('User not found');
+          }
+  
+          // Set expiry date (24 hours from now)
+          const now = new Date();
+          const expiryDate = new Date();
+          expiryDate.setDate(now.getDate() + 1);
+  
+          // Update permissions and expiry map
+          const updatedPermissions = new Set(user.permissions || []);
+          updatedPermissions.add(pagePath);
+          user.permissions = [...updatedPermissions];
+  
+          // Update expiry map
+          const updatedExpiryMap = new Map(user.expiryMap || {});
+          updatedExpiryMap.set(pagePath, expiryDate);
+          user.expiryMap = Object.fromEntries(updatedExpiryMap);
+  
+          // Save the updated user
+          await user.save();
+  
+          // If we have socket.io instance, emit the update
+          if (req.app.get('io')) {
+            const io = req.app.get('io');
+            io.emit('permissionUpdated', {
+              userId: userId,
+              grantedBy: responderUsername,
+              name: user.name,
+              permissions: [pagePath]
+            });
+          }
+  
+          console.log('Access granted successfully for user:', userId);
+        } catch (accessError) {
+          console.error('Error granting access:', accessError);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to grant access',
+            message: accessError.message
+          });
+        }
+      }
+  
+      res.json({ 
+        success: true, 
+        message: `Message ${status} and access ${status === 'accepted' ? 'granted' : 'denied'} successfully`,
+        data: message 
+      });
+    } catch (error) {
+      console.error("Error updating message:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Failed to update message status" 
+      });
+    }
+  };

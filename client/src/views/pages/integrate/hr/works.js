@@ -314,128 +314,132 @@ const Works = () => {
 
         {filteredData.map((item) => (
           <CCard
-            key={item._id}
-            className="mb-3"
-            style={{ cursor: 'pointer' }}
-            onClick={() => handleEmployeeClick(item._id)}
-          >
-            <CCardHeader className="d-flex justify-content-between align-items-center">
-                <h4>
-                  {item.username} - {item.name}
-                </h4>
-                <CButton
-                  color="primary"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent the event from triggering the card click
-                    console.log("✅ Clicked User ID:", item._id);
-
-                    setSelectedEmployeeId(item._id);  // Set the selected employee
-                    setAccessButtonClicked(true); // Mark that the "Access" button was clicked
-
-                    setTimeout(() => {
-                      setShowModal(true); // Open the modal after setting the employee
-                    }, 100);
-                  }}
-                >
-                  Access
-                </CButton>
-              </CCardHeader>
-
-
-
-            {selectedEmployeeId && (
-                  <GrantAccessModal 
-                    visible={showModal} 
-                    onClose={() => setShowModal(false)} 
-                    userId={selectedEmployeeId} 
-                  />
-                )}
-            
-            {selectedEmployeeId === item._id && !accessButtonClicked && (
-  <CCardBody onClick={stopPropagation}>
-    <CListGroup>
-      <CListGroupItem>Email: {item.email}</CListGroupItem>
-      <CListGroupItem>
-        Phone Number: {item.phoneNumber || 'N/A'}
-      </CListGroupItem>
-      <CListGroupItem>Country: {item.country}</CListGroupItem>
-      <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
-      <CListGroupItem>Role: {item.role}</CListGroupItem>
-      <CListGroupItem>
-        Department: {item.department}
-      </CListGroupItem>
-      <CListGroupItem>
-        <CFormSelect
-          value={selectedRole[item._id] || ''}
-          onClick={stopPropagation}
-          onChange={(e) =>
-            setSelectedRole({
-              ...selectedRole,
-              [item._id]: e.target.value,
-            })
-          }
-        >
-          <option value="">Select Role</option>
-          <option value="superadmin">Super Admin</option>
-          <option value="admin">Admin</option>
-          <option value="manager">Manager</option>
-          <option value="employee">Employee</option>
-        </CFormSelect>
-      </CListGroupItem>
-      <CListGroupItem>
-        <CButton
-          color="primary"
-          size="sm"
+          key={item._id}
+          className="mb-3"
+          style={{ cursor: 'pointer' }}
           onClick={(e) => {
-            stopPropagation(e);
-            handleRoleChange(item._id);
+            // Prevent the button click from triggering the card's onClick
+            if (!e.target.closest('button')) {
+              console.log("🟢 Card Clicked ID:", item._id);
+              setSelectedEmployeeId((prevId) => (prevId === item._id ? null : item._id)); // Toggle card content
+              setAccessButtonClicked(false); // Reset the access button click state
+            }
           }}
         >
-          Change Role
-        </CButton>
-        <CButton
-          color="danger"
-          size="sm"
-          className="ms-2"
-          onClick={(e) => {
-            stopPropagation(e);
-            handleDeleteUser(item._id);
-          }}
-        >
-          Fire User
-        </CButton>
-      </CListGroupItem>
-      <CListGroupItem>
-        {item.department !== 'Administrative' && (
-          <CButton
-            color="info"
-            size="sm"
-            onClick={(e) => {
-              stopPropagation(e);
-              handleGenerateAndSend(item._id, item.department);
-            }}
-          >
-            Send to {item.department}
-          </CButton>
-        )}
-      </CListGroupItem>
-      <CListGroupItem>
-        <CButton
-          color="info"
-          size="sm"
-          onClick={(e) => {
-            stopPropagation(e);
-            handleResetPassword(item._id);
-          }}
-        >
-          Send link to reset password
-        </CButton>
-      </CListGroupItem>
-    </CListGroup>
-  </CCardBody>
-)}
-
-          </CCard>
+          <CCardHeader className="d-flex justify-content-between align-items-center">
+            <h4>
+              {item.username} - {item.name}
+            </h4>
+            <CButton
+              color="primary"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event propagation to the card's onClick
+                console.log("✅ Button Clicked ID:", item._id);
+        
+                setSelectedEmployeeId(item._id); // Set the selected employee
+                setAccessButtonClicked(true); // Mark that the "Access" button was clicked
+        
+                setTimeout(() => {
+                  setShowModal(true); // Open the modal after setting the employee
+                }, 100);
+              }}
+            >
+              Access
+            </CButton>
+          </CCardHeader>
+        
+          {/* Grant Access Modal */}
+          {selectedEmployeeId && accessButtonClicked && (
+            <GrantAccessModal
+              visible={showModal}
+              onClose={() => setShowModal(false)}
+              userId={selectedEmployeeId}
+            />
+          )}
+        
+          {/* Card Body */}
+          {selectedEmployeeId === item._id && !accessButtonClicked && (
+            <CCardBody>
+              <CListGroup>
+                <CListGroupItem>Email: {item.email}</CListGroupItem>
+                <CListGroupItem>
+                  Phone Number: {item.phoneNumber || 'N/A'}
+                </CListGroupItem>
+                <CListGroupItem>Country: {item.country}</CListGroupItem>
+                <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
+                <CListGroupItem>Role: {item.role}</CListGroupItem>
+                <CListGroupItem>Department: {item.department}</CListGroupItem>
+                <CListGroupItem>
+                  <CFormSelect
+                    value={selectedRole[item._id] || ''}
+                    onClick={(e) => e.stopPropagation()} // Prevent triggering the card's onClick
+                    onChange={(e) =>
+                      setSelectedRole({
+                        ...selectedRole,
+                        [item._id]: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select Role</option>
+                    <option value="superadmin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="employee">Employee</option>
+                  </CFormSelect>
+                </CListGroupItem>
+                <CListGroupItem>
+                  <CButton
+                    color="primary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRoleChange(item._id);
+                    }}
+                  >
+                    Change Role
+                  </CButton>
+                  <CButton
+                    color="danger"
+                    size="sm"
+                    className="ms-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUser(item._id);
+                    }}
+                  >
+                    Fire User
+                  </CButton>
+                </CListGroupItem>
+                <CListGroupItem>
+                  {item.department !== 'Administrative' && (
+                    <CButton
+                      color="info"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGenerateAndSend(item._id, item.department);
+                      }}
+                    >
+                      Send to {item.department}
+                    </CButton>
+                  )}
+                </CListGroupItem>
+                <CListGroupItem>
+                  <CButton
+                    color="info"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResetPassword(item._id);
+                    }}
+                  >
+                    Send link to reset password
+                  </CButton>
+                </CListGroupItem>
+              </CListGroup>
+            </CCardBody>
+          )}
+        </CCard>
         ))}
       </CRow>
     </CContainer>

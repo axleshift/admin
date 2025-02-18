@@ -51,19 +51,20 @@ const Login = () => {
         localStorage.setItem('refreshToken', response.data.refreshToken);
   
         // ✅ Store user data from login response (NO need for another API call)
-        const { id, name, role, email, username, department, permissions } = response.data.user;
-  
-        sessionStorage.setItem('userId', id); // ✅ Fix: Store userId properly
+        const { id, name, username, role, email, department, permissions } = response.data.user;
+        sessionStorage.setItem('userId', id);
+        sessionStorage.setItem('username', username || ''); // Ensure username is stored
         sessionStorage.setItem('name', name || '');
-        sessionStorage.setItem('role', role || '');
         sessionStorage.setItem('email', email || '');
-        sessionStorage.setItem('username', username || '');
+        sessionStorage.setItem('role', role || '');
         sessionStorage.setItem('department', department || '');
         sessionStorage.setItem('permissions', JSON.stringify(permissions || []));
-  
+    
+    
         // ✅ Log the stored permissions from sessionStorage
         console.log("Stored Permissions in sessionStorage:", sessionStorage.getItem('permissions'));
-  
+        console.log("Email stored in sessionStorage:", sessionStorage.getItem('email'));
+
         // ✅ Redirect user based on department
         switch (department.toLowerCase()) {
           case 'administrative':
@@ -166,20 +167,7 @@ const Login = () => {
                 </CCardBody>
               </CCard>
 
-              {/* Sign Up Section */}
-              <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
-                <CCardBody className="text-center">
-                  <div>
-                    <h2>Sign up</h2>
-                    <p>Don&apos;t have an account? Register now to gain access.</p>
-                    <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
-                      </CButton>
-                    </Link>
-                  </div>
-                </CCardBody>
-              </CCard>
+              
             </CCardGroup>
           </CCol>
         </CRow>

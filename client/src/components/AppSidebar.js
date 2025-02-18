@@ -33,7 +33,7 @@ const AppSidebar = () => {
 
     const fetchPermissions = async () => {
       try {
-        const response = await axios.get(`http://localhost:5053/hr/user/${userId}/permissions`);
+        const response = await axios.get(`http://localhost:5053/hr/user/permissions/${userId}`);
         console.log('✅ Permissions from API:', response.data);
         
         setUserPermissions(response.data.accessPermissions || []);
