@@ -1,4 +1,3 @@
-// ChatContainer.jsx
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { CButton, CCard, CCardBody, CInputGroup, CFormInput } from '@coreui/react';
@@ -7,6 +6,7 @@ import { faCommentDots, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../../../scss/chat.scss';
 import { useColorModes } from '@coreui/react';
+import ActivityTracker from '../../../util/ActivityTracker'; // Adjust path as needed
 
 const ChatContainer = () => {
   const { colorMode } = useColorModes('coreui-free-react-admin-template-theme');
@@ -18,6 +18,13 @@ const ChatContainer = () => {
   const [pageAccessRequest, setPageAccessRequest] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
   const [socket, setSocket] = useState(null);
+  
+  // Activity tracking states
+  const [chatOpened, setChatOpened] = useState(false);
+  const [messageDetails, setMessageDetails] = useState(null);
+  const [accessRequested, setAccessRequested] = useState(false);
+  const [pageAccessDetails, setPageAccessDetails] = useState(null);
+  const [statusCheck, setStatusCheck] = useState(false);
 
   useEffect(() => {
     const newSocket = io('http://localhost:5053');
@@ -56,6 +63,8 @@ const ChatContainer = () => {
   const checkRequestStatus = async () => {
     try {
       const username = sessionStorage.getItem("username");
+      setStatusCheck(true); // Track status check activity
+      
       const response = await axios.get(`http://localhost:5053/admin/request-status/${username}`);
       
       if (response.data.success && response.data.updates.length > 0) {
@@ -86,6 +95,12 @@ const ChatContainer = () => {
 
     const messageToSend = { text: userInput, sender: 'user' };
     setMessages(prev => [...prev, messageToSend]);
+    
+    // Track message activity with content details
+    setMessageDetails({
+      content: userInput,
+      timestamp: new Date().toISOString()
+    });
 
     try {
       const response = await axios.post('http://localhost:5053/admin/chat', {
@@ -121,6 +136,7 @@ const ChatContainer = () => {
     setRequestType('access');
     setPageAccessRequest(null);
     setSelectedPage(null);
+    setAccessRequested(true); // Track initial access request
   };
 
   const handlePageAccess = () => {
@@ -133,6 +149,15 @@ const ChatContainer = () => {
     const name = sessionStorage.getItem("name");
     setSelectedPage(page.name);
     setUserInput(`Requesting access to ${page.name} page.`);
+    
+    // Track page access request with detailed information
+    setPageAccessDetails({
+      pageName: page.name,
+      pagePath: page.path,
+      department: department,
+      username: username,
+      requestTime: new Date().toISOString()
+    });
   
     try {
       const response = await axios.post("http://localhost:5053/admin/sendmessage", {
@@ -165,6 +190,14 @@ const ChatContainer = () => {
     setPageAccessRequest(null);
   };
 
+  const toggleChat = () => {
+    const newState = !isChatOpen;
+    setIsChatOpen(newState);
+    if (newState) {
+      setChatOpened(true); // Track chat opening activity
+    }
+  };
+
   const allNavItems = [
     { path: "/employeedash", name: "Dashboard"},
     { path: "/hrdash", name: "HR Dashboard"},
@@ -187,10 +220,46 @@ const ChatContainer = () => {
 
   return (
     <div>
+      {/* Activity trackers with detailed information */}
+      {chatOpened && (
+        <ActivityTracker
+          action="Chat Opened"
+          description={`User opened the chat interface at ${new Date().toLocaleString()}`}
+        />
+      )}
+      
+      {messageDetails && (
+        <ActivityTracker
+          action="Message Sent"
+          description={`User sent: "${messageDetails.content}" at ${new Date(messageDetails.timestamp).toLocaleString()}`}
+        />
+      )}
+      
+      {accessRequested && (
+        <ActivityTracker
+          action="Access Request Initiated"
+          description={`User initiated the access request process at ${new Date().toLocaleString()}`}
+        />
+      )}
+      
+      {pageAccessDetails && (
+        <ActivityTracker
+          action="Page Access Requested"
+          description={`User ${pageAccessDetails.username} from ${pageAccessDetails.department} dept requested access to ${pageAccessDetails.pageName} (${pageAccessDetails.pagePath}) at ${new Date(pageAccessDetails.requestTime).toLocaleString()}`}
+        />
+      )}
+
+      {statusCheck && (
+        <ActivityTracker
+          action="Status Check"
+          description={`User checked status of pending access requests at ${new Date().toLocaleString()}`}
+        />
+      )}
+
       <CButton
         color="primary"
         className="chat-bubble"
-        onClick={() => setIsChatOpen(!isChatOpen)}
+        onClick={toggleChat}
       >
         <FontAwesomeIcon icon={faCommentDots} size="lg" />
       </CButton>
@@ -208,7 +277,7 @@ const ChatContainer = () => {
           <CCardBody style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="chatbox-header" style={{ marginBottom: '10px' }}>
               <h6>Chat</h6>
-              <CButton color="danger" size="sm" onClick={() => setIsChatOpen(false)}>
+              <CButton color="danger" size="sm" onClick={toggleChat}>
                 ✖
               </CButton>
             </div>
@@ -318,4 +387,3 @@ const ChatContainer = () => {
 };
 
 export default ChatContainer;
-

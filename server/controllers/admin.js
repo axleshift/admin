@@ -374,106 +374,59 @@ export const handleStatusUpdate = async (req, res) => {
   
   export const updateMessageStatus = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { status, responderUsername } = req.body;
-  
-      // Validate inputs
-      if (!id || !status || !responderUsername) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Missing required fields" 
-        });
-      }
-  
-      if (!['accepted', 'cancelled'].includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Invalid status" 
-        });
-      }
-  
-      // Find the message first
-      const message = await Message.findById(id);
-      
-      if (!message) {
-        return res.status(404).json({ 
-          success: false, 
-          error: "Message not found" 
-        });
-      }
-  
-      // Update the message
-      message.status = status;
-      message.responseMetadata = {
-        respondedBy: responderUsername,
-        responseTime: new Date().toISOString()
-      };
-  
-      await message.save();
-  
-      // Handle access granting when message is accepted
-      if (status === 'accepted') {
-        try {
-          const userId = message.metadata.requester;
-          const pagePath = `/${message.metadata.pageName.toLowerCase()}`;
-          
-          // Find the user and update their permissions
-          const user = await User.findOne({ username: userId });
-          
-          if (!user) {
-            throw new Error('User not found');
-          }
-  
-          // Set expiry date (24 hours from now)
-          const now = new Date();
-          const expiryDate = new Date();
-          expiryDate.setDate(now.getDate() + 1);
-  
-          // Update permissions and expiry map
-          const updatedPermissions = new Set(user.permissions || []);
-          updatedPermissions.add(pagePath);
-          user.permissions = [...updatedPermissions];
-  
-          // Update expiry map
-          const updatedExpiryMap = new Map(user.expiryMap || {});
-          updatedExpiryMap.set(pagePath, expiryDate);
-          user.expiryMap = Object.fromEntries(updatedExpiryMap);
-  
-          // Save the updated user
-          await user.save();
-  
-          // If we have socket.io instance, emit the update
-          if (req.app.get('io')) {
-            const io = req.app.get('io');
-            io.emit('permissionUpdated', {
-              userId: userId,
-              grantedBy: responderUsername,
-              name: user.name,
-              permissions: [pagePath]
-            });
-          }
-  
-          console.log('Access granted successfully for user:', userId);
-        } catch (accessError) {
-          console.error('Error granting access:', accessError);
-          return res.status(500).json({
-            success: false,
-            error: 'Failed to grant access',
-            message: accessError.message
-          });
+        const { id } = req.params;
+        const { status, responderUsername } = req.body;
+
+        if (!id || !status || !responderUsername) {
+            return res.status(400).json({ success: false, error: "Missing required fields" });
         }
-      }
-  
-      res.json({ 
-        success: true, 
-        message: `Message ${status} and access ${status === 'accepted' ? 'granted' : 'denied'} successfully`,
-        data: message 
-      });
+
+        if (!['accepted', 'cancelled'].includes(status)) {
+            return res.status(400).json({ success: false, error: "Invalid status" });
+        }
+
+        // Find the request in the database
+        const message = await Message.findById(id);
+        if (!message) {
+            return res.status(404).json({ success: false, error: "Message not found" });
+        }
+
+        // Update the request status
+        message.status = status;
+        message.responseMetadata = {
+            respondedBy: responderUsername,
+            responseTime: new Date()
+        };
+
+        await message.save();
+
+        // Grant access if request was accepted
+        if (status === "accepted") {
+            try {
+                const userId = message.metadata.requester;
+                const pageName = message.metadata.pageName;
+
+                // Emit event via socket.io
+                const io = req.app.get("io");
+                if (io) {
+                    io.emit("requestStatusUpdate", {
+                        userId,
+                        status,
+                        messageId: message._id,
+                        respondedBy: responderUsername,
+                        pageName
+                    });
+                    console.log(`Sent real-time notification to ${userId}`);
+                }
+            } catch (error) {
+                console.error("Error granting access:", error);
+                return res.status(500).json({ success: false, error: "Failed to grant access" });
+            }
+        }
+
+        res.json({ success: true, message: `Request ${status}`, data: message });
     } catch (error) {
-      console.error("Error updating message:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message || "Failed to update message status" 
-      });
+        console.error("Error updating message:", error);
+        res.status(500).json({ success: false, error: "Failed to update request status" });
     }
-  };
+};

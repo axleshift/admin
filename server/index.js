@@ -10,31 +10,47 @@ import clientRoutes from "./routes/client.js";
 import generalRoutes from "./routes/general.js";
 import managementRoutes from "./routes/management.js";
 import salesRoutes from "./routes/sales.js";
-import notificationsRoutes from './routes/notification.js'
+import notificationsRoutes from './routes/notification.js';
 import hrRoutes from "./routes/hr.js";
 import coreRoutes from "./routes/core.js";
 import logisticsRoutes from "./routes/logistics.js";
 import financeRoutes from "./routes/finance.js";
-import adminRoutes from './routes/admin.js'
-import tryRoutes from './routes/try.js'
+import adminRoutes from './routes/admin.js';
+import tryRoutes from './routes/try.js';
 
 import session from "express-session";
 import MongoStore from "connect-mongo";
 
 import { Server } from "socket.io";
-import http from 'http';
+import http from "http";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import JobPosting from "./model/h2.js";
-import user from "./model/User.js"
+import User from "./model/User.js"; // Capitalized "User" for consistency
 import Shipping from "./model/Shipping.js";
 import overall from "./model/overall.js";
-import { employee, mockLogisticsData ,users, transactions, overalldata, jobPostings} from "./data/index.js";
+import { employee, mockLogisticsData, users, transactions, overalldata, jobPostings } from "./data/index.js";
 
-// Configuration
+// ✅ 1. Load environment variables at the very top
 dotenv.config();
+
+// ✅ 2. Initialize Express app
 const app = express();
+
+// ✅ 3. Create HTTP server and Socket.io instance
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"]
+    }
+});
+
+// ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
+app.set("io", io);
+
+// ✅ 5. Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
@@ -50,7 +66,8 @@ app.use(
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     })
 );
-// Set up session middleware before routes
+
+// ✅ 6. Set up session middleware before routes
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
@@ -59,55 +76,46 @@ app.use(
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URL,
         }),
-        cookie: { secure: false, httpOnly:true }, // 1 day
+        cookie: { secure: false, httpOnly: true }, // 1 day
     })
 );
 
-// Routes
+// ✅ 7. Register routes
 app.use("/client", clientRoutes);
 app.use("/general", generalRoutes);
 app.use("/management", managementRoutes);
 app.use("/sales", salesRoutes);
-app.use('/admin', adminRoutes);
-app.use('/try', tryRoutes);
+app.use("/admin", adminRoutes);
+app.use("/try", tryRoutes);
 
-// Integration
-app.use('/hr', hrRoutes);
-app.use('/core', coreRoutes);
-app.use('/logistics', logisticsRoutes);
-app.use('/finance', financeRoutes);
+// ✅ 8. Integration routes
+app.use("/hr", hrRoutes);
+app.use("/core", coreRoutes);
+app.use("/logistics", logisticsRoutes);
+app.use("/finance", financeRoutes);
+app.use("/notifications", notificationsRoutes);
 
-app.use('/notifications', notificationsRoutes);
-
+// ✅ 9. Load AI service
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const server = http.createServer(app);
-const io = new Server(server);
-
-// Mongoose connection
+// ✅ 10. Connect to MongoDB and start the server
 const PORT = process.env.PORT || 9000;
 
 mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
-        server.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
-
-        // Optionally, populate the database with some initial data
-        // Employee.insertMany(employee)
-        // Logistics.insertMany(mockLogisticsData)
-        // user.insertMany(users)
-        // Shipping.insertMany(transactions)
-        // overall.insertMany(overalldata)
-        // JobPosting.insertMany(jobPostings)
+        server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
     })
-    .catch((err) => console.log(`${err} did not connect`));
+    .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 
-// Socket.io event listeners
+// ✅ 11. Handle WebSocket connections
 io.on("connection", (socket) => {
-    console.log("A user connected");
+    console.log(`✅ A user connected: ${socket.id}`);
+
     socket.on("disconnect", () => {
-        console.log("User disconnected");
+        console.log(`❌ User disconnected: ${socket.id}`);
     });
 });
 
+// ✅ 12. Export io instance
 export { io };
