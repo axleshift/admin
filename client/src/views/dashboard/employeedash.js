@@ -22,7 +22,7 @@ import OverviewChart from '../pages/sales/overviewChart';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import BreakdownChart from '../../views/pages/sales/breakdownchart';
-import '../../scss/_custom.scss';
+import '../../scss/dashboard.scss';
 
 const Employeedash = () => {
   const navigate = useNavigate();
@@ -82,21 +82,14 @@ const Employeedash = () => {
   }
 
   return (
-    <CContainer>
-      <CRow className="mb-4" style={{ margin: '1.5rem 2.5rem' }}>
-        <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
-        <CCol className="d-flex justify-content-end align-items-center">
+    <CContainer fluid className="p-3">
+      <CRow className="mb-4">
+        <CCol xs={12} md={8}>
+          <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
+        </CCol>
+        <CCol xs={12} md={4} className="d-flex justify-content-md-end align-items-center mb-3 mb-md-0">
           <button
-            style={{
-              backgroundColor: 'green',
-              fontSize: '10px',
-              fontWeight: 'bold',
-              padding: '10px 20px',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-            }}
+            className="download-btn"
             onClick={handleDownload}
           >
             <FontAwesomeIcon icon={faDownload} />
@@ -105,16 +98,9 @@ const Employeedash = () => {
         </CCol>
       </CRow>
 
-      <CRow
-        style={{
-          display: isNonMediumScreens ? 'grid' : 'flex',
-          flexDirection: isNonMediumScreens ? 'none' : 'column',
-          gridTemplateColumns: isNonMediumScreens ? 'repeat(12, 1fr)' : '1fr',
-          gridAutoRows: '160px',
-          gap: '20px',
-        }}
-      >
-        <CCol style={{ gridColumn: isNonMediumScreens ? 'span 3' : 'span 1' }}>
+      {/* StatBox Row */}
+      <CRow className="my-3 g-3">
+        <CCol xs={12} md={6} lg={3}>
           <StatBox
             title="Total Customers"
             value={dashboardData && dashboardData.totalCustomers}
@@ -123,7 +109,7 @@ const Employeedash = () => {
             icon={<FontAwesomeIcon icon={faEnvelope} style={{ fontSize: '20px', color: '#ffc107' }} />}
           />
         </CCol>
-        <CCol style={{ gridColumn: isNonMediumScreens ? 'span 3' : 'span 1' }}>
+        <CCol xs={12} md={6} lg={3}>
           <StatBox
             title="Sales Today"
             value={dashboardData?.todayStats?.totalSales || 'N/A'}
@@ -132,10 +118,7 @@ const Employeedash = () => {
             icon={<FontAwesomeIcon icon={faCartShopping} style={{ fontSize: '20px' }} />}
           />
         </CCol>
-        <CCol style={{ gridColumn: isNonMediumScreens ? 'span 6' : 'span 1' }}>
-          <OverviewChart view="sales" salesData={dashboardData} />
-        </CCol>
-        <CCol style={{ gridColumn: isNonMediumScreens ? 'span 3' : 'span 1' }}>
+        <CCol xs={12} md={6} lg={3}>
           <StatBox
             title="Monthly Sales"
             value={dashboardData && dashboardData.thisMonthStats.totalSales}
@@ -144,7 +127,7 @@ const Employeedash = () => {
             icon={<FontAwesomeIcon icon={faChartLine} style={{ fontSize: '20px' }} />}
           />
         </CCol>
-        <CCol style={{ gridColumn: isNonMediumScreens ? 'span 3' : 'span 1' }}>
+        <CCol xs={12} md={6} lg={3}>
           <StatBox
             title="Yearly Sales"
             value={dashboardData && dashboardData.yearlySalesTotal}
@@ -155,55 +138,71 @@ const Employeedash = () => {
         </CCol>
       </CRow>
 
-      <CRow className="custom-container custom-margin-top">
-        <CCol xs={12} md={8}>
+      {/* Chart Row */}
+      <CRow className="my-3">
+        <CCol xs={12}>
+          <CCard className="mb-4">
+            <div className="p-3">
+              <OverviewChart view="sales" salesData={dashboardData} />
+            </div>
+          </CCard>
+        </CCol>
+      </CRow>
+
+      {/* Transactions and Breakdown Row */}
+      <CRow className="my-3 g-3">
+        <CCol xs={12} lg={8}>
           <CCard>
             <h5 className="p-3">Transactions</h5>
-            <CTable striped bordered hover responsive>
-              <CTableHead>
-                <CTableRow>
-                  <CTableHeaderCell>Customer Name</CTableHeaderCell>
-                  <CTableHeaderCell>Order Volume (kg)</CTableHeaderCell>
-                  <CTableHeaderCell>Shipping Type</CTableHeaderCell>
-                  <CTableHeaderCell>Order Date</CTableHeaderCell>
-                  <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell>Delivery Date</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody>
-                {shippingData &&
-                  shippingData.map((shipping) => (
-                    <CTableRow key={shipping._id}>
-                      <CTableDataCell>{shipping.customerName}</CTableDataCell>
-                      <CTableDataCell>{shipping.orderVolume}</CTableDataCell>
-                      <CTableDataCell>{shipping.shippingType}</CTableDataCell>
-                      <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
-                      <CTableDataCell>
-                        <CBadge color={shipping.status === 'Delivered' ? 'success' : 'warning'}>
-                          {shipping.status}
-                        </CBadge>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        {shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleDateString() : 'N/A'}
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))}
-              </CTableBody>
-            </CTable>
+            <div className="table-responsive">
+              <CTable striped bordered hover responsive className="mb-0">
+                <CTableHead>
+                  <CTableRow>
+                    <CTableHeaderCell>Customer Name</CTableHeaderCell>
+                    <CTableHeaderCell>Order Volume (kg)</CTableHeaderCell>
+                    <CTableHeaderCell>Shipping Type</CTableHeaderCell>
+                    <CTableHeaderCell>Order Date</CTableHeaderCell>
+                    <CTableHeaderCell>Status</CTableHeaderCell>
+                    <CTableHeaderCell>Delivery Date</CTableHeaderCell>
+                  </CTableRow>
+                </CTableHead>
+                <CTableBody>
+                  {shippingData &&
+                    shippingData.map((shipping) => (
+                      <CTableRow key={shipping._id}>
+                        <CTableDataCell>{shipping.customerName}</CTableDataCell>
+                        <CTableDataCell>{shipping.orderVolume}</CTableDataCell>
+                        <CTableDataCell>{shipping.shippingType}</CTableDataCell>
+                        <CTableDataCell>{new Date(shipping.orderDate).toLocaleDateString()}</CTableDataCell>
+                        <CTableDataCell>
+                          <CBadge color={shipping.status === 'Delivered' ? 'success' : 'warning'}>
+                            {shipping.status}
+                          </CBadge>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleDateString() : 'N/A'}
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))}
+                </CTableBody>
+              </CTable>
+            </div>
           </CCard>
         </CCol>
 
-        <CCol xs={12} md={4}>
+        <CCol xs={12} lg={4}>
           <CCard>
             <h5 className="p-3">Sales By Category</h5>
-            <BreakdownChart />
+            <div className="p-3">
+              <BreakdownChart />
+            </div>
             <h6 className="p-3">Revenue of this year and Sales</h6>
           </CCard>
         </CCol>
       </CRow>
 
-      {/* Display the access token */}
-      <CRow className="mt-4">
+      {/* Access Token Card */}
+      <CRow className="my-3">
         <CCol>
           <CCard>
             <h5 className="p-3">Access Token</h5>

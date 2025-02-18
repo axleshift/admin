@@ -1,0 +1,171 @@
+.custom-margin-top {
+    margin-top: 3rem;
+  }
+  
+  .custom-container {
+    padding: 1rem 2rem;
+  }
+  
+  /* Improved scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #60a5fa;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+  }
+  
+  /* Dark mode scrollbar adjustments */
+  body.dark-mode ::-webkit-scrollbar-track {
+    background: #374151;
+  }
+  
+  body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #60a5fa;
+  }
+  
+  body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #93c5fd;
+  }
+  
+  /* Custom navigation title */
+  .custom-nav-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: #1f2937;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark-mode .custom-nav-title {
+    color: #f9fafb;
+  }
+  
+  /* Table styling improvements */
+  .table thead th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9fafb;
+  }
+  
+  /* Card styling improvements */
+  .card {
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+  
+  .card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 1rem 1.5rem;
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  /* Dark mode card styling */
+  body.dark-mode .card {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  
+  body.dark-mode .card-header {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  
+  body.dark-mode .table thead th {
+    background-color: #374151;
+    color: #e5e7eb;
+    border-color: #4b5563;
+  }
+  
+  body.dark-mode .table tbody td {
+    border-color: #374151;
+    color: #e5e7eb;
+  }
+  
+  body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #263244;
+  }
+  
+  /* Animation improvements */
+  @keyframes strip-and-disappear {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.5;
+      transform: translateY(-5px);
+      clip-path: polygon(0 0, 100% 5%, 100% 95%, 0 100%);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-20px);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+  }
+  
+  .strip-effect {
+    animation: strip-and-disappear 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+  }
+  
+  /* Button styling */
+  button.download-btn {
+    background-color: #10b981;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.65rem 1.25rem;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  button.download-btn:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  }
+  
+  button.download-btn:active {
+    transform: translateY(0);
+  }
