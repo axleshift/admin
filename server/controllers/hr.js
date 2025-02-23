@@ -3,17 +3,30 @@ import { generateUsername } from "../UTIL/generateCode.js";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
 import { getCustomers } from "./client.js";
-
 import {io}  from '../index.js'
+import axios from 'axios'
 
+const hrdata = 'http://axleshifthr.com/users'
 
+export async function fetchhrdata(){
+  try{
+    const response = await axios.get(hrdata)
+
+    console.log('fetch data', response.data)
+
+    return response.data
+  } catch (error){
+    console.error('Failed to fetch',error)
+    throw error
+  }
+}
 
   
 
 
 export const getWorker = async (req, res) => {
     try {
-      const workers = await User.find({ role: { $in: ["manager", 'superadmin',"admin", "employee"] } }).select("-password");
+      const workers = await User.find({ role: { $in: ["manager", 'superadmin',"admin", "employee","Admin","Manager","Superadmin","Employee"] } }).select("-password");
   
       // Ensure consistent data
       const sanitizedWorkers = workers.map((worker) => ({

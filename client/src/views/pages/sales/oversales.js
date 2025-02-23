@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CCard, CCardBody, CCardHeader, CCol, CRow } from "@coreui/react";
 import CustomHeader from "../../../components/header/customhead";
 import OverviewChart from "./overviewChart";
-import { useGetSalesQuery } from "../../../state/api"; 
+import { useGetSalesQuery } from "../../../state/financeApi"; 
 import PropTypes from 'prop-types';
 const Overview = ({isDashboard = false}) => {
   const [view, setView] = useState("units");

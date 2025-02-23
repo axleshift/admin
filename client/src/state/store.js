@@ -1,5 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { api } from './api'
+import { adminApi } from './adminApi'
+import { hrApi } from './hrApi'
+import { financeApi } from './financeApi'
+import { coreApi } from './coreApi'
+import { logisticApi } from './logisticApi'
 import { setupListeners } from '@reduxjs/toolkit/query'
 
 const initialState = {
@@ -31,9 +35,18 @@ const changeState = (state = initialState, { type, payload }) => {
 const store = configureStore({
   reducer: {
     changeState,
-    [api.reducerPath]: api.reducer,
+    [adminApi.reducerPath]: adminApi.reducer,
+    [hrApi.reducerPath]: hrApi.reducer,
+    [logisticApi.reducerPath]: logisticApi.reducer,
+    [coreApi.reducerPath]: coreApi.reducer,
+    [financeApi.reducerPath]: financeApi.reducer,
   },
-  middleware: (getDefault) => getDefault().concat(api.middleware),
+  middleware: (getDefault) => getDefault().concat(
+    adminApi.middleware, 
+    hrApi.middleware,
+    logisticApi.middleware,
+    coreApi.middleware,
+    financeApi.middleware),
 })
 setupListeners(store.dispatch)
 

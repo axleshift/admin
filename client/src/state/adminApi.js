@@ -1,8 +1,11 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Define the base API with RTK Query
-export const api = createApi({
-  baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_APP_BASE_URL }),
+export const adminApi = createApi({
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: import.meta.env.VITE_APP_BASE_URL ,
+    credentials: 'include',}),
+  
   reducerPath: "adminApi",
   tagTypes: [
     "User", 
@@ -25,51 +28,92 @@ export const api = createApi({
       query: (id) => `general/user/${id}`,
       providesTags: ["User"],
     }),
-    // Fetch all products
-    getProducts: build.query({
-      query: () => `client/products`,
-      providesTags: ["Products"],
+//fix
+    loginUser: build.mutation({
+      query: ({ identifier, password }) => ({
+        url: "client/login",
+        method: "POST",
+        body: { identifier, password },
+      }),
     }),
+    changePassword: build.mutation({
+      query: (credentials) => ({
+        url: 'client/change-password',
+        method: 'PUT',
+        body: credentials,
+      }),
+    }),
+    postForgotPassword: build.mutation({
+      query: (email) => ({
+        url: 'general/forgot-password', 
+        method: 'POST',
+        body: { email },
+      }),
+    }),
+
+    registerUser: build.mutation({
+      query: (userData) => ({
+        url: '/client/register',
+        method: 'POST',
+        body: userData,
+      }),
+    }),
+
+  //admin
+
+
+  getUserActivity: build.query({
+    query: () => 'admin/user-activity',
+  }),
+  getUserPermissions: build.query({
+      query: (userId) => `hr/user/permissions/${userId}`,
+    }),
+
+  resetPassword: build.mutation({
+      query: ({ id, token, password }) => ({
+        url: `/general/reset-password/${id}/${token}`,
+        method: 'POST',
+        body: { password },
+      }),
+  }),
+  getLogs: build.query({
+    query: (params) => ({
+      url: 'admin/logs',
+      params: {
+        page: params.page || 1,
+        limit: params.limit || 50,
+        sort: 'timestamp',
+        order: 'desc',
+        ...params.filters
+      }
+    }),
+    transformResponse: (response) => ({
+      logs: response.logs,
+      total: response.total,
+      pages: response.pages
+    }),
+    // Enable caching
+    keepUnusedDataFor: 300, // Keep data for 5 minutes
+  }),
+
+
+    getPerformance: build.query({
+      query: () => 'hr/performance',
+    }),
+ 
+
     // Fetch all customers
     getCustomers: build.query({
       query: () => `client/customers/`,
       providesTags: ["Customers"],
     }),
     // Fetch all workers
-    getWorkers: build.query({
-      query: () => `hr/worker/`,
-      providesTags: ["Workers"],
-    }),
+    
 
-    postgenerate: build.mutation({
-      query: (userId) => ({
-        url: `hr/generate/${userId}`, // Correctly matches the backend route
-        method: 'POST',
-      }),
-      invalidatesTags: ['Generate'],
-    }),
-    getPerformance: build.query({
-      query: () => 'hr/performance',
-    }),
+    
+    
 
-    // Change role of a worker
-    changeRole: build.mutation({
-      query: ({ userId, newRole }) => ({
-        url: `hr/worker/${userId}/role`,
-        method: "PUT",
-        body: { newRole },
-      }),
-      invalidatesTags: ["Workers"],
-    }),
-    // Fire (delete) a user
-    fireUser: build.mutation({
-      query: ({ userId }) => ({
-        url: `hr/worker/${userId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Workers"],
-    }),
-    // Fetch shipping data with optional parameters
+
     getShipping: build.query({
       query: (params) => {
         const { customerId, product } = params || {};
@@ -117,41 +161,7 @@ export const api = createApi({
     }),
 
     // Logistics queries and mutations
-    getLogistics: build.query({
-      query: () => 'logix/logistic',  // Fetch all logistics
-      providesTags: ['Logistics'],
-    }),
-    getLogisticsById: build.query({
-      query: (id) => `logix/logistic/${id}`, // Fetch logistics by ID
-      providesTags: ['Logistics'],
-    }),
-    getLogisticsByTrackingNum: build.query({
-      query: (trackingNumber) => ({
-        url: `logix/logistic/track`, // Fetch logistics by tracking number
-        method: 'POST',
-        body: { trackingNumber },
-      }),
-      providesTags: ['Logistics'],
-    }),
-    updateLogistics: build.mutation({
-      query: ({ id, currentLocation }) => ({
-        url: `logix/logistic/${id}`, // Update logistics
-        method: "PUT",
-        body: { currentLocation },
-      }),
-      invalidatesTags: ["Logistics"],
-    }),
-    deleteLogistics: build.mutation({
-      query: (id) => ({
-        url: `logix/logistic/${id}`, // Delete logistics
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Logistics"],
-    }),
-    getSales: build.query({
-      query: () => 'sales/sales',
-      providesTags: ['Sales'],
-    }),
+    
 
     getDashboard: build.query({
       query: () => 'general/dashboard',
@@ -172,34 +182,7 @@ export const api = createApi({
     }),
 
     // Integration
-      postToHr: build.mutation({
-        query: ({ department, payload }) => ({
-          url: `management/hr`,
-          method: "POST",
-          body: payload,
-        }),
-      }),
-    postToFinance: build.mutation({
-      query: ({ department, payload }) => ({
-        url: `management/finance`,
-        method: "POST",
-        body: payload,
-      }),
-    }),
-    postToCore: build.mutation({
-      query: ({ department, payload }) => ({
-        url: `management/core`,
-        method: "POST",
-        body: payload,
-      }),
-    }),
-    postToLogistics: build.mutation({
-      query: ({ department, payload }) => ({
-        url: `management/logistics`,
-        method: "POST",
-        body: payload,
-      }),
-    }),
+     
 
 
     postBackup: build.mutation({
@@ -226,24 +209,8 @@ export const api = createApi({
 
     
     
-    postForgotPassword: build.mutation({
-      query: (email) => ({
-        url: 'general/forgot-password', 
-        method: 'POST',
-        body: { email },
-      }),
-    }),
-    //hr
-    getJobPostings: build.query({
-      query: () => 'hr/job-posting',
-    }),
-    getJobPostingById: build.query({
-      query: (id) => `hr/job-postings/${id}`, 
-    }),
-    getpayroll:build.query({
-      query: (id) => `hr/payroll`,
-    }),
-
+  
+ 
 
     posttryBackup: build.mutation({
       query: () => ({
@@ -267,10 +234,7 @@ export const api = createApi({
     }),
 
 
-    gethrdash: build.query({
-      query: () => 'hr/hrdash',
-      providesTags: ['Dashboard'],
-    }),
+  
     
   }),
 
@@ -279,24 +243,32 @@ export const api = createApi({
 // Export the hooks generated by RTK Query
 export const {
   useGetUserQuery,
-  useGetProductsQuery,
+  //fix
+  useLoginUserMutation,
+  useChangePasswordMutation,
+  useRegisterUserMutation,
+  
+//admin
+useGetUserActivityQuery,
+useGetUserPermissionsQuery,
+useResetPasswordMutation,
+useGetLogsQuery,
+
+
+//finance
+
   useGetCustomersQuery,
-  useGetWorkersQuery,
-  usePostgenerateMutation,
+ 
+ 
   useGetPerformanceQuery,
-  useChangeRoleMutation,
-  useFireUserMutation,
+ 
   useGetShippingQuery,
   useCreateShippingMutation,
   useUpdateShippingMutation,
   useDeleteShippingMutation,
   useUpdateUserMutation,
-  useGetLogisticsQuery,
-  useGetLogisticsByIdQuery,
-  useGetLogisticsByTrackingNumQuery,
-  useUpdateLogisticsMutation,
-  useDeleteLogisticsMutation,
-  useGetSalesQuery,
+
+ 
   useGetDashboardQuery,
   useGetNotifQuery,
   usePostNotifMutation,
@@ -305,18 +277,15 @@ export const {
   usePostRestoreMutation ,
   usePostsetDirectoryMutation,
 
-  usePostToHrMutation,
-  usePostToFinanceMutation,
-  usePostToCoreMutation,
-  usePostToLogisticsMutation,
+
   usePostForgotPasswordMutation ,
-  useGetJobPostingsQuery, 
-  useGetJobPostingByIdQuery,
-  useGetpayrollQuery,
+
+
 
   usePosttryBackupMutation,
   usePosttryRestoreMutation,
   usePosttrySaveMutation,
 
-  useGethrdashQuery,
-} = api;
+} = adminApi;
+
+

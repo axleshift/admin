@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    githubId: String,
     name: {
       type: String,
       required: true,
@@ -22,7 +23,8 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["admin", "manager", "superadmin"], // Restrict roles to these options
+      enum: ["admin", "manager", "superadmin",'employee'], 
+      lowercase: true, 
     },
     username: {
       type: String,

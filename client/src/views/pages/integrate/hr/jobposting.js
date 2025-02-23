@@ -17,7 +17,7 @@ import {
   CModalBody,
   CModalFooter,
 } from '@coreui/react';
-import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/api'; // Path to the RTK query API slice
+import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi'; // Path to the RTK query API slice
 import ActivityTracker from '../../../../util/ActivityTracker'; // Import ActivityTracker
 
 const RecruitmentModule = () => {

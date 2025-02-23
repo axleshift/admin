@@ -14,7 +14,7 @@ import {
   CFormInput,
   CButton,
 } from '@coreui/react';
-import { useGetCustomersQuery } from '../../state/api';
+import { useGetCustomersQuery } from '../../state/adminApi';
 import CustomHeader from '../../components/header/customhead';
 import { useNavigate } from 'react-router-dom';
 

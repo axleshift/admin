@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
@@ -38,6 +39,19 @@ const ActivityTracker = ({ path, action, description }) => {
   }, [location, path, action, description, accessToken]);
 
   return null;
+};
+
+ActivityTracker.propTypes = {
+  path: PropTypes.string,
+  action: PropTypes.string,
+  description: PropTypes.string
+};
+
+// Add default props since these are all optional
+ActivityTracker.defaultProps = {
+  path: undefined,
+  action: undefined,
+  description: undefined
 };
 
 export default ActivityTracker;

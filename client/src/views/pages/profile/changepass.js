@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useChangePasswordMutation } from '../../../state/adminApi';
 import {
   CButton,
   CCard,
@@ -12,51 +12,50 @@ import {
   CContainer,
   CRow,
   CCol,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilLockLocked } from '@coreui/icons'
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilLockLocked } from '@coreui/icons';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const ChangePass = () => {
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState(null)
-  const [successMessage, setSuccessMessage] = useState(null)
-  const navigate = useNavigate()
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const navigate = useNavigate();
+
+  const [changePassword, { isLoading, error }] = useChangePasswordMutation();
+
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((prevState) => ({
+      ...prevState,
+      [field]: !prevState[field],
+    }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const email = sessionStorage.getItem('email')
+    e.preventDefault();
+    const email = sessionStorage.getItem('email');
 
-    // Basic validation
     if (newPassword !== confirmPassword) {
-      setErrorMessage('New passwords do not match.')
-      return
+      setErrorMessage('New passwords do not match.');
+      return;
     }
 
     try {
-      // Send a request to verify the current password and change to the new password
-      const response = await axios.put('http://localhost:5053/client/change-password', {
-        email,
-        currentPassword,
-        newPassword,
-      })
-
-      // Check if the password change was successful
-      if (response.data.success) {
-        setSuccessMessage('Password changed successfully!')
-        setTimeout(() => {
-          navigate('/settings') // Navigate back to settings after success
-        }, 2000) // Redirect after 2 seconds
-      }
-    } catch (error) {
-      if (error.response) {
-        setErrorMessage(error.response.data.message || 'An error occurred. Please try again.')
-      } else {
-        setErrorMessage('An error occurred. Please try again later.')
-      }
+      await changePassword({ email, currentPassword, newPassword }).unwrap();
+      setSuccessMessage('Password changed successfully!');
+      setTimeout(() => navigate('/settings'), 2000);
+    } catch (err) {
+      setErrorMessage(err.data?.message || 'An error occurred. Please try again.');
     }
-  }
+  };
 
   return (
     <CContainer>
@@ -68,50 +67,56 @@ const ChangePass = () => {
               {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
               {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
               <CForm onSubmit={handleSubmit}>
-                {/* Current Password Input */}
                 <CInputGroup className="mb-3">
                   <CInputGroupText>
                     <CIcon icon={cilLockLocked} />
                   </CInputGroupText>
                   <CFormInput
-                    type="password"
+                    type={showPassword.current ? 'text' : 'password'}
                     placeholder="Current Password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
                   />
+                  <CInputGroupText onClick={() => togglePasswordVisibility('current')} style={{ cursor: 'pointer' }}>
+                    {showPassword.current ? <FaEyeSlash /> : <FaEye />}
+                  </CInputGroupText>
                 </CInputGroup>
 
-                {/* New Password Input */}
                 <CInputGroup className="mb-4">
                   <CInputGroupText>
                     <CIcon icon={cilLockLocked} />
                   </CInputGroupText>
                   <CFormInput
-                    type="password"
+                    type={showPassword.new ? 'text' : 'password'}
                     placeholder="New Password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                   />
+                  <CInputGroupText onClick={() => togglePasswordVisibility('new')} style={{ cursor: 'pointer' }}>
+                    {showPassword.new ? <FaEyeSlash /> : <FaEye />}
+                  </CInputGroupText>
                 </CInputGroup>
 
-                {/* Confirm New Password Input */}
                 <CInputGroup className="mb-4">
                   <CInputGroupText>
                     <CIcon icon={cilLockLocked} />
                   </CInputGroupText>
                   <CFormInput
-                    type="password"
+                    type={showPassword.confirm ? 'text' : 'password'}
                     placeholder="Confirm New Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
+                  <CInputGroupText onClick={() => togglePasswordVisibility('confirm')} style={{ cursor: 'pointer' }}>
+                    {showPassword.confirm ? <FaEyeSlash /> : <FaEye />}
+                  </CInputGroupText>
                 </CInputGroup>
 
-                <CButton type="submit" color="primary" className="px-4">
-                  Change Password
+                <CButton type="submit" color="primary" className="px-4" disabled={isLoading}>
+                  {isLoading ? 'Updating...' : 'Change Password'}
                 </CButton>
               </CForm>
             </CCardBody>
@@ -119,7 +124,7 @@ const ChangePass = () => {
         </CCol>
       </CRow>
     </CContainer>
-  )
-}
+  );
+};
 
-export default ChangePass
+export default ChangePass;

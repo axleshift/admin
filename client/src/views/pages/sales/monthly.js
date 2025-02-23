@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { CRow, CCol, CCard, CCardHeader, CCardBody } from '@coreui/react';
 import CustomHeader from '../../../components/header/customhead';
-import { useGetSalesQuery } from '../../../state/api';
+import { useGetSalesQuery } from '../../../state/financeApi';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Monthly = () => {

@@ -13,7 +13,16 @@ import {
   CFormSelect,
   CBadge,
 } from '@coreui/react';
-import { useGetWorkersQuery, useChangeRoleMutation, useFireUserMutation, usePostgenerateMutation } from '../../../../state/api';
+import { 
+  usePostToHrMutation, 
+  usePostToFinanceMutation, 
+  usePostToCoreMutation, 
+  usePostToLogisticsMutation,
+  useGetWorkersQuery, 
+  useChangeRoleMutation, 
+  useFireUserMutation,
+   usePostgenerateMutation 
+  } from '../../../../state/hrApi';
 import CustomHeader from '../../../../components/header/customhead';
 import ExcelJS from 'exceljs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,12 +30,7 @@ import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import ActivityTracker from '../../../../util/ActivityTracker'; // Import ActivityTracker
 import GrantAccessModal from '../../scene/modal.js';
 // Import the mutations for the departments
-import { 
-  usePostToHrMutation, 
-  usePostToFinanceMutation, 
-  usePostToCoreMutation, 
-  usePostToLogisticsMutation 
-} from '../../../../state/api'; 
+
 import axios from 'axios'; 
 
 const Works = () => {

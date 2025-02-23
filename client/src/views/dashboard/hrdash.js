@@ -4,7 +4,7 @@ import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import StatBox from "../pages/scene/statbox";
 import CustomHeader from "../../components/header/customhead";
 import { CContainer, CRow, CCol, CCard } from "@coreui/react";
-import { useGethrdashQuery, useGetJobPostingsQuery, useGetpayrollQuery } from "../../state/api";
+import { useGethrdashQuery, useGetJobPostingsQuery, useGetpayrollQuery } from "../../state/hrApi";
 import AnnouncementBox from "../pages/scene/announce";
 
 const Hrdash = () => {

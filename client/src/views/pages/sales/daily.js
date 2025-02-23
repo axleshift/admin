@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { useGetSalesQuery } from '../../../state/api';
+import { useGetSalesQuery } from '../../../state/financeApi';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Daily = () => {

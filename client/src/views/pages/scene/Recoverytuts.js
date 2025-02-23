@@ -1,141 +1,219 @@
 import React, { useState } from 'react';
 import {
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CButton,
-  CFormInput,
+    CContainer,
+    CButton,
+    CRow,
+    CCol,
+    CForm,
+    CFormLabel,
+    CFormInput,
+    CCard,
+    CCardHeader,
+    CCardBody,
+    CCardTitle,
+    CCardText,
+    CSpinner,
+    CAlert
 } from '@coreui/react';
-import { usePostBackupMutation, usePostRestoreMutation, usePostsetDirectoryMutation } from '../../../state/api';
+import axios from 'axios';
 
-const RecoveryTutorial = () => {
-  const [timestamp, setTimestamp] = useState('');
-  const [filename, setFilename] = useState('');
-  const [databaseName, setDatabaseName] = useState('');
-  const [directoryPath, setDirectoryPath] = useState('');
-  
-  const [postBackup, { isLoading: isBackupLoading }] = usePostBackupMutation();
-  const [postRestore, { isLoading: isRestoreLoading }] = usePostRestoreMutation();
-  const [postsetDirectory, { isLoading: isDirectoryLoading }] = usePostsetDirectoryMutation();
+const RecoveryPage = () => {
+    const [directory, setDirectory] = useState('');
+    const [timestamp, setTimestamp] = useState('');
+    const [databaseName, setDatabaseName] = useState('');
+    const [filename, setFilename] = useState('');
+    const [loading, setLoading] = useState({
+        directory: false,
+        backup: false,
+        restore: false
+    });
+    const [status, setStatus] = useState({
+        message: '',
+        type: '', // 'success' or 'danger'
+        visible: false
+    });
 
-  const handleBackup = async () => {
-    if (!directoryPath) {
-      alert('Please select a backup directory first.');
-      return;
-    }
-    try {
-      const response = await fetch('http://localhost:5053/admin/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ backupDir: directoryPath }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      alert(data.message);
-    } catch (error) {
-      console.error('Backup failed:', error);
-      alert(`Backup failed: ${error.message}`);
-    }
-  };
-  
-  
+    const showStatus = (message, type) => {
+        setStatus({ message, type, visible: true });
+        setTimeout(() => setStatus(prev => ({ ...prev, visible: false })), 5000);
+    };
 
-  const handleRestore = async () => {
-    if (!timestamp || !filename || !databaseName || !directoryPath) {
-      alert('Please enter all fields and select a directory.');
-      return;
-    }
-    try {
-      const response = await postRestore({
-        timestamp,
-        filename,
-        databaseName,
-        directoryPath,
-      }).unwrap();
-      alert(response.message);
-    } catch (error) {
-      console.error('Restore failed:', error);
-      alert(error.data?.message || 'Restore failed. Please check the server logs.');
-    }
-  };
-  const handleSelectDirectory = async () => {
-    try {
-      const directoryHandle = await window.showDirectoryPicker();
-      
-      // Log the directory handle to see its details
-      console.log('Directory Handle:', directoryHandle);
-  
-      // Simplified logic for modern browsers
-      const path = directoryHandle?.name;
-  
-      // Log the selected directory name
-      console.log('Selected Directory Name:', path);
-  
-      setDirectoryPath(path);
-  
-      // Save the directory to the backend
-      const result = await postsetDirectory({ directoryPath: path }).unwrap();
-  
-      // Log the backend response
-      console.log('Backend Response:', result);
-  
-      alert(`Directory selected and saved: ${result.directory}`);
-    } catch (error) {
-      console.error('Error selecting directory:', error);
-      alert('Failed to select and save the directory. ' + error.message);
-    }
-  };
-  
-  return (
-    <CCard>
-      <CCardHeader>
-        <h4>System Recovery Tutorial</h4>
-      </CCardHeader>
-      <CCardBody>
-        <CFormInput
-          type="text"
-          placeholder="Enter Backup Timestamp"
-          value={timestamp}
-          onChange={(e) => setTimestamp(e.target.value)}
-        />
-        <CFormInput
-          type="text"
-          placeholder="Enter BSON File Name"
-          value={filename}
-          onChange={(e) => setFilename(e.target.value)}
-        />
-        <CFormInput
-          type="text"
-          placeholder="Enter Database Name"
-          value={databaseName}
-          onChange={(e) => setDatabaseName(e.target.value)}
-        />
-        <CButton
-          color="warning"
-          onClick={handleSelectDirectory}
-          style={{ marginTop: '10px' }}
-          disabled={isDirectoryLoading}
-        >
-          {isDirectoryLoading ? 'Saving...' : 'Select Backup Directory'}
-        </CButton>
-        {directoryPath && (
-          <p>
-            <strong>Selected Directory:</strong> {directoryPath}
-          </p>
-        )}
-        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <CButton color="success" onClick={handleBackup} disabled={isBackupLoading}>
-            {isBackupLoading ? 'Backing up...' : 'Backup Now'}
-          </CButton>
-          <CButton color="danger" onClick={handleRestore} disabled={isRestoreLoading}>
-            {isRestoreLoading ? 'Restoring...' : 'Recover Now'}
-          </CButton>
-        </div>
-      </CCardBody>
-    </CCard>
-  );
+    const handleSetDirectory = async () => {
+        if (!directory) {
+            showStatus('Please enter a directory.', 'danger');
+            return;
+        }
+
+        setLoading(prev => ({ ...prev, directory: true }));
+        try {
+            const response = await axios.post('http://localhost:5053/admin/set-directory', { directory });
+            showStatus(response.data.message, 'success');
+        } catch (error) {
+            showStatus(error?.response?.data?.message || 'Error setting directory', 'danger');
+        } finally {
+            setLoading(prev => ({ ...prev, directory: false }));
+        }
+    };
+
+    const handleBackup = async () => {
+        setLoading(prev => ({ ...prev, backup: true }));
+        try {
+            const response = await axios.post('http://localhost:5053/admin/backup');
+            showStatus(response.data.message, 'success');
+        } catch (error) {
+            showStatus(error?.response?.data?.message || 'Error during backup', 'danger');
+        } finally {
+            setLoading(prev => ({ ...prev, backup: false }));
+        }
+    };
+
+    const handleRestore = async () => {
+        if (!timestamp || !filename || !databaseName) {
+            showStatus('Please fill in all restore fields.', 'danger');
+            return;
+        }
+
+        setLoading(prev => ({ ...prev, restore: true }));
+        try {
+            const response = await axios.post('http://localhost:5053/admin/restore', {
+                timestamp,
+                filename,
+                databaseName,
+            });
+            showStatus(response.data.message, 'success');
+        } catch (error) {
+            showStatus(error?.response?.data?.message || 'Restore failed.', 'danger');
+        } finally {
+            setLoading(prev => ({ ...prev, restore: false }));
+        }
+    };
+
+    return (
+        <CContainer className="py-4">
+            {status.visible && (
+                <CAlert color={status.type} dismissible>
+                    {status.message}
+                </CAlert>
+            )}
+
+            <CRow className="mb-4">
+                <CCol>
+                    <CCard>
+                        <CCardHeader>
+                            <CCardTitle>Backup Directory Configuration</CCardTitle>
+                        </CCardHeader>
+                        <CCardBody>
+                            <CCardText>Set the directory where database backups will be stored</CCardText>
+                            <CForm>
+                                <CFormLabel htmlFor="directory">Backup Directory Path</CFormLabel>
+                                <div className="d-flex gap-2">
+                                    <CFormInput
+                                        id="directory"
+                                        type="text"
+                                        placeholder="/path/to/backup/directory"
+                                        value={directory}
+                                        onChange={(e) => setDirectory(e.target.value)}
+                                    />
+                                    <CButton 
+                                        color="primary"
+                                        onClick={handleSetDirectory}
+                                        disabled={loading.directory}
+                                        style={{ minWidth: '120px' }}
+                                    >
+                                        {loading.directory ? (
+                                            <CSpinner size="sm" />
+                                        ) : (
+                                            'Set Directory'
+                                        )}
+                                    </CButton>
+                                </div>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+
+            <CRow className="g-4">
+                <CCol md={6}>
+                    <CCard>
+                        <CCardHeader>
+                            <CCardTitle>Backup Database</CCardTitle>
+                        </CCardHeader>
+                        <CCardBody>
+                            <CCardText>Create a new backup of the current database state</CCardText>
+                            <CButton 
+                                color="primary"
+                                onClick={handleBackup}
+                                disabled={loading.backup}
+                                className="w-100"
+                            >
+                                {loading.backup ? (
+                                    <CSpinner size="sm" />
+                                ) : (
+                                    'Create Backup'
+                                )}
+                            </CButton>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+
+                <CCol md={6}>
+                    <CCard>
+                        <CCardHeader>
+                            <CCardTitle>Restore Database</CCardTitle>
+                        </CCardHeader>
+                        <CCardBody>
+                            <CCardText>Restore a specific collection from a backup</CCardText>
+                            <CForm>
+                                <div className="mb-3">
+                                    <CFormLabel htmlFor="timestamp">Backup Timestamp</CFormLabel>
+                                    <CFormInput
+                                        id="timestamp"
+                                        type="text"
+                                        placeholder="2025-01-22_08-33-12-PM"
+                                        value={timestamp}
+                                        onChange={(e) => setTimestamp(e.target.value)}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <CFormLabel htmlFor="database">Database Name</CFormLabel>
+                                    <CFormInput
+                                        id="database"
+                                        type="text"
+                                        placeholder="adminis"
+                                        value={databaseName}
+                                        onChange={(e) => setDatabaseName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <CFormLabel htmlFor="filename">BSON Filename</CFormLabel>
+                                    <CFormInput
+                                        id="filename"
+                                        type="text"
+                                        placeholder="users.bson"
+                                        value={filename}
+                                        onChange={(e) => setFilename(e.target.value)}
+                                    />
+                                </div>
+                                <CButton 
+                                    color="warning"
+                                    onClick={handleRestore}
+                                    disabled={loading.restore}
+                                    className="w-100"
+                                >
+                                    {loading.restore ? (
+                                        <CSpinner size="sm" />
+                                    ) : (
+                                        'Restore Collection'
+                                    )}
+                                </CButton>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
+    );
 };
 
-export default RecoveryTutorial;
+export default RecoveryPage;

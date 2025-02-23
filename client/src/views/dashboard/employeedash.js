@@ -16,12 +16,12 @@ import {
 import CustomHeader from '../../components/header/customhead';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faChartLine, faDownload, faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import { useGetDashboardQuery, useGetShippingQuery } from '../../state/api';
+import { useGetDashboardQuery, useGetShippingQuery } from '../../state/adminApi';
 import StatBox from '../pages/scene/statbox';
 import OverviewChart from '../pages/sales/overviewChart';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import BreakdownChart from '../../views/pages/sales/breakdownchart';
+import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
 
 const Employeedash = () => {
@@ -201,15 +201,7 @@ const Employeedash = () => {
         </CCol>
       </CRow>
 
-      {/* Access Token Card */}
-      <CRow className="my-3">
-        <CCol>
-          <CCard>
-            <h5 className="p-3">Access Token</h5>
-            <p className="p-3">{accessToken}</p>
-          </CCard>
-        </CCol>
-      </CRow>
+    
     </CContainer>
   );
 };

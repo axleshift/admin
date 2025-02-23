@@ -99,12 +99,7 @@ const AppHeader = () => {
                 Dashboard
               </CNavLink>
             </CNavItem>
-            <CNavItem>
-              <CNavLink href="#">Users</CNavLink>
-            </CNavItem>
-            <CNavItem>
-              <CNavLink href="#">Settings</CNavLink>
-            </CNavItem>
+            
           </CHeaderNav>
           <CHeaderNav className="ms-auto">
             <CNavItem>
@@ -112,28 +107,23 @@ const AppHeader = () => {
                 <CIcon icon={cilBell} size="lg" />
               </CNavLink>
             </CNavItem>
-            <CDropdown
-              visible={showDropdown}
-              onVisibleChange={setShowDropdown}
-              placement="bottom-end"
-            >
-              <CDropdownMenu className="mt-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {notifications.length === 0 ? (
-                  <CDropdownItem>No new notifications</CDropdownItem>
-                ) : (
-                  notifications.map((notification) => (
-                    <CDropdownItem key={notification.id}>
-                      {notification.message}
-                    </CDropdownItem>
-                  ))
-                )}
-              </CDropdownMenu>
-            </CDropdown>
-            <CNavItem>
-              <CNavLink href="#">
-                <CIcon icon={cilList} size="lg" />
-              </CNavLink>
-            </CNavItem>
+            <CDropdown placement="bottom-end">
+  <CDropdownToggle onClick={() => setShowDropdown(!showDropdown)}>
+    <CIcon icon={cilBell} size="lg" />
+  </CDropdownToggle>
+  {showDropdown && (
+    <CDropdownMenu className="mt-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+      {notifications.length === 0 ? (
+        <CDropdownItem>No new notifications</CDropdownItem>
+      ) : (
+        notifications.map((notification) => (
+          <CDropdownItem key={notification.id}>{notification.message}</CDropdownItem>
+        ))
+      )}
+    </CDropdownMenu>
+  )}
+</CDropdown>
+            
             <CNavItem>
               {/* Message Icon */}
               <CNavLink onClick={handleMessageClick} style={{ cursor: 'pointer' }}>

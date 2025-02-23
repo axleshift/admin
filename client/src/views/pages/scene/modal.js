@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { CModal, CModalHeader, CModalBody, CModalFooter, CButton, CFormCheck } from '@coreui/react';
 import axios from 'axios';
 
@@ -41,7 +42,6 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     fetchPermissions();
   }, [userId]);
 
-  
   useEffect(() => {
     console.log('GrantAccessModal received userId:', userId);
   }, [userId]);
@@ -68,7 +68,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
       const response = await axios.post('http://localhost:5053/hr/user/grant-access', {
         userId,
         newPermissions: selectedPermissions,
-        grantedBy:name, // Replace with the actual current user
+        grantedBy: name,
       });
   
       console.log("✅ Access granted:", response.data);
@@ -110,8 +110,6 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
       alert('Failed to revoke access.');
     }
   };
-  
-  
 
   return (
     <CModal visible={visible} onClose={onClose} onClick={handleModalClick}>
@@ -145,6 +143,12 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
       </CModalFooter>
     </CModal>
   );
+};
+
+GrantAccessModal.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  userId: PropTypes.string.isRequired
 };
 
 export default GrantAccessModal;

@@ -1,7 +1,11 @@
 import express from "express";
-import { getUser, forgotPassword, resetPassword, getDashboardStats } from "../controllers/general.js";
+import { getUser, forgotPassword, resetPassword, getDashboardStats, getAllUsers, updateUser } from "../controllers/general.js";
 
 const router = express.Router();
+router.get('/users',getAllUsers)
+router.put('/users/:id',updateUser)
+
+
 
 router.get("/user/:id", getUser);
 router.post("/forgot-password", forgotPassword);

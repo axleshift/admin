@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import '../src/scss/_custom.scss';
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react';
@@ -10,32 +10,29 @@ import {
   faWindowRestore, faSignsPost, 
   faBullhorn,
   faSquarePersonConfined,
-  faBell
+  faBell,
+  faGlobe
 } from '@fortawesome/free-solid-svg-icons';
 
-// Define the navigation items dynamically based on the user role and department
-
 const _nav = () => {
-  // Fetch user details from sessionStorage
-// Retrieve user details from sessionStorage
-const userRole = sessionStorage.getItem('role'); // e.g., 'superadmin'
-const userDepartment = sessionStorage.getItem('department'); // e.g., 'HR'
-const userUsername = sessionStorage.getItem('username'); 
-const userId = sessionStorage.getItem('userId'); // Declare userId properly
-const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
-const userEmail = sessionStorage.getItem('email');
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
+  const userUsername = sessionStorage.getItem('username'); 
+  const userId = sessionStorage.getItem('userId');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+  const userEmail = sessionStorage.getItem('email');
 
-// Console log all retrieved sessionStorage values
-console.log("✅ Session Storage Values:");
-console.log("Role:", userRole);
-console.log("Department:", userDepartment);
-console.log("Username:", userUsername);
-console.log("User ID:", userId);
-console.log("Permissions:", userPermissions);
-console.log("Email:", userEmail);
+  console.log("✅ Session Storage Values:", {
+    Role: userRole,
+    Department: userDepartment,
+    Username: userUsername,
+    "User ID": userId,
+    Permissions: userPermissions,
+    Email: userEmail
+  });
 
-// State for allowed routes
-const [allowedRoutes, setAllowedRoutes] = useState([]);
+  const [allowedRoutes, setAllowedRoutes] = useState([]);
+  
   useEffect(() => {
     if (!userId) {
       console.error('❌ No userId found in sessionStorage');
@@ -45,7 +42,6 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
     const fetchUserPermissions = async () => {
       try {
         const response = await axios.get(`http://localhost:5053/hr/user/permissions/${userId}`);
-
         console.log('✅ API Response:', response.data);
         
         if (response.data.permissions && response.data.permissions.length > 0) {
@@ -53,11 +49,11 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
         } else {
           console.warn('⚠️ No permissions found for this user.');
         }
-
       } catch (error) {
         console.error('❌ Error fetching permissions:', error);
       }
     };
+
     if (!userPermissions.length) {
       fetchUserPermissions();
     } else {
@@ -65,29 +61,8 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
     }
   }, [userId]);
 
- 
+  const navItems = [];
 
-  console.log('✅ Allowed Routes:', allowedRoutes);
-  const allNavItems = [
-    { path: "/employeedash", name: "Dashboard", icon: faHouse },
-    { path: "/hrdash", name: "HR Dashboard", icon: faHouse },
-    { path: "/financedash", name: "Finance Dashboard", icon: faHouse },
-    { path: "/coredash", name: "Core Dashboard", icon: faHouse },
-    { path: "/logisticdash", name: "Logistic Dashboard", icon: faHouse },
-    { path: "/useractivity/index", name: "User Activity", icon: faListCheck },
-    { path: "/restore", name: "Restore", icon: faWindowRestore },
-    { path: "/tack", name: "Button", icon: faBell },
-    { path: "/freight/transaction", name: "Transactions", icon: faCartShopping },
-    { path: "/oversales", name: "Overview", icon: faCoins },
-    { path: "/worker", name: "Employees", icon: faUser },
-    { path: "/jobposting", name: "Job Post", icon: faSignsPost },
-    { path: "/payroll", name: "Payroll", icon: faCoins },
-    { path: "/customer", name: "Customer", icon: faUserGroup },
-    { path: "/monthly", name: "Monthly", icon: faCalendar },
-    { path: "/daily", name: "Daily", icon: faCalendarDays },
-    { path: "/breakdown", name: "Breakdown", icon: faPieChart },
-  ];
-  
   const accessPermissions = {
     superadmin: {
       HR: [
@@ -111,7 +86,8 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
         '/tack',
         '/recovery',
         '/Toasts',
-        '/chatbox'
+        '/chatbox',
+        '/invoice'
       ],
       Core: [
         '/employeedash',
@@ -204,8 +180,7 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
         '/recovery',
         '/Toasts',
         '/chatbox'
-      ],
-      // ... other departments
+      ]
     },
     admin: {
       HR: [
@@ -216,6 +191,7 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
       ],
       Core: [
         '/coredash',
+        '/shipment',
         '/customer',
         '/monthly',
         '/daily',
@@ -226,8 +202,13 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
         '/freight/transaction',
         '/oversales',
       ],
-      Logistic: [
-        '/logisticdash',
+      Logistics: [
+        '/logisticdash',    // Add routes related to logistics
+        '/shipment',
+        '/customer',
+        '/monthly',
+        '/daily',
+        '/breakdown',
       ],
       Administrative: [
         '/employeedash',
@@ -263,74 +244,41 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
     }
   };
 
-  const navItems = allowedRoutes.map(route => ({
-    component: CNavItem,
-    name: route,
-    to: route,
-    icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-  }));
-
-
-
-  
-
-  // Check if accessPermissions exists for the userRole and userDepartment
-  if (accessPermissions[userRole] && accessPermissions[userRole][userDepartment]) {
-    // Administrative Dashboard Item
+  if (accessPermissions[userRole]?.[userDepartment]) {
+    // Dashboard Section
     if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
       navItems.push(
-       { 
-        component: CNavItem,
-        name: 'Dashboard',
-        to: 'employeedash',
-        icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-        badge: { color: 'info', text: 'NEW' },
-      },
-      
-    );
+        { 
+          component: CNavItem,
+          name: 'Dashboard',
+          to: 'employeedash',
+          icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
+          badge: { color: 'info', text: 'NEW' },
+        }
+      );
     }
 
     // Department-Specific Dashboards
-    if (accessPermissions[userRole][userDepartment].includes('/hrdash')) {
-      navItems.push({
-        component: CNavItem,
-        name: 'HR Dashboard',
-        to: '/hrdash',
-        icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-        badge: { color: 'info' },
-      });
-    }
+    const dashboards = [
+      { path: '/hrdash', name: 'HR Dashboard' },
+      { path: '/financedash', name: 'Finance Dashboard' },
+      { path: '/coredash', name: 'Core Dashboard' },
+      { path: '/logisticdash', name: 'Logistic Dashboard' }
+    ];
 
-    if (accessPermissions[userRole][userDepartment].includes('/financedash')) {
-      navItems.push({
-        component: CNavItem,
-        name: 'Finance Dashboard',
-        to: '/financedash',
-        icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-        badge: { color: 'info' },
-      });
-    }
+    dashboards.forEach(dashboard => {
+      if (accessPermissions[userRole][userDepartment].includes(dashboard.path)) {
+        navItems.push({
+          component: CNavItem,
+          name: dashboard.name,
+          to: dashboard.path,
+          icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
+          badge: { color: 'info' },
+        });
+      }
+    });
 
-    if (accessPermissions[userRole][userDepartment].includes('/coredash')) {
-      navItems.push({
-        component: CNavItem,
-        name: 'Core Dashboard',
-        to: '/coredash',
-        icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-        badge: { color: 'info' },
-      });
-    }
-
-    if (accessPermissions[userRole][userDepartment].includes('/logisticdash')) {
-      navItems.push({
-        component: CNavItem,
-        name: 'Logistic Dashboard',
-        to: '/logisticdash',
-        icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-        badge: { color: 'info' },
-      });
-    }
-
+    // Admin Section
     if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
@@ -351,6 +299,43 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
           name: 'Button', 
           icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
           to: '/tack'
+        },
+        {
+          component: CNavItem, 
+          name: 'Ex', 
+          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
+          to: '/ex'
+        },
+        {
+          component: CNavItem, 
+          name: 'NewUser', 
+          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
+          to: '/registernew'
+        }
+      );
+    }
+
+    // HR Section
+    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
+      navItems.push(
+        { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
+        { 
+          component: CNavItem, 
+          name: 'Employees', 
+          icon: <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px' }} />, 
+          to: '/worker' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Job Post', 
+          icon: <FontAwesomeIcon icon={faSignsPost} style={{ marginRight: '8px' }} />, 
+          to: '/jobposting' 
+        },
+        {
+          component: CNavItem,
+          name: 'Payroll',
+          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />,
+          to: '/payroll'
         }
       );
     }
@@ -370,63 +355,24 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
           name: 'Overview', 
           icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
           to: '/oversales' 
-        }
-      );
-    }
-
-    // Logistic Section
-    if (accessPermissions[userRole][userDepartment].includes('/logisticdash')) {
-      navItems.push(
-        { component: CNavTitle, name: 'Logistics', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'Logistics Dashboard', 
-          icon: <FontAwesomeIcon icon={faTruckFast} style={{ marginRight: '8px' }} />, 
-          to: '/logisticdash' 
-        }
-      );
-    }
-
-    // HR Section
-    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
-      navItems.push(
-        { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'Employees', 
-          icon: <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px' }} />, 
-          to: '/worker' 
         },
         { 
           component: CNavItem, 
-          name: 'JobPost', 
-          icon: <FontAwesomeIcon icon={faSignsPost} style={{ marginRight: '8px' }} />, 
-          to: '/jobposting' 
-        },
-        {
-          component: CNavItem,
-          name:'Payroll',
-          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />,
-          to: '/payroll'
-        }
-      );
-    }
-
-    // Finance Section
-    if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
-      navItems.push(
-        { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'Transactions', 
-          icon: <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />, 
-          to: 'freight/transaction' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Overview', 
+          name: 'Financial Analytics', 
           icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-          to: '/oversales' 
+          to: '/financialanalytics' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Invoice', 
+          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+          to: '/invoice' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Freight Audit', 
+          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+          to: '/freightaudit' 
         }
       );
     }
@@ -458,8 +404,46 @@ const [allowedRoutes, setAllowedRoutes] = useState([]);
           name: 'Breakdown', 
           icon: <FontAwesomeIcon icon={faPieChart} style={{ marginRight: '8px' }} />, 
           to: '/breakdown' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Shipment', 
+          icon: <FontAwesomeIcon icon={faTruckFast} style={{ marginRight: '8px' }} />, 
+          to: '/shipment' 
         }
       );
+    }
+    //logistic
+    if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
+      navItems.push(
+        {   component:CNavTitle, name: 'Logistic', className: 'custom-nav-title'},
+        {
+          component:CNavTitle,
+          name:'Logistic',
+          icon:<FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px'}}/>,
+          to:'/logistic1/index'
+        }
+      )
+    }
+    // Only add Access Permissions section if user is not superadmin
+    if (userRole !== 'superadmin') {
+      // Add "Access Permissions" section at the end
+      navItems.push(
+        { component: CNavTitle, name: 'Access Permissions', className: 'custom-nav-title' }
+      );
+
+      // Add all allowed routes that aren't already in the standard sections
+      const standardRoutes = new Set(navItems.filter(item => item.to).map(item => item.to));
+      allowedRoutes.forEach(route => {
+        if (!standardRoutes.has(route)) {
+          navItems.push({
+            component: CNavItem,
+            name: route.split('/').pop().charAt(0).toUpperCase() + route.split('/').pop().slice(1),
+            to: route,
+            icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
+          });
+        }
+      });
     }
   }
 

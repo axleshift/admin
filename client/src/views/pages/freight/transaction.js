@@ -18,7 +18,7 @@ import {
   useGetShippingQuery,
   useUpdateShippingMutation,
   useDeleteShippingMutation,
-} from '../../../state/api'
+} from '../../../state/adminApi'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

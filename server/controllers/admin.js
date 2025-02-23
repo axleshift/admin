@@ -1,89 +1,172 @@
-
+import Employee from '../model/employee.js';
 import path from 'path';
-import fs from 'fs';
+import fs, { access } from 'fs';
+import os from 'os';
 import { exec } from 'child_process';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Message from '../model/message.js'
 import User from '../model/User.js'
+import Log from '../model/Log.js';
+import passport from 'passport'
+import { Strategy as GitHubStrategy } from "passport-github2";
+import jwt  from 'jsonwebtoken'
+import dotenv from 'dotenv'
+import axios from 'axios'
+import mongoose from 'mongoose'
+
+
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let backupDir = ''; // The base directory for backups
 const mongoURL = process.env.MONGO_URL || 'your-default-mongo-uri-here';
 
+const normalizePath = (filepath) => {
+  return path.normalize(filepath).replace(/\\/g, '/');
+};
+
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: process.env.GITHUB_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        console.log('GitHub access token:', accessToken);
+        let user = await User.findOne({ githubId: profile.id });
+
+        if (!user) {
+          const departments = ["HR", "Administrative", "Finance", "Core", "Logistics"];
+          const roles = ["admin", "manager", "superadmin", "employee"];
+
+          user = new User({
+            githubId: profile.id,
+            name: profile.displayName || "GitHub User",
+            email: profile.emails?.[0]?.value || `user${profile.id}@example.com`,
+            password: "N/A", // Password not required for OAuth users
+            phoneNumber: "N/A",
+            role: roles[Math.floor(Math.random() * roles.length)],
+            username: profile.username,
+            department: departments[Math.floor(Math.random() * departments.length)],
+            accessToken,
+            refreshToken,
+          });
+
+          await user.save();
+        }
+
+        const token = jwt.sign(
+          {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            phoneNumber: user.phoneNumber,
+            department: user.department,
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" }
+        );
+
+        return done(null, { token });
+      } catch (error) {
+        return done(error, null);
+      }
+    }
+  )
+);
+
+export const githubAuth = passport.authenticate("github", { scope: ["profile", "email"] });
+export const githubCallback = passport.authenticate("github", { session: false });
+export const sendToken = (req, res) => {
+  res.json({ token: req.user.token });
+};
+
+export const getUsersBy = async (req, res) => {
+  try {
+    const department = req.params.department.toLowerCase();
+    const users = await User.find({ department });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: `No users found in ${department} department` });
+    }
+    res.json({ department, users });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 
 export const setBackupDirectory = (req, res) => {
-    const { directory } = req.body;
+  const { directory } = req.body;
 
-    if (!directory) {
-        return res.status(400).json({ message: 'Directory is required' });
-    }
+  if (!directory) {
+      return res.status(400).json({ message: 'Directory is required' });
+  }
 
-    backupDir = directory;
-    console.log(`Backup directory set to: ${backupDir}`);
-    res.status(200).json({ message: `Backup directory set to: ${backupDir}` });
+  // Create absolute path based on OS
+  const absolutePath = path.resolve(directory);
+  backupDir = normalizePath(absolutePath);
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+  }
+
+  console.log(`Backup directory set to: ${backupDir}`);
+  res.status(200).json({ message: `Backup directory set to: ${backupDir}` });
 };
 
 export const backupDatabase = (req, res) => {
-    if (!backupDir) {
-        return res.status(400).json({ message: 'Backup directory not set' });
-    }
+  if (!backupDir) {
+      return res.status(400).json({ message: 'Backup directory not set' });
+  }
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = now.getHours();
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = String(hours % 12 || 12).padStart(2, '0');
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+  const filePath = normalizePath(path.join(backupDir, timestamp));
 
-    const timestamp = `${year}-${month}-${day}_${formattedHours}-${minutes}-${seconds}-${ampm}`;
-    const filePath = path.join(backupDir, `${timestamp}`);
+  const databaseName = 'adminis';
+  
+  // Use --uri for MongoDB connection string
+  const command = `mongodump --uri "${mongoURL}" --db ${databaseName} --out "${filePath}"`;
 
-    const databaseName = 'adminis';
-    const command = `mongodump --uri "${mongoURL}" --db ${databaseName} --out ${filePath}`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error('Error executing mongodump:', error);
-            return res.status(500).json({ message: 'Backup failed', error: error.message });
-        }
-        res.status(200).json({ message: 'Backup successful', filePath });
-    });
+  exec(command, (error, stdout, stderr) => {
+      if (error) {
+          console.error('Error executing mongodump:', error);
+          return res.status(500).json({ message: 'Backup failed', error: error.message });
+      }
+      res.status(200).json({ message: 'Backup successful', filePath });
+  });
 };
 
 export const restoreDatabase = (req, res) => {
-    const { timestamp, filename, databaseName } = req.body;
+  const { timestamp, filename, databaseName } = req.body;
 
-    if (!timestamp || !filename || !databaseName) {
-        return res.status(400).json({ message: 'All inputs are required: timestamp, filename, and database name.' });
-    }
+  if (!timestamp || !filename || !databaseName) {
+      return res.status(400).json({ message: 'All inputs are required: timestamp, filename, and database name.' });
+  }
 
-    const timestampRegex = /^\d{4}-\d{2}-\d{2}_[0-1]?[0-9]-[0-5]?[0-9]-[0-5]?[0-9]-[AP]{1}[M]{1}$/;
-    if (!timestamp.match(timestampRegex)) {
-        return res.status(400).json({ message: 'Invalid timestamp format. Use YYYY-MM-DD_HH-MM-SS-AM/PM.' });
-    }
+  const filePath = normalizePath(path.join(backupDir, timestamp, databaseName, filename));
 
-    const filePath = path.join(backupDir, timestamp, databaseName, filename);
+  if (!fs.existsSync(filePath)) {
+      return res.status(400).json({ message: `Backup file not found at ${filePath}. Ensure the file exists.` });
+  }
 
-    if (!fs.existsSync(filePath)) {
-        return res.status(400).json({ message: `Backup file not found at ${filePath}. Ensure the file exists.` });
-    }
+  const collectionName = path.basename(filename, '.bson');
+  const command = `mongorestore --uri="${mongoURL}" --nsInclude=${databaseName}.${collectionName} "${filePath}"`;
 
-    const collectionName = path.basename(filename, '.bson');
-    const command = `mongorestore --uri="${mongoURL}" --nsInclude=${databaseName}.${collectionName} "${filePath}"`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error('Restore failed:', stderr);
-            return res.status(500).json({ message: `Restore failed. Error: ${stderr}` });
-        }
-        res.json({ message: `Collection '${collectionName}' restored successfully into database '${databaseName}' from ${filePath}` });
-    });
+  exec(command, (error, stdout, stderr) => {
+      if (error) {
+          console.error('Restore failed:', stderr);
+          return res.status(500).json({ message: `Restore failed. Error: ${stderr}` });
+      }
+      res.json({ message: `Collection '${collectionName}' restored successfully into database '${databaseName}' from ${filePath}` });
+  });
 };
-
 
 export const generateAnnouncement = async (req, res) => {
     try {
@@ -372,61 +455,239 @@ export const handleStatusUpdate = async (req, res) => {
     }
   };
   
+
   export const updateMessageStatus = async (req, res) => {
+      try {
+          const { id } = req.params;
+          const { status, responderUsername } = req.body;
+  
+          if (!id || !status || !responderUsername) {
+              return res.status(400).json({ success: false, error: "Missing required fields" });
+          }
+  
+          if (!['accepted', 'cancelled'].includes(status)) {
+              return res.status(400).json({ success: false, error: "Invalid status" });
+          }
+  
+          // Find the request in the database
+          const message = await Message.findById(id);
+          if (!message) {
+              return res.status(404).json({ success: false, error: "Message not found" });
+          }
+  
+          // Update the request status
+          message.status = status;
+          message.responseMetadata = {
+              respondedBy: responderUsername,
+              responseTime: new Date()
+          };
+  
+          await message.save();
+  
+          // Grant access if request was accepted
+          if (status === "accepted") {
+              try {
+                  const userId = message.metadata.requester;
+                  const pagePath = `/${message.metadata.pageName.toLowerCase()}`;
+  
+                  // Find user and update permissions
+                  const user = await User.findOne({ username: userId });
+                  if (!user) {
+                      throw new Error('User not found');
+                  }
+  
+                  // Set up expiry date (24 hours from now)
+                  const now = new Date();
+                  const expiryDate = new Date();
+                  expiryDate.setDate(now.getDate() + 1);
+  
+                  // Update user's permissions
+                  if (!user.permissions) {
+                      user.permissions = [];
+                  }
+                  if (!user.permissions.includes(pagePath)) {
+                      user.permissions.push(pagePath);
+                  }
+  
+                  // Update expiry map
+                  if (!user.expiryMap) {
+                      user.expiryMap = {};
+                  }
+                  user.expiryMap[pagePath] = expiryDate;
+  
+                  // Save the updated user
+                  await user.save();
+                  console.log(`Updated permissions for user ${userId}:`, {
+                      permissions: user.permissions,
+                      expiryMap: user.expiryMap
+                  });
+  
+                  // Emit event via socket.io
+                  const io = req.app.get("io");
+                  if (io) {
+                      io.emit("permissionUpdated", {
+                          userId,
+                          grantedBy: responderUsername,
+                          name: user.name,
+                          permissions: [pagePath]
+                      });
+                      console.log(`Sent real-time notification to ${userId}`);
+                  }
+              } catch (error) {
+                  console.error("Error granting access:", error);
+                  return res.status(500).json({ 
+                      success: false, 
+                      error: "Failed to grant access",
+                      details: error.message 
+                  });
+              }
+          }
+  
+          res.json({ 
+              success: true, 
+              message: `Request ${status} and permissions ${status === 'accepted' ? 'granted' : 'unchanged'}`, 
+              data: message 
+          });
+      } catch (error) {
+          console.error("Error updating message:", error);
+          res.status(500).json({ 
+              success: false, 
+              error: "Failed to update request status",
+              details: error.message 
+          });
+      }
+  };
+
+
+  export const createLog = async (user, action, description, route ) => {
+      try {
+          const newLog = new Log({
+              username: user.username,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              action,
+              description,
+              route, // Ensure route is always provided
+          });
+          await newLog.save();
+      } catch (error) {
+          console.error('Error creating log:', error);
+      }
+  };
+  
+  
+  // Log user route visits
+  export const logRouteVisit = async (req, res, next) => {
+      if (req.session.user) {
+          const { username, name, department, role } = req.session.user;
+          const route = req.originalUrl;
+          const description = `User visited ${route}`;
+  
+          // Exclude logging for /logs/activity route
+          if (route !== '/try/logs/activity') { // <- This is the crucial change
+              try {
+                  await createLog({ username, name, department, role }, 'Route Visit', description, route);
+              } catch (error) {
+                  console.error('Error logging route visit:', error);
+              }
+          }
+  
+      }
+      next();
+  };
+  
+  // Fetch all logs
+  export const getLogs = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { status, responderUsername } = req.body;
-
-        if (!id || !status || !responderUsername) {
-            return res.status(400).json({ success: false, error: "Missing required fields" });
-        }
-
-        if (!['accepted', 'cancelled'].includes(status)) {
-            return res.status(400).json({ success: false, error: "Invalid status" });
-        }
-
-        // Find the request in the database
-        const message = await Message.findById(id);
-        if (!message) {
-            return res.status(404).json({ success: false, error: "Message not found" });
-        }
-
-        // Update the request status
-        message.status = status;
-        message.responseMetadata = {
-            respondedBy: responderUsername,
-            responseTime: new Date()
-        };
-
-        await message.save();
-
-        // Grant access if request was accepted
-        if (status === "accepted") {
-            try {
-                const userId = message.metadata.requester;
-                const pageName = message.metadata.pageName;
-
-                // Emit event via socket.io
-                const io = req.app.get("io");
-                if (io) {
-                    io.emit("requestStatusUpdate", {
-                        userId,
-                        status,
-                        messageId: message._id,
-                        respondedBy: responderUsername,
-                        pageName
-                    });
-                    console.log(`Sent real-time notification to ${userId}`);
-                }
-            } catch (error) {
-                console.error("Error granting access:", error);
-                return res.status(500).json({ success: false, error: "Failed to grant access" });
-            }
-        }
-
-        res.json({ success: true, message: `Request ${status}`, data: message });
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const skip = (page - 1) * limit;
+  
+      // Build filter query
+      const filterQuery = {};
+      if (req.query.username) filterQuery.username = new RegExp(req.query.username, 'i');
+      if (req.query.department) filterQuery.department = new RegExp(req.query.department, 'i');
+      if (req.query.role) filterQuery.role = new RegExp(req.query.role, 'i');
+      if (req.query.action) filterQuery.action = new RegExp(req.query.action, 'i');
+      if (req.query.startDate || req.query.endDate) {
+        filterQuery.timestamp = {};
+        if (req.query.startDate) filterQuery.timestamp.$gte = new Date(req.query.startDate);
+        if (req.query.endDate) filterQuery.timestamp.$lte = new Date(req.query.endDate);
+      }
+  
+      // Execute queries in parallel
+      const [logs, total] = await Promise.all([
+        Log.find(filterQuery)
+          .sort({ timestamp: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(), // Use lean() for better performance
+        Log.countDocuments(filterQuery)
+      ]);
+  
+      res.status(200).json({
+        logs,
+        total,
+        pages: Math.ceil(total / limit)
+      });
     } catch (error) {
-        console.error("Error updating message:", error);
-        res.status(500).json({ success: false, error: "Failed to update request status" });
+      console.error('Error fetching logs:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
     }
-};
+  };
+  
+  export const logFrontendActivity = async (req, res) => {
+      try {
+          const user = req.session.user; // Get user session
+  
+          if (!user) {
+              return res.status(401).json({ message: "Unauthorized: No user session found" });
+          }
+  
+          const { route, action, description } = req.body; // Get frontend data
+  
+          if (!route || !action || !description) {
+              return res.status(400).json({ message: "Missing required fields" });
+          }
+  
+          // Log activity
+          await Log.create({
+              username: user.username,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              route,        // Store the route from frontend
+              action,       // Store the action from frontend
+              description,  // Store the description from frontend
+              timestamp: new Date()
+          });
+  
+          res.status(200).json({ message: "Activity logged successfully" });
+      } catch (error) {
+          console.error("❌ Error logging activity:", error);
+          res.status(500).json({ message: "Internal Server Error" });
+      }
+  };
+  
+  
+  export const getUserActivity = async (req, res) => {
+      try {
+          if (!req.session.user) {
+              return res.status(401).json({ message: "Unauthorized: No user session found" });
+          }
+  
+          const { username } = req.session.user; // Get username from session
+  
+          const logs = await Log.find({ username }).sort({ timestamp: -1 }); // Fetch logs by username
+  
+          if (!logs.length) {
+              return res.status(404).json({ message: "No activity found for this user" });
+          }
+  
+          res.status(200).json(logs);
+      } catch (error) {
+          console.error("❌ Error fetching user activity:", error);
+          res.status(500).json({ message: "Internal Server Error" });
+      }
+  };

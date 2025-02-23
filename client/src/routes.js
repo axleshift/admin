@@ -9,6 +9,8 @@ const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
 
+const NewReg = React.lazy(() => import('./views/pages/register/registernew'));
+
 const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
 const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
 
@@ -18,13 +20,16 @@ const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
 const Payroll = React.lazy(() => import('./views/pages/integrate/hr/payroll'));
 // core
+const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
 
 // finance
+const FreightAudit = React.lazy(() => import("./views/pages/integrate/finance/freightaudit"))
+const FinancialAnalytics = React.lazy(() => import("./views/pages/integrate/finance/financialanalytics"))
+const Invoice = React.lazy(() => import("./views/pages/integrate/finance/invoice"))
 
 // logistics
 const Customers = React.lazy(() => import('./views/customers/index'));
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'));
-const AddCustomer = React.lazy(() => import('./views/customers/add'));
 const Land = React.lazy(() => import('./views/pages/freight/land'));
 const Transaction = React.lazy(() => import('./views/pages/freight/transaction'));
 const Shipping = React.lazy(() => import('./views/pages/freight/shipping'));
@@ -49,7 +54,7 @@ const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'))
 
 const Button = React.lazy(() => import('./views/pages/scene/button'));
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
-
+const Ex = React.lazy(()=>import ('./views/pages/scene/ex'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
 
@@ -60,14 +65,15 @@ const routes = [
   { path: '/coredash', name: 'Dashboard', element: <ProtectedRoute><CoreDash /></ProtectedRoute> },
   { path: '/financedash', name: 'Dashboard', element: <ProtectedRoute><FinanceDash /></ProtectedRoute> },
 
+  { path: '/registernew', name: 'Register', element: <ProtectedRoute><NewReg /></ProtectedRoute> },
+
   { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
   { path: '/chatbox' , name:'chatbox', element: <ProtectedRoute><Chatbox/></ProtectedRoute>},
 
   { path: '/register', name: 'Register', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
   { path: '/customer', name: 'Customer', element: <ProtectedRoute><Customers /></ProtectedRoute> },
-  { path: '/add', name: 'Add Customer', element: <ProtectedRoute><AddCustomer /></ProtectedRoute> },
-  { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },
+   { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },
   { path: '/jobposting', name: 'Job Posting', element: <ProtectedRoute><Jobpost /></ProtectedRoute> },
   { path: '/payroll', name: 'Payroll', element: <ProtectedRoute><Payroll /></ProtectedRoute> },
   { path: '/profile', name: 'Profile Page', element: <ProtectedRoute><Profile /></ProtectedRoute> },
@@ -87,10 +93,18 @@ const routes = [
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },
   { path: '/logistic1/pin', name: 'Track', element: <ProtectedRoute><Pin /></ProtectedRoute> },
 
+
+  //finance
+  { path: '/freightaudit', name:'FreightAudit', element: <ProtectedRoute><FreightAudit /></ProtectedRoute> },
+  { path: '/financialanalytics', name:'FreightAudit', element: <ProtectedRoute><FinancialAnalytics /></ProtectedRoute> },
+  { path: '/invoice', name:'FreightAudit', element: <ProtectedRoute><Invoice /></ProtectedRoute> },
+
+  //core
+  { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
   //trial
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
   { path: '/tack' , name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
-
+  { path: '/ex', name:'Ex', element: <ProtectedRoute><Ex /></ProtectedRoute>}
 ];
 
 export default routes;

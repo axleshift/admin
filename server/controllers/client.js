@@ -1,11 +1,8 @@
 
 import Log from '../model/Log.js';
 import { createLog } from '../controllers/try.js';  
-
 import Customer from "../model/Customer.js";
-
 import User from "../model/User.js";
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateUsername } from "../UTIL/generateCode.js";
@@ -123,6 +120,12 @@ export const loginUser = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
+        // Check if the user has one of the allowed roles: admin, superadmin, or manager
+        const allowedRoles = ["admin", "superadmin", "manager"];
+        if (!allowedRoles.includes(user.role)) {
+            return res.status(403).json({ message: "You do not have permission to access this application." });
+        }
+
         // Generate JWT Access Token
         const accessToken = jwt.sign(
             { id: user._id },
@@ -171,6 +174,7 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 
 

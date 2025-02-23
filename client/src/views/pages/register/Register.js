@@ -16,6 +16,7 @@ import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilPhone, cilUser } from '@coreui/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useRegisterUserMutation } from '../../../state/adminApi';
 
 const Register = () => {
   const [data, setData] = useState({
@@ -31,51 +32,50 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-
+  const [registerUser] = useRegisterUserMutation()
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    const errors = {};
+    const errors = {}
 
     // Validate fields
-    if (!data.name) errors.name = true;
-    if (!data.email) errors.email = true;
-    if (!data.phoneNumber) errors.phoneNumber = true;
-    if (!data.password) errors.password = true;
-    if (data.password !== data.repeatPassword) errors.repeatPassword = true;
-    if (!data.role) errors.role = true;
-    if (!data.department) errors.department = true;
+    if (!data.name) errors.name = true
+    if (!data.email) errors.email = true
+    if (!data.phoneNumber) errors.phoneNumber = true
+    if (!data.password) errors.password = true
+    if (data.password !== data.repeatPassword) errors.repeatPassword = true
+    if (!data.role) errors.role = true
+    if (!data.department) errors.department = true
 
     if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      setError('Please fill all required fields');
-      return;
+      setValidationErrors(errors)
+      setError('Please fill all required fields')
+      return
     }
 
     // Clear errors if valid
-    setValidationErrors({});
-    setError('');
+    setValidationErrors({})
+    setError('')
 
     const requestData = {
       ...data,
       adminUsername: data.role === 'admin' ? data.name : undefined,
-    };
-
-    setLoading(true);
-    try {
-      const response = await axios.post('http://localhost:5053/client/register', requestData);
-      console.log(response.data);
-      navigate('/worker');
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Registration failed');
-    } finally {
-      setLoading(false);
     }
-  };
 
+    setLoading(true)
+    try {
+      const response = await registerUser(requestData).unwrap()
+      console.log(response)
+      navigate('/worker')
+    } catch (err) {
+      console.error('Registration error:', err)
+      setError(err.data?.error || 'Registration failed')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>

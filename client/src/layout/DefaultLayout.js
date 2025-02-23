@@ -1,6 +1,6 @@
 import React from 'react'
 import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
-import { useGetUserQuery } from '../state/api'
+import { useGetUserQuery } from '../state/adminApi'
 import { useSelector } from 'react-redux'
 
 const DefaultLayout = () => {

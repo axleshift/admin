@@ -12,9 +12,12 @@ import {
     access,
     getUserPermissions,
     revokeAccess,
+    fetchhrdata,
   } from "../controllers/hr.js";
 
 const router = express.Router();
+router.get('/hr',fetchhrdata)
+
 router.get("/worker", getWorker);
 
 router.post('/generate/:userId', generateOAuth);

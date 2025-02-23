@@ -1,4 +1,6 @@
 import User from "../model/User.js";
+import Employee from '../model/employee.js';
+
 import transaction from "../model/transaction.js";
 import Overall from '../model/overall.js';
 import jwt from "jsonwebtoken";
@@ -8,6 +10,62 @@ import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 
 dotenv.config();
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find(); // Fetch all users
+        res.status(200).json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+export const updateUser = async (req, res) => {
+    const { role, department, password } = req.body;
+    
+    try {
+        let updateFields = { role, department };
+
+        // If password is provided, hash and update it
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            updateFields.password = await bcrypt.hash(password, salt);
+        } else {
+            updateFields.$unset = { password: "" }; // Remove password if empty
+        }
+
+        // Find and update the user
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            updateFields,
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find and update Employee record
+        const employeeData = {
+            userId: updatedUser._id,
+            role: updatedUser.role,
+            department: updatedUser.department
+        };
+
+        let employee = await Employee.findOneAndUpdate(
+            { userId: updatedUser._id }, 
+            employeeData, 
+            { upsert: true, new: true }
+        );
+
+        // ✅ Correct response
+        return res.status(200).json({ updatedUser, employee });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+};
+
 
 export const getUser = async (req, res) => {
     try {
@@ -65,6 +123,7 @@ export const forgotPassword = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
+
 export const resetPassword = async (req, res) => {
     const { id, token } = req.params;
     const { password } = req.body;
@@ -76,9 +135,15 @@ export const resetPassword = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
-        await user.save();
+        
+        // Normalize role to be case-insensitive
+        if (user.role) {
+            user.role = user.role.toLowerCase();
+        }
 
+        await user.save();
         res.json({ Status: "Success" });
+
     } catch (err) {
         if (err.name === "JsonWebTokenError") {
             return res.status(400).json({ Status: "Error with token" });
@@ -88,6 +153,7 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ Status: "Internal Server Error", error: err.message });
     }
 };
+
 
 
 

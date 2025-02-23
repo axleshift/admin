@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from 'axios';
 import {
   CCard,
   CCardBody,
@@ -12,10 +11,12 @@ import {
   CSpinner,
   CRow,
   CBadge,
+  CPagination,
+  CPaginationItem,
 } from "@coreui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRecordVinyl } from "@fortawesome/free-solid-svg-icons";
-import "../../../scss/profile.scss";
+import { useGetUserActivityQuery, useGetUserPermissionsQuery } from '../../../state/adminApi'
 
 const Profile = () => {
   const [user, setUser] = useState({
@@ -26,15 +27,34 @@ const Profile = () => {
     department: "",
     permissions: [],
   });
-  const [allowedRoutes, setAllowedRoutes] = useState([]);
   const [isBoxVisible, setIsBoxVisible] = useState(false);
   const [ShowActivityLayout, setShowActivityLayout] = useState(true);
-  const [userActivity, setUserActivity] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
+  const userId = sessionStorage.getItem("userId");
+  
+  // Using RTK Query hooks
+  const { 
+    data: userActivity = [], 
+    isLoading: activityLoading, 
+    error: activityError,
+    refetch: refetchActivity
+  } = useGetUserActivityQuery(undefined, {
+    skip: !isBoxVisible,
+    // Add credentials to match backend session requirements
+    credentials: 'include'
+  });
+
+  const { 
+    data: permissionsData,
+    isLoading: permissionsLoading
+  } = useGetUserPermissionsQuery(userId, {
+    skip: !userId,
+    credentials: 'include'
+  });
   useEffect(() => {
-    // Retrieve user data and permissions from sessionStorage
+    // Retrieve user data from sessionStorage
     const permissions = sessionStorage.getItem("permissions");
     const userData = {
       name: sessionStorage.getItem("name") || "Unknown Name",
@@ -47,38 +67,16 @@ const Profile = () => {
     setUser(userData);
   }, []);
 
-  useEffect(() => {
-    const userId = sessionStorage.getItem("userId");
-    if (!userId) {
-      console.error("❌ No userId found in sessionStorage");
-      return;
-    }
-
-    const fetchUserPermissions = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5053/hr/user/permissions/${userId}`
-        );
-        console.log("✅ API Response:", response.data);
-
-        if (response.data.permissions && response.data.permissions.length > 0) {
-          setAllowedRoutes(response.data.permissions);
-        } else {
-          console.warn("⚠️ No permissions found for this user.");
-        }
-      } catch (error) {
-        console.error("❌ Error fetching permissions:", error);
-      }
-    };
-
-    fetchUserPermissions();
-  }, []);
-
-  const allPermissions = [...new Set([...user.permissions, ...allowedRoutes])];
+  // Combine permissions from both sources
+  const allPermissions = [
+    ...new Set([
+      ...(user.permissions || []),
+      ...(permissionsData?.permissions || [])
+    ])
+  ];
 
   // Function to filter and format activity logs
   const formatActivityLog = (log) => {
-    // Skip logs that contain API endpoints or technical descriptions
     if (
       log.action?.includes('/logs/activity') ||
       log.action?.includes('/user-activity') ||
@@ -95,28 +93,10 @@ const Profile = () => {
     };
   };
 
-  const fetchUserActivity = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.get("http://localhost:5053/try/user-activity", {
-        withCredentials: true,
-      });
-
-      // Filter and transform the activity logs
-      const filteredActivity = (response.data || [])
-        .map(formatActivityLog)
-        .filter(log => log !== null);
-
-      setUserActivity(filteredActivity);
-      setShowActivityLayout(true);
-    } catch (err) {
-      console.error("Error fetching user activity:", err);
-      setError("Failed to load activity. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter and transform activity logs
+  const filteredActivity = (userActivity || [])
+    .map(formatActivityLog)
+    .filter(log => log !== null);
 
   return (
     <div className="profile-container">
@@ -130,10 +110,7 @@ const Profile = () => {
                   color="primary"
                   variant="ghost"
                   className="activity-toggle-btn"
-                  onClick={() => {
-                    setIsBoxVisible(!isBoxVisible);
-                    fetchUserActivity();
-                  }}
+                  onClick={() => setIsBoxVisible(!isBoxVisible)}
                 >
                   <FontAwesomeIcon icon={faRecordVinyl} />
                 </CButton>
@@ -169,7 +146,9 @@ const Profile = () => {
 
               <div className="permissions-section mt-4">
                 <h4 className="mb-3">Permissions</h4>
-                {allPermissions.length > 0 ? (
+                {permissionsLoading ? (
+                  <CSpinner color="primary" size="sm" />
+                ) : allPermissions.length > 0 ? (
                   <CListGroup>
                     {allPermissions.map((permission, index) => (
                       <CListGroupItem
@@ -199,33 +178,100 @@ const Profile = () => {
               </CCardHeader>
               <CCardBody className="activity-body">
                 <div className="activity-scroll-container">
-                  {loading ? (
+                  {activityLoading ? (
                     <div className="text-center p-4">
                       <CSpinner color="primary" />
                     </div>
-                  ) : error ? (
-                    <div className="error-message">{error}</div>
-                  ) : userActivity.length > 0 ? (
-                    <CListGroup>
-                      {userActivity.map((log, index) => (
-                        <CListGroupItem
-                          key={`activity-${index}`}
-                          className="activity-item mb-3"
-                        >
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <CBadge color="primary" className="activity-badge">
-                              {log.action}
-                            </CBadge>
-                            <small className="text-medium-emphasis">
-                              {new Date(log.timestamp).toLocaleString()}
-                            </small>
-                          </div>
-                          <p className="mb-0 activity-description">
-                            {log.description}
-                          </p>
-                        </CListGroupItem>
-                      ))}
-                    </CListGroup>
+                  ) : activityError ? (
+                    <div className="error-message">Failed to load activity. Please try again.</div>
+                  ) : filteredActivity.length > 0 ? (
+                    <>
+                      <CListGroup>
+                        {filteredActivity
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((log, index) => (
+                            <CListGroupItem
+                              key={`activity-${index}`}
+                              className="activity-item mb-3"
+                            >
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <CBadge color="primary" className="activity-badge">
+                                  {log.action}
+                                </CBadge>
+                                <small className="text-medium-emphasis">
+                                  {new Date(log.timestamp).toLocaleString()}
+                                </small>
+                              </div>
+                              <p className="mb-0 activity-description">
+                                {log.description}
+                              </p>
+                            </CListGroupItem>
+                          ))}
+                      </CListGroup>
+
+                      {Math.ceil(filteredActivity.length / itemsPerPage) > 1 && (
+                        <div className="d-flex justify-content-center mt-4">
+                          <CPagination aria-label="Activity log pagination">
+                            <CPaginationItem
+                              aria-label="Previous"
+                              onClick={() => setCurrentPage(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              <span aria-hidden="true">&laquo;</span>
+                            </CPaginationItem>
+
+                            {(() => {
+                              const totalPages = Math.ceil(filteredActivity.length / itemsPerPage);
+                              const maxVisiblePages = 5;
+                              let pages = [];
+
+                              if (totalPages <= maxVisiblePages) {
+                                pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+                              } else {
+                                pages.push(1);
+                                let start = Math.max(currentPage - 1, 2);
+                                let end = Math.min(currentPage + 1, totalPages - 1);
+                                if (start === 2) end = 4;
+                                if (end === totalPages - 1) start = totalPages - 3;
+                                if (start > 2) pages.push('...');
+                                for (let i = start; i <= end; i++) {
+                                  pages.push(i);
+                                }
+                                if (end < totalPages - 1) pages.push('...');
+                                pages.push(totalPages);
+                              }
+
+                              return pages.map((page, index) => (
+                                page === '...' ? (
+                                  <CPaginationItem
+                                    key={`ellipsis-${index}`}
+                                    disabled
+                                  >
+                                    ...
+                                  </CPaginationItem>
+                                ) : (
+                                  <CPaginationItem
+                                    key={page}
+                                    active={currentPage === page}
+                                    onClick={() => setCurrentPage(page)}
+                                  >
+                                    {page}
+                                  </CPaginationItem>
+                                )
+                              ));
+                            })()}
+
+                            <CPaginationItem
+                              aria-label="Next"
+                              onClick={() => setCurrentPage(currentPage + 1)}
+                              disabled={currentPage === Math.ceil(filteredActivity.length / itemsPerPage)}
+                            >
+                              <span aria-hidden="true">&raquo;</span>
+                            </CPaginationItem>
+                          </CPagination>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-center text-medium-emphasis">
                       No activity logs found

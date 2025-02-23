@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetLogisticsByTrackingNumQuery, useGetLogisticsQuery } from '../../../../state/api'; // Adjust the import path as necessary
+import { useGetLogisticsByTrackingNumQuery, useGetLogisticsQuery } from '../../../../state/adminApi'; // Adjust the import path as necessary
 import axios from 'axios'; // Ensure axios is imported
 
 const Pin = () => {
