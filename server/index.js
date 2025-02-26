@@ -86,7 +86,7 @@ app.use("/general", generalRoutes);
 app.use("/management", managementRoutes);
 app.use("/sales", salesRoutes);
 app.use("/admin", adminRoutes);
-app.use("/try", tryRoutes);
+app.use("/try", tryRoutes); 
 
 // ✅ 8. Integration routes
 app.use("/hr", hrRoutes);

@@ -1,8 +1,11 @@
-import Employee from '../model/employee.js';
 import path from 'path';
-import fs, { access } from 'fs';
-import os from 'os';
+import fs from 'fs';
 import { exec } from 'child_process';
+import archiver from 'archiver';
+import extract from "extract-zip";
+import { pipeline } from 'stream/promises';
+
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Message from '../model/message.js'
 import User from '../model/User.js'
@@ -17,8 +20,8 @@ import mongoose from 'mongoose'
 
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-let backupDir = ''; // The base directory for backups
-const mongoURL = process.env.MONGO_URL || 'your-default-mongo-uri-here';
+let backupDir = ''; 
+const mongoURL = process.env.MONGO_URL
 
 const normalizePath = (filepath) => {
   return path.normalize(filepath).replace(/\\/g, '/');
@@ -104,7 +107,7 @@ export const setBackupDirectory = (req, res) => {
   const { directory } = req.body;
 
   if (!directory) {
-      return res.status(400).json({ message: 'Directory is required' });
+    return res.status(400).json({ message: 'Directory is required' });
   }
 
   // Create absolute path based on OS
@@ -113,59 +116,248 @@ export const setBackupDirectory = (req, res) => {
 
   // Create directory if it doesn't exist
   if (!fs.existsSync(backupDir)) {
+    try {
       fs.mkdirSync(backupDir, { recursive: true });
+    } catch (error) {
+      return res.status(500).json({ 
+        message: `Failed to create directory: ${error.message}`,
+        error: error.toString()
+      });
+    }
   }
 
   console.log(`Backup directory set to: ${backupDir}`);
   res.status(200).json({ message: `Backup directory set to: ${backupDir}` });
 };
 
-export const backupDatabase = (req, res) => {
+export const listBackups = (req, res) => {
+  if (!backupDir) {
+      return res.status(400).json({ message: "Backup directory not set" });
+  }
+
+  try {
+      if (!fs.existsSync(backupDir)) {
+          return res.status(400).json({ message: "Backup directory does not exist", backups: [] });
+      }
+
+      const files = fs.readdirSync(backupDir);
+      const backups = files
+          .filter(file => file.endsWith(".zip")) // Only show ZIP archives
+          .map(file => ({
+              name: file,
+              path: path.join(backupDir, file),
+              created: fs.statSync(path.join(backupDir, file)).birthtime,
+          }))
+          .sort((a, b) => b.created - a.created); // Sort newest first
+
+      res.status(200).json({ backups });
+  } catch (error) {
+      console.error("Error listing backups:", error);
+      res.status(500).json({ message: "Failed to list backups", error: error.message, backups: [] });
+  }
+};
+
+// Rest of the code remains the same...
+export const listCollections = async (req, res) => {
+  const { backupName } = req.params;
+  const { databaseName } = req.query; // Use query parameters for database name
+
+  if (!backupDir) {
+      return res.status(400).json({ message: "Backup directory not set" });
+  }
+
+  const archivePath = path.join(backupDir, backupName);
+  const tempDir = path.join(backupDir, `temp_${Date.now()}`);
+
+  try {
+      // ✅ Ensure the backup file exists before extracting
+      if (!fs.existsSync(archivePath)) {
+          return res.status(400).json({ message: `Backup file ${backupName} not found.` });
+      }
+
+      // ✅ Ensure temp directory exists
+      if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      // ✅ Extract the backup archive
+      console.log(`Extracting backup: ${archivePath} to ${tempDir}`);
+      await extract(archivePath, { dir: tempDir });
+
+      if (!databaseName) {
+          // ✅ If no database is specified, return a list of databases
+          const databases = fs.readdirSync(tempDir).filter(dir =>
+              fs.statSync(path.join(tempDir, dir)).isDirectory()
+          );
+
+          console.log(`Databases found: ${databases}`);
+          return res.status(200).json({ databases });
+      }
+
+      // ✅ Check if the selected database exists
+      const dbPath = path.join(tempDir, databaseName);
+      if (!fs.existsSync(dbPath)) {
+          return res.status(400).json({ message: `Database ${databaseName} not found in backup.` });
+      }
+
+      // ✅ Return BSON collections inside the selected database
+      const collections = fs.readdirSync(dbPath).filter(file => file.endsWith(".bson"));
+
+      console.log(`Collections found in ${databaseName}: ${collections}`);
+      return res.status(200).json({ collections });
+  } catch (error) {
+      console.error("Error listing collections:", error);
+      res.status(500).json({ message: "Failed to list collections", error: error.message });
+  } finally {
+      // ✅ Cleanup extracted files safely
+      setTimeout(() => {
+          fs.rm(tempDir, { recursive: true, force: true }, (err) => {
+              if (err) console.error("Failed to remove temp extraction folder:", err);
+          });
+      }, 5000);
+  }
+};
+
+export const backupDatabase = async (req, res) => {
   if (!backupDir) {
       return res.status(400).json({ message: 'Backup directory not set' });
   }
 
   const now = new Date();
-  const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '');
-  const filePath = normalizePath(path.join(backupDir, timestamp));
-
+  const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
+  const backupDirPath = normalizePath(path.join(backupDir, timestamp));
+  const archivePath = normalizePath(`${backupDirPath}.zip`);
   const databaseName = 'adminis';
-  
-  // Use --uri for MongoDB connection string
-  const command = `mongodump --uri "${mongoURL}" --db ${databaseName} --out "${filePath}"`;
 
-  exec(command, (error, stdout, stderr) => {
-      if (error) {
-          console.error('Error executing mongodump:', error);
-          return res.status(500).json({ message: 'Backup failed', error: error.message });
+  try {
+      // Ensure backup directory exists
+      if (!fs.existsSync(backupDirPath)) {
+          fs.mkdirSync(backupDirPath, { recursive: true });
       }
-      res.status(200).json({ message: 'Backup successful', filePath });
-  });
+
+      // Run `mongodump` and wait for completion
+      await new Promise((resolve, reject) => {
+          const command = `mongodump --uri "${mongoURL}" --db ${databaseName} --out "${backupDirPath}"`;
+          exec(command, (error, stdout, stderr) => {
+              if (error) {
+                  console.error('Error executing mongodump:', error);
+                  return reject(error);
+              }
+              resolve(stdout);
+          });
+      });
+
+      // Create a zip archive
+      const output = fs.createWriteStream(archivePath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      // Handle archive errors
+      archive.on('error', (err) => {
+          console.error('Archiver Error:', err);
+          return res.status(500).json({ message: 'Error compressing backup', error: err.message });
+      });
+
+      output.on('close', () => {
+          console.log(`Backup archived: ${archivePath} (${archive.pointer()} bytes)`);
+          
+          // Cleanup: Remove original backup folder asynchronously
+          fs.rm(backupDirPath, { recursive: true, force: true }, (err) => {
+              if (err) {
+                  console.error('Failed to remove backup folder:', err);
+              }
+          });
+
+          // ✅ Ensure response is sent
+          res.status(200).json({
+              message: 'Backup created and archived successfully',
+              archivePath: archivePath,
+          });
+      });
+
+      // Pipe archive to file
+      archive.pipe(output);
+      archive.directory(backupDirPath, false);
+      await archive.finalize();
+  } catch (error) {
+      console.error('Backup failed:', error);
+      return res.status(500).json({ message: 'Backup failed', error: error.message });
+  }
 };
 
-export const restoreDatabase = (req, res) => {
+export const restoreDatabase = async (req, res) => {
   const { timestamp, filename, databaseName } = req.body;
 
   if (!timestamp || !filename || !databaseName) {
-      return res.status(400).json({ message: 'All inputs are required: timestamp, filename, and database name.' });
+    return res.status(400).json({ 
+      message: 'All inputs are required: timestamp, filename, and database name.' 
+    });
   }
 
-  const filePath = normalizePath(path.join(backupDir, timestamp, databaseName, filename));
-
-  if (!fs.existsSync(filePath)) {
-      return res.status(400).json({ message: `Backup file not found at ${filePath}. Ensure the file exists.` });
-  }
-
-  const collectionName = path.basename(filename, '.bson');
-  const command = `mongorestore --uri="${mongoURL}" --nsInclude=${databaseName}.${collectionName} "${filePath}"`;
-
-  exec(command, (error, stdout, stderr) => {
-      if (error) {
-          console.error('Restore failed:', stderr);
-          return res.status(500).json({ message: `Restore failed. Error: ${stderr}` });
+  try {
+    let backupPath = normalizePath(path.join(backupDir, timestamp));
+    let tempDir = null;
+    
+    // Check if we're restoring from a zip archive
+    if (timestamp.endsWith('.zip')) {
+      // Create a temporary directory for extraction
+      tempDir = path.join(backupDir, `temp_${Date.now()}`);
+      fs.mkdirSync(tempDir, { recursive: true });
+      
+      // Extract the archive to the temp directory
+      await new Promise((resolve, reject) => {
+        const extract = require('extract-zip');
+        extract(backupPath, { dir: tempDir })
+          .then(resolve)
+          .catch(reject);
+      });
+      
+      // Update the path to point to the extracted content
+      backupPath = tempDir;
+    }
+    
+    // Construct the path to the BSON file
+    const filePath = normalizePath(path.join(backupPath, databaseName, filename));
+    
+    if (!fs.existsSync(filePath)) {
+      // Clean up temp directory if it was created
+      if (tempDir) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
       }
-      res.json({ message: `Collection '${collectionName}' restored successfully into database '${databaseName}' from ${filePath}` });
-  });
+      
+      return res.status(400).json({ 
+        message: `Backup file not found at ${filePath}. Ensure the file exists.` 
+      });
+    }
+
+    const collectionName = path.basename(filename, '.bson');
+    const command = `mongorestore --uri="${mongoURL}" --nsInclude=${databaseName}.${collectionName} "${filePath}"`;
+
+    // Execute the restore command
+    await new Promise((resolve, reject) => {
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Restore failed:', stderr);
+          reject(new Error(stderr));
+          return;
+        }
+        resolve(stdout);
+      });
+    });
+    
+    // Clean up temp directory if it was created
+    if (tempDir) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+    
+    res.status(200).json({ 
+      message: `Collection '${collectionName}' restored successfully into database '${databaseName}'` 
+    });
+  } catch (error) {
+    console.error('Restore failed:', error);
+    res.status(500).json({ 
+      message: `Restore failed: ${error.message}` 
+    });
+  }
 };
 
 export const generateAnnouncement = async (req, res) => {

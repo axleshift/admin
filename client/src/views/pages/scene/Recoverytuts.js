@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     CContainer,
     CButton,
@@ -13,7 +13,9 @@ import {
     CCardTitle,
     CCardText,
     CSpinner,
-    CAlert
+    CAlert,
+    CListGroup,
+    CListGroupItem
 } from '@coreui/react';
 import axios from 'axios';
 
@@ -22,10 +24,12 @@ const RecoveryPage = () => {
     const [timestamp, setTimestamp] = useState('');
     const [databaseName, setDatabaseName] = useState('');
     const [filename, setFilename] = useState('');
+    const [backupFiles, setBackupFiles] = useState([]);
     const [loading, setLoading] = useState({
         directory: false,
         backup: false,
-        restore: false
+        restore: false,
+        fetchBackups: false,
     });
     const [status, setStatus] = useState({
         message: '',
@@ -38,16 +42,22 @@ const RecoveryPage = () => {
         setTimeout(() => setStatus(prev => ({ ...prev, visible: false })), 5000);
     };
 
-    const handleSetDirectory = async () => {
-        if (!directory) {
-            showStatus('Please enter a directory.', 'danger');
+    const handleSetDirectory = async (event) => {
+        const files = event.target.files;
+        if (!files.length) {
+            showStatus('Please select a directory.', 'danger');
             return;
         }
 
+        const selectedPath = files[0].webkitRelativePath.split('/')[0]; // Extracting the first part of the path as directory
+
+        setDirectory(selectedPath);
         setLoading(prev => ({ ...prev, directory: true }));
+
         try {
-            const response = await axios.post('http://localhost:5053/admin/set-directory', { directory });
+            const response = await axios.post('http://localhost:5053/admin/set-directory', { directory: selectedPath });
             showStatus(response.data.message, 'success');
+            fetchBackupFiles();
         } catch (error) {
             showStatus(error?.response?.data?.message || 'Error setting directory', 'danger');
         } finally {
@@ -55,11 +65,25 @@ const RecoveryPage = () => {
         }
     };
 
+    const fetchBackupFiles = async () => {
+        setLoading(prev => ({ ...prev, fetchBackups: true }));
+        try {
+            const response = await axios.get('http://localhost:5053/admin/get-backup-files');
+            setBackupFiles(response.data.files);
+        } catch (error) {
+            showStatus('Failed to retrieve backup files', 'danger');
+        } finally {
+            setLoading(prev => ({ ...prev, fetchBackups: false }));
+        }
+    };
+
+
     const handleBackup = async () => {
         setLoading(prev => ({ ...prev, backup: true }));
         try {
             const response = await axios.post('http://localhost:5053/admin/backup');
             showStatus(response.data.message, 'success');
+            fetchBackupFiles(); // Refresh file list after backup
         } catch (error) {
             showStatus(error?.response?.data?.message || 'Error during backup', 'danger');
         } finally {
@@ -68,15 +92,14 @@ const RecoveryPage = () => {
     };
 
     const handleRestore = async () => {
-        if (!timestamp || !filename || !databaseName) {
-            showStatus('Please fill in all restore fields.', 'danger');
+        if (!filename || !databaseName) { // Timestamp is derived from filename
+            showStatus('Please fill in Database Name and BSON Filename.', 'danger');
             return;
         }
 
         setLoading(prev => ({ ...prev, restore: true }));
         try {
             const response = await axios.post('http://localhost:5053/admin/restore', {
-                timestamp,
                 filename,
                 databaseName,
             });
@@ -87,6 +110,11 @@ const RecoveryPage = () => {
             setLoading(prev => ({ ...prev, restore: false }));
         }
     };
+    useEffect(() => {
+        if (directory) {
+            fetchBackupFiles();
+        }
+    }, [directory]);
 
     return (
         <CContainer className="py-4">
@@ -109,21 +137,20 @@ const RecoveryPage = () => {
                                 <div className="d-flex gap-2">
                                     <CFormInput
                                         id="directory"
-                                        type="text"
-                                        placeholder="/path/to/backup/directory"
-                                        value={directory}
-                                        onChange={(e) => setDirectory(e.target.value)}
+                                        type="file"
+                                        webkitdirectory="true"
+                                        onChange={handleSetDirectory}
                                     />
                                     <CButton 
                                         color="primary"
-                                        onClick={handleSetDirectory}
-                                        disabled={loading.directory}
+                                        onClick={fetchBackupFiles}
+                                        disabled={loading.fetchBackups}
                                         style={{ minWidth: '120px' }}
                                     >
-                                        {loading.directory ? (
+                                        {loading.fetchBackups ? (
                                             <CSpinner size="sm" />
                                         ) : (
-                                            'Set Directory'
+                                            'Browse Folder'
                                         )}
                                     </CButton>
                                 </div>
@@ -158,56 +185,72 @@ const RecoveryPage = () => {
                 </CCol>
 
                 <CCol md={6}>
+            <CCard>
+                <CCardHeader>
+                    <CCardTitle>Restore Database</CCardTitle>
+                </CCardHeader>
+                <CCardBody>
+                    <CCardText>Restore a specific database from a backup</CCardText>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel htmlFor="database">Database Name</CFormLabel>
+                            <CFormInput
+                                id="database"
+                                type="text"
+                                placeholder="adminis"
+                                value={databaseName}
+                                onChange={(e) => setDatabaseName(e.target.value)}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <CFormLabel htmlFor="filename">BSON Filename</CFormLabel>
+                            <CFormInput
+                                id="filename"
+                                type="text"
+                                placeholder="users.bson"
+                                value={filename}
+                                onChange={(e) => setFilename(e.target.value)}
+                            />
+                        </div>
+                        <CButton 
+                            color="warning"
+                            onClick={handleRestore}
+                            disabled={loading.restore}
+                            className="w-100"
+                        >
+                            {loading.restore ? (
+                                <CSpinner size="sm" />
+                            ) : (
+                                'Restore Database'
+                            )}
+                        </CButton>
+                    </CForm>
+                </CCardBody>
+            </CCard>
+        </CCol>
+            </CRow>
+
+            <CRow className="mb-4">
+                <CCol>
                     <CCard>
                         <CCardHeader>
-                            <CCardTitle>Restore Database</CCardTitle>
+                            <CCardTitle>Available Backup Files</CCardTitle>
                         </CCardHeader>
                         <CCardBody>
-                            <CCardText>Restore a specific collection from a backup</CCardText>
-                            <CForm>
-                                <div className="mb-3">
-                                    <CFormLabel htmlFor="timestamp">Backup Timestamp</CFormLabel>
-                                    <CFormInput
-                                        id="timestamp"
-                                        type="text"
-                                        placeholder="2025-01-22_08-33-12-PM"
-                                        value={timestamp}
-                                        onChange={(e) => setTimestamp(e.target.value)}
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <CFormLabel htmlFor="database">Database Name</CFormLabel>
-                                    <CFormInput
-                                        id="database"
-                                        type="text"
-                                        placeholder="adminis"
-                                        value={databaseName}
-                                        onChange={(e) => setDatabaseName(e.target.value)}
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <CFormLabel htmlFor="filename">BSON Filename</CFormLabel>
-                                    <CFormInput
-                                        id="filename"
-                                        type="text"
-                                        placeholder="users.bson"
-                                        value={filename}
-                                        onChange={(e) => setFilename(e.target.value)}
-                                    />
-                                </div>
-                                <CButton 
-                                    color="warning"
-                                    onClick={handleRestore}
-                                    disabled={loading.restore}
-                                    className="w-100"
-                                >
-                                    {loading.restore ? (
-                                        <CSpinner size="sm" />
+                            <CCardText>Here are the backup files available for restoration:</CCardText>
+                            <CListGroup>
+                                {loading.fetchBackups ? (
+                                    <CSpinner size="sm" />
+                                ) : (
+                                    backupFiles.length > 0 ? (
+                                        backupFiles.map((file, index) => (
+                                            <CListGroupItem key={index}>{file}</CListGroupItem>
+                                        ))
                                     ) : (
-                                        'Restore Collection'
-                                    )}
-                                </CButton>
-                            </CForm>
+                                        <CListGroupItem>No backup files available.</CListGroupItem>
+                                    )
+                                )}
+                            </CListGroup>
                         </CCardBody>
                     </CCard>
                 </CCol>

@@ -179,7 +179,8 @@ const _nav = () => {
         '/tack',
         '/recovery',
         '/Toasts',
-        '/chatbox'
+        '/chatbox',
+        '/recoverytuts'
       ]
     },
     admin: {
@@ -305,6 +306,12 @@ const _nav = () => {
           name: 'Ex', 
           icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
           to: '/ex'
+        },
+        {
+          component: CNavItem, 
+          name: 'trial', 
+          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
+          to: '/recovery'
         },
         {
           component: CNavItem, 

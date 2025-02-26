@@ -1,8 +1,6 @@
 import express from "express";
 import { 
-    setBackupDirectory,
-    backupDatabase, 
-    restoreDatabase, 
+
     generateAnnouncement,
     chatbox,sendMessage,
     getDepartmentMessages,
@@ -15,19 +13,30 @@ import {
     getUsersBy ,
     getLogs, 
     logFrontendActivity, 
-    getUserActivity 
+    getUserActivity,
+    
+    setBackupDirectory, 
+    backupDatabase, 
+    restoreDatabase, 
+    listBackups, 
+    listCollections 
 } from "../controllers/admin.js";
 import { logActivity } from '../middleware/logActivity.js';
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
 const router = express.Router();
+router.post('/set-directory', setBackupDirectory);
+router.post('/backup', backupDatabase);
+router.post('/restore', restoreDatabase);
+// New routes for listing backups and collections
+router.get('/list-backups', listBackups);
+router.get('/list-collections/:backupName', listCollections);
+
 router.get('/github', githubAuth);
 router.get('/github/callback',githubCallback, sendToken)
 
 router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
 
-router.post('/set-directory', setBackupDirectory);
-router.post('/backup',backupDatabase)
-router.post('/restore', restoreDatabase);
+
 router.post('/generate', generateAnnouncement)
 router.post('/chat',chatbox)
 router.post('/status-update', handleStatusUpdate);

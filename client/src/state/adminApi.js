@@ -61,6 +61,32 @@ export const adminApi = createApi({
 
   //admin
 
+  setBackupDirectory: build.mutation({
+    query: (data) => ({
+      url: 'set-directory',
+      method: 'POST',
+      body: data,
+    }),
+  }),
+  backupDatabase: build.mutation({
+    query: () => ({
+      url: 'backup',
+      method: 'POST',
+    }),
+  }),
+  restoreDatabase: build.mutation({
+    query: (data) => ({
+      url: 'restore',
+      method: 'POST',
+      body: data,
+    }),
+  }),
+  listBackups: build.query({
+    query: () => 'list-backups',
+  }),
+  listCollections: build.query({
+    query: (backupName) => `list-collections/${backupName}`,
+  }),
 
   getUserActivity: build.query({
     query: () => 'admin/user-activity',
@@ -249,6 +275,12 @@ export const {
   useRegisterUserMutation,
   
 //admin
+useSetBackupDirectoryMutation,
+useBackupDatabaseMutation,
+useRestoreDatabaseMutation,
+useListBackupsQuery,
+useListCollectionsQuery,
+
 useGetUserActivityQuery,
 useGetUserPermissionsQuery,
 useResetPasswordMutation,
