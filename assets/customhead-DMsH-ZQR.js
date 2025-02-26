@@ -1,1 +1,0 @@
-import{j as r,e as t,f as a,P as s}from"./index-CKcFKU7h.js";import{C as o}from"./CCardTitle-DlzJVczk.js";import{C as d}from"./CCardText-BWRHRdk1.js";const C=({title:e,subtitle:i})=>r.jsx(t,{className:"border-0",children:r.jsxs(a,{children:[r.jsx(o,{children:e})," ",r.jsx(d,{children:i})," "]})});C.propTypes={title:s.string.isRequired,subtitle:s.string.isRequired};export{C};
