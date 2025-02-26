@@ -1,0 +1,1 @@
+import{r as m,_ as p,R as o,B as i,D as N,P as s}from"./index-CKcFKU7h.js";var r=m.forwardRef(function(e,t){var n=e.children,a=e.as,c=a===void 0?"p":a,l=e.className,d=p(e,["children","as","className"]);return o.createElement(c,i({className:N("card-text",l)},d,{ref:t}),n)});r.propTypes={as:s.elementType,children:s.node,className:s.string};r.displayName="CCardText";export{r as C};
