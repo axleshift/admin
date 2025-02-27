@@ -15,7 +15,8 @@ import {
   faPaperPlane, 
   faArrowLeft, 
   faUpload,
-  faCheck 
+  faCheck,
+  faImage 
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../../../scss/chat.scss';
@@ -42,6 +43,10 @@ const ChatContainer = () => {
   const [approvalSubmitted, setApprovalSubmitted] = useState(false);
   const [fileUploading, setFileUploading] = useState(false);
   
+  // Image generation states
+  const [imageGenerationPrompt, setImageGenerationPrompt] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
   // Reference for file input
   const fileInputRef = useRef(null);
   
@@ -52,6 +57,10 @@ const ChatContainer = () => {
   const [pageAccessDetails, setPageAccessDetails] = useState(null);
   const [statusCheck, setStatusCheck] = useState(false);
   const [approvalDetails, setApprovalDetails] = useState(null);
+  const [imageGenerationDetails, setImageGenerationDetails] = useState(null);
+  
+  // New state to toggle request options visibility
+  const [showRequestOptions, setShowRequestOptions] = useState(false);
 
   // Navigation items
   const allNavItems = [
@@ -115,8 +124,16 @@ const ChatContainer = () => {
   }, []);
 
   // Helper function to add messages
-  const addMessage = (text, sender, type = null) => {
-    setMessages(prev => [...prev, { text, sender, type }]);
+  const addMessage = (text, sender, type = null, imageData = null) => {
+    const newMessage = { text, sender, type };
+    
+    // If this is an image message, include the image data
+    if (imageData) {
+      newMessage.imageData = imageData;
+      newMessage.type = 'image';
+    }
+    
+    setMessages(prev => [...prev, newMessage]);
   };
 
   // Handle going back in the workflow
@@ -128,9 +145,15 @@ const ChatContainer = () => {
       setSelectedDepartment('');
       setApprovalFile(null);
       setApprovalNote('');
+    } else if (requestType === 'image') {
+      setRequestType(null);
+      setImageGenerationPrompt('');
     } else if (requestType) {
       setRequestType(null);
       setAccessRequested(false);
+      setShowRequestOptions(false);
+    } else if (showRequestOptions) {
+      setShowRequestOptions(false);
     }
   };
 
@@ -161,6 +184,56 @@ const ChatContainer = () => {
     return () => clearInterval(statusInterval);
   }, []);
 
+  // Generate image based on user prompt
+  const generateImage = async () => {
+    if (!imageGenerationPrompt.trim()) {
+      addMessage("Please provide a description for the image you want to generate.", "gemini");
+      return;
+    }
+    
+    setIsGeneratingImage(true);
+    addMessage(`Generating image of: ${imageGenerationPrompt}`, "user");
+    addMessage("Generating your image, please wait...", "gemini", "status");
+    
+    // Track image generation request
+    setImageGenerationDetails({
+      prompt: imageGenerationPrompt,
+      timestamp: new Date().toISOString()
+    });
+    
+    try {
+      // Send the request to the backend
+      const response = await axios.post('http://localhost:5053/admin/chat', {
+        message: `generate image ${imageGenerationPrompt}`,
+        conversationHistory,
+      });
+      
+      // Check if we received image data
+      if (response.data.imageData) {
+        // Create a message with the image
+        addMessage(
+          response.data.response || `I've created an image based on: "${imageGenerationPrompt}"`, 
+          'gemini', 
+          'image', 
+          response.data.imageData
+        );
+        
+        // Update conversation history
+        setConversationHistory(response.data.conversationHistory);
+      } else {
+        // No image was generated
+        addMessage("Sorry, I couldn't generate that image. Please try a different description.", "gemini");
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      addMessage("Sorry, there was an error generating your image. Please try again.", "gemini");
+    }
+    
+    setIsGeneratingImage(false);
+    setRequestType(null);
+    setImageGenerationPrompt('');
+  };
+
   // Send message to the chat
   const sendMessage = async () => {
     if (!userInput.trim()) return;
@@ -178,7 +251,18 @@ const ChatContainer = () => {
         conversationHistory,
       });
 
-      addMessage(response.data.response, 'gemini');
+      // Check if the response includes image data
+      if (response.data.imageData) {
+        addMessage(
+          response.data.response, 
+          'gemini', 
+          'image', 
+          response.data.imageData
+        );
+      } else {
+        addMessage(response.data.response, 'gemini');
+      }
+      
       setConversationHistory(response.data.conversationHistory);
 
       if (userInput.toLowerCase().includes('status')) {
@@ -234,6 +318,7 @@ const ChatContainer = () => {
     setUserInput('');
     setPageAccessRequest(null);
     setRequestType(null);
+    setShowRequestOptions(false);
   };
   
   // Handle file selection
@@ -302,6 +387,7 @@ const ChatContainer = () => {
         setApprovalNote('');
         setApprovalRequest(null);
         setRequestType(null);
+        setShowRequestOptions(false);
       }
     } catch (error) {
       console.error("Failed to send approval request:", error);
@@ -365,10 +451,16 @@ const ChatContainer = () => {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
+    },
+    image: {
+      maxWidth: '100%',
+      maxHeight: '200px',
+      borderRadius: '5px',
+      marginTop: '5px'
     }
   };
 
-  const showBackButton = requestType === 'access' || pageAccessRequest === 'page' || approvalRequest === 'form';
+  const showBackButton = showRequestOptions || requestType === 'access' || pageAccessRequest === 'page' || approvalRequest === 'form' || requestType === 'image';
 
   return (
     <div>
@@ -379,6 +471,7 @@ const ChatContainer = () => {
       {pageAccessDetails && <ActivityTracker action="Page Access Requested" description={`User ${pageAccessDetails.username} from ${pageAccessDetails.department} dept requested access to ${pageAccessDetails.pageName} (${pageAccessDetails.pagePath}) at ${new Date(pageAccessDetails.requestTime).toLocaleString()}`} />}
       {statusCheck && <ActivityTracker action="Status Check" description={`User checked status of pending access requests at ${new Date().toLocaleString()}`} />}
       {approvalDetails && <ActivityTracker action="Approval Request Submitted" description={`User submitted approval request to ${approvalDetails.targetDepartment} department with file "${approvalDetails.fileName}" (${approvalDetails.fileSize}) at ${new Date(approvalDetails.timestamp).toLocaleString()}`} />}
+      {imageGenerationDetails && <ActivityTracker action="Image Generation Requested" description={`User requested image generation with prompt: "${imageGenerationDetails.prompt}" at ${new Date(imageGenerationDetails.timestamp).toLocaleString()}`} />}
 
       {/* Chat button */}
       <CButton color="primary" className="chat-bubble" onClick={toggleChat}>
@@ -405,9 +498,21 @@ const ChatContainer = () => {
               <CButton color="danger" size="sm" onClick={toggleChat}>✖</CButton>
             </div>
 
-            {/* Controls - Main Request Options */}
-            {!requestType && (
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            {/* Single Request Button */}
+            {!showRequestOptions && !requestType && !pageAccessRequest && !approvalRequest && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                <CButton 
+                  color="primary" 
+                  onClick={() => setShowRequestOptions(true)}
+                >
+                  Request
+                </CButton>
+              </div>
+            )}
+
+            {/* Request Options */}
+            {showRequestOptions && !requestType && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px', justifyContent: 'center' }}>
                 <CButton 
                   color="primary" 
                   onClick={() => { 
@@ -422,6 +527,12 @@ const ChatContainer = () => {
                   onClick={() => setRequestType('approval')}
                 >
                   Submit Approval
+                </CButton>
+                <CButton 
+                  color="info" 
+                  onClick={() => setRequestType('image')}
+                >
+                  <FontAwesomeIcon icon={faImage} /> Generate Image
                 </CButton>
               </div>
             )}
@@ -446,6 +557,31 @@ const ChatContainer = () => {
               >
                 Submit Approval Form
               </CButton>
+            )}
+            
+            {/* Image Generation Form */}
+            {requestType === 'image' && (
+              <div style={{ marginBottom: '15px' }}>
+                <label htmlFor="imagePrompt" style={{ display: 'block', marginBottom: '5px' }}>
+                  Describe the image you want to generate:
+                </label>
+                <CFormInput
+                  id="imagePrompt"
+                  placeholder="Enter a detailed description of the image you want..."
+                  value={imageGenerationPrompt}
+                  onChange={(e) => setImageGenerationPrompt(e.target.value)}
+                  style={{ marginBottom: '10px' }}
+                  disabled={isGeneratingImage}
+                />
+                <CButton
+                  color="info"
+                  onClick={generateImage}
+                  style={{ width: '100%' }}
+                  disabled={!imageGenerationPrompt.trim() || isGeneratingImage}
+                >
+                  <FontAwesomeIcon icon={faImage} /> {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+                </CButton>
+              </div>
             )}
             
             {/* Approval Form */}
@@ -555,6 +691,15 @@ const ChatContainer = () => {
                   }}
                 >
                   {msg.text}
+                  {msg.type === 'image' && msg.imageData && (
+                    <div style={{ marginTop: '10px' }}>
+                      <img 
+                        src={`data:image/png;base64,${msg.imageData}`} 
+                        alt="Generated image" 
+                        style={styles.image}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
