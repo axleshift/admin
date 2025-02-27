@@ -60,6 +60,10 @@ export const adminApi = createApi({
     }),
 
   //admin
+  getPermissions: build.query({
+    query: () => "general/permissions", // API endpoint
+  }),
+
 
   setBackupDirectory: build.mutation({
     query: (data) => ({
@@ -275,6 +279,7 @@ export const {
   useRegisterUserMutation,
   
 //admin
+useGetPermissionsQuery,
 useSetBackupDirectoryMutation,
 useBackupDatabaseMutation,
 useRestoreDatabaseMutation,

@@ -1,262 +1,240 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
 import {
-    CContainer,
-    CButton,
-    CRow,
-    CCol,
-    CForm,
-    CFormLabel,
-    CFormInput,
-    CCard,
-    CCardHeader,
-    CCardBody,
-    CCardTitle,
-    CCardText,
-    CSpinner,
-    CAlert,
-    CListGroup,
-    CListGroupItem
-} from '@coreui/react';
-import axios from 'axios';
+  CContainer,
+  CTable,
+  CCard,
+  CCardBody,
+  CCardTitle,
+  CListGroup,
+  CListGroupItem,
+  CSpinner,
+  CAlert,
+  CBadge,
+  CCardHeader,
+  CPagination,
+  CPaginationItem
+} from "@coreui/react";
+import { useGetPermissionsQuery } from "../../../state/adminApi";
+import CIcon from '@coreui/icons-react';
+import { 
+  cilPeople, 
+  cilLockLocked, 
+  cilBriefcase, 
+  cilBuilding, 
+  cilSearch,
+  cilShieldAlt,
+  cilChevronLeft,
+  cilChevronRight
+} from '@coreui/icons';
 
-const RecoveryPage = () => {
-    const [directory, setDirectory] = useState('');
-    const [timestamp, setTimestamp] = useState('');
-    const [databaseName, setDatabaseName] = useState('');
-    const [filename, setFilename] = useState('');
-    const [backupFiles, setBackupFiles] = useState([]);
-    const [loading, setLoading] = useState({
-        directory: false,
-        backup: false,
-        restore: false,
-        fetchBackups: false,
-    });
-    const [status, setStatus] = useState({
-        message: '',
-        type: '', // 'success' or 'danger'
-        visible: false
-    });
+const AccessReview = () => {
+  const { data, error, isLoading } = useGetPermissionsQuery(); // RTK Query hook
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Number of users to display per page
 
-    const showStatus = (message, type) => {
-        setStatus({ message, type, visible: true });
-        setTimeout(() => setStatus(prev => ({ ...prev, visible: false })), 5000);
-    };
+  // Get role-specific badge color
+  const getRoleBadgeColor = (role) => {
+    switch(role?.toLowerCase()) {
+      case 'admin':
+        return 'danger';
+      case 'manager':
+        return 'warning';
+      case 'user':
+        return 'info';
+      default:
+        return 'secondary';
+    }
+  };
 
-    const handleSetDirectory = async (event) => {
-        const files = event.target.files;
-        if (!files.length) {
-            showStatus('Please select a directory.', 'danger');
-            return;
-        }
+  // Get department-specific icon
+  const getDepartmentIcon = (department) => {
+    switch(department?.toLowerCase()) {
+      case 'it':
+        return cilShieldAlt;
+      case 'hr':
+        return cilPeople;
+      case 'finance':
+        return cilBriefcase;
+      case 'marketing':
+        return cilSearch;
+      default:
+        return cilBuilding;
+    }
+  };
 
-        const selectedPath = files[0].webkitRelativePath.split('/')[0]; // Extracting the first part of the path as directory
-
-        setDirectory(selectedPath);
-        setLoading(prev => ({ ...prev, directory: true }));
-
-        try {
-            const response = await axios.post('http://localhost:5053/admin/set-directory', { directory: selectedPath });
-            showStatus(response.data.message, 'success');
-            fetchBackupFiles();
-        } catch (error) {
-            showStatus(error?.response?.data?.message || 'Error setting directory', 'danger');
-        } finally {
-            setLoading(prev => ({ ...prev, directory: false }));
-        }
-    };
-
-    const fetchBackupFiles = async () => {
-        setLoading(prev => ({ ...prev, fetchBackups: true }));
-        try {
-            const response = await axios.get('http://localhost:5053/admin/get-backup-files');
-            setBackupFiles(response.data.files);
-        } catch (error) {
-            showStatus('Failed to retrieve backup files', 'danger');
-        } finally {
-            setLoading(prev => ({ ...prev, fetchBackups: false }));
-        }
-    };
-
-
-    const handleBackup = async () => {
-        setLoading(prev => ({ ...prev, backup: true }));
-        try {
-            const response = await axios.post('http://localhost:5053/admin/backup');
-            showStatus(response.data.message, 'success');
-            fetchBackupFiles(); // Refresh file list after backup
-        } catch (error) {
-            showStatus(error?.response?.data?.message || 'Error during backup', 'danger');
-        } finally {
-            setLoading(prev => ({ ...prev, backup: false }));
-        }
-    };
-
-    const handleRestore = async () => {
-        if (!filename || !databaseName) { // Timestamp is derived from filename
-            showStatus('Please fill in Database Name and BSON Filename.', 'danger');
-            return;
-        }
-
-        setLoading(prev => ({ ...prev, restore: true }));
-        try {
-            const response = await axios.post('http://localhost:5053/admin/restore', {
-                filename,
-                databaseName,
-            });
-            showStatus(response.data.message, 'success');
-        } catch (error) {
-            showStatus(error?.response?.data?.message || 'Restore failed.', 'danger');
-        } finally {
-            setLoading(prev => ({ ...prev, restore: false }));
-        }
-    };
-    useEffect(() => {
-        if (directory) {
-            fetchBackupFiles();
-        }
-    }, [directory]);
-
+  // Render permissions with colored badges based on sensitivity
+  const renderPermission = (permission) => {
+    let color = 'info';
+    if (permission.includes('delete') || permission.includes('admin')) {
+      color = 'danger';
+    } else if (permission.includes('edit') || permission.includes('create') || permission.includes('write')) {
+      color = 'warning';
+    } else if (permission.includes('view') || permission.includes('read')) {
+      color = 'success';
+    }
+    
     return (
-        <CContainer className="py-4">
-            {status.visible && (
-                <CAlert color={status.type} dismissible>
-                    {status.message}
-                </CAlert>
-            )}
-
-            <CRow className="mb-4">
-                <CCol>
-                    <CCard>
-                        <CCardHeader>
-                            <CCardTitle>Backup Directory Configuration</CCardTitle>
-                        </CCardHeader>
-                        <CCardBody>
-                            <CCardText>Set the directory where database backups will be stored</CCardText>
-                            <CForm>
-                                <CFormLabel htmlFor="directory">Backup Directory Path</CFormLabel>
-                                <div className="d-flex gap-2">
-                                    <CFormInput
-                                        id="directory"
-                                        type="file"
-                                        webkitdirectory="true"
-                                        onChange={handleSetDirectory}
-                                    />
-                                    <CButton 
-                                        color="primary"
-                                        onClick={fetchBackupFiles}
-                                        disabled={loading.fetchBackups}
-                                        style={{ minWidth: '120px' }}
-                                    >
-                                        {loading.fetchBackups ? (
-                                            <CSpinner size="sm" />
-                                        ) : (
-                                            'Browse Folder'
-                                        )}
-                                    </CButton>
-                                </div>
-                            </CForm>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
-
-            <CRow className="g-4">
-                <CCol md={6}>
-                    <CCard>
-                        <CCardHeader>
-                            <CCardTitle>Backup Database</CCardTitle>
-                        </CCardHeader>
-                        <CCardBody>
-                            <CCardText>Create a new backup of the current database state</CCardText>
-                            <CButton 
-                                color="primary"
-                                onClick={handleBackup}
-                                disabled={loading.backup}
-                                className="w-100"
-                            >
-                                {loading.backup ? (
-                                    <CSpinner size="sm" />
-                                ) : (
-                                    'Create Backup'
-                                )}
-                            </CButton>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-
-                <CCol md={6}>
-            <CCard>
-                <CCardHeader>
-                    <CCardTitle>Restore Database</CCardTitle>
-                </CCardHeader>
-                <CCardBody>
-                    <CCardText>Restore a specific database from a backup</CCardText>
-                    <CForm>
-                        <div className="mb-3">
-                            <CFormLabel htmlFor="database">Database Name</CFormLabel>
-                            <CFormInput
-                                id="database"
-                                type="text"
-                                placeholder="adminis"
-                                value={databaseName}
-                                onChange={(e) => setDatabaseName(e.target.value)}
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <CFormLabel htmlFor="filename">BSON Filename</CFormLabel>
-                            <CFormInput
-                                id="filename"
-                                type="text"
-                                placeholder="users.bson"
-                                value={filename}
-                                onChange={(e) => setFilename(e.target.value)}
-                            />
-                        </div>
-                        <CButton 
-                            color="warning"
-                            onClick={handleRestore}
-                            disabled={loading.restore}
-                            className="w-100"
-                        >
-                            {loading.restore ? (
-                                <CSpinner size="sm" />
-                            ) : (
-                                'Restore Database'
-                            )}
-                        </CButton>
-                    </CForm>
-                </CCardBody>
-            </CCard>
-        </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-                <CCol>
-                    <CCard>
-                        <CCardHeader>
-                            <CCardTitle>Available Backup Files</CCardTitle>
-                        </CCardHeader>
-                        <CCardBody>
-                            <CCardText>Here are the backup files available for restoration:</CCardText>
-                            <CListGroup>
-                                {loading.fetchBackups ? (
-                                    <CSpinner size="sm" />
-                                ) : (
-                                    backupFiles.length > 0 ? (
-                                        backupFiles.map((file, index) => (
-                                            <CListGroupItem key={index}>{file}</CListGroupItem>
-                                        ))
-                                    ) : (
-                                        <CListGroupItem>No backup files available.</CListGroupItem>
-                                    )
-                                )}
-                            </CListGroup>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
-        </CContainer>
+      <CBadge color={color} className="me-1 mb-1">
+        {permission}
+      </CBadge>
     );
+  };
+
+  if (isLoading) {
+    return (
+      <CContainer className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+        <CSpinner color="primary" />
+      </CContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <CContainer className="mt-4">
+        <CAlert color="danger">Error: {error.message}</CAlert>
+      </CContainer>
+    );
+  }
+
+  // Calculate pagination values
+  const totalUsers = data?.users?.length || 0;
+  const totalPages = Math.ceil(totalUsers / itemsPerPage);
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = data?.users?.slice(indexOfFirstUser, indexOfLastUser) || [];
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Generate pagination items
+  const renderPaginationItems = () => {
+    const items = [];
+    
+    // Previous button
+    items.push(
+      <CPaginationItem 
+        key="prev" 
+        disabled={currentPage === 1}
+        onClick={() => handlePageChange(currentPage - 1)}
+      >
+        <CIcon icon={cilChevronLeft} />
+      </CPaginationItem>
+    );
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(
+        <CPaginationItem 
+          key={i} 
+          active={i === currentPage}
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </CPaginationItem>
+      );
+    }
+    
+    // Next button
+    items.push(
+      <CPaginationItem 
+        key="next" 
+        disabled={currentPage === totalPages}
+        onClick={() => handlePageChange(currentPage + 1)}
+      >
+        <CIcon icon={cilChevronRight} />
+      </CPaginationItem>
+    );
+    
+    return items;
+  };
+
+  return (
+    <CContainer className="mt-4">
+      <CCard className="mb-4 shadow-sm">
+        <CCardHeader className="bg-primary text-white d-flex align-items-center">
+          <CIcon icon={cilLockLocked} size="xl" className="me-2" />
+          <h3 className="mb-0">Access Control Review</h3>
+        </CCardHeader>
+        <CCardBody>
+          {totalUsers > 0 ? (
+            <>
+              <CTable hover responsive striped className="border">
+                <thead className="bg-light">
+                  <tr>
+                    <th>
+                      <CIcon icon={cilPeople} className="me-2" />
+                      Name
+                    </th>
+                    <th>
+                      <CIcon icon={cilBriefcase} className="me-2" />
+                      Role
+                    </th>
+                    <th>
+                      <CIcon icon={cilBuilding} className="me-2" />
+                      Department
+                    </th>
+                    <th>
+                      <CIcon icon={cilShieldAlt} className="me-2" />
+                      Permissions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentUsers.map((user) => (
+                    <tr key={user._id}>
+                      <td className="align-middle font-weight-bold">{user.name}</td>
+                      <td className="align-middle">
+                        <CBadge color={getRoleBadgeColor(user.role)}>{user.role}</CBadge>
+                      </td>
+                      <td className="align-middle">
+                        <div className="d-flex align-items-center">
+                          <CIcon icon={getDepartmentIcon(user.department)} className="me-2" />
+                          {user.department}
+                        </div>
+                      </td>
+                      <td>
+                        <CCard className="border-0 shadow-sm">
+                          <CCardBody className="p-3">
+                            <div className="d-flex flex-wrap">
+                              {user.permissions && user.permissions.length > 0 ? (
+                                user.permissions.map((perm, index) => (
+                                  <div key={index} className="me-1 mb-1">
+                                    {renderPermission(perm)}
+                                  </div>
+                                ))
+                              ) : (
+                                <CBadge color="secondary" className="text-muted">
+                                  No permissions assigned
+                                </CBadge>
+                              )}
+                            </div>
+                          </CCardBody>
+                        </CCard>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </CTable>
+
+              {/* Pagination */}
+              <div className="d-flex justify-content-between align-items-center mt-4">
+                <div className="text-muted">
+                  Showing {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, totalUsers)} of {totalUsers} users
+                </div>
+                <CPagination aria-label="Page navigation">
+                  {renderPaginationItems()}
+                </CPagination>
+              </div>
+            </>
+          ) : (
+            <CAlert color="info">No users found</CAlert>
+          )}
+        </CCardBody>
+      </CCard>
+    </CContainer>
+  );
 };
 
-export default RecoveryPage;
+export default AccessReview;

@@ -8,6 +8,7 @@ import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
+import { createCipheriv } from "crypto";
 
 dotenv.config();
 
@@ -66,6 +67,20 @@ export const updateUser = async (req, res) => {
     }
 };
 
+//access reviews and recertification
+export const accessReview = async (req, res) => {
+    try {
+        const users = await User.find({}, "name role department permissions");
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+
+        res.json({ users }); // Send all users with their permissions
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 export const getUser = async (req, res) => {
     try {
