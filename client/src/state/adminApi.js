@@ -125,7 +125,18 @@ export const adminApi = createApi({
     // Enable caching
     keepUnusedDataFor: 300, // Keep data for 5 minutes
   }),
-  
+  getSecurityIncidents: build.query({
+    query: ({ page, limit, filters }) => ({
+      url: `/security/security-incidents`,
+      method: 'GET',
+      params: {
+        page,
+        limit,
+        ...filters
+      }
+    }),
+    providesTags: ['SecurityIncidents']
+  }),
   //request 
   getRequests: build.query({
     query: () => '/general/requests',
@@ -150,6 +161,9 @@ export const adminApi = createApi({
     }),
     invalidatesTags: ['Requests']
   }),
+
+  //security
+  
 
     getPerformance: build.query({
       query: () => 'hr/performance',
@@ -314,6 +328,7 @@ useGetUserActivityQuery,
 useGetUserPermissionsQuery, 
 useResetPasswordMutation,
 useGetLogsQuery,
+useGetSecurityIncidentsQuery, 
 
 useGetRequestsQuery,
 useReceiveRequestMutation, 
