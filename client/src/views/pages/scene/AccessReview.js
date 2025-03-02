@@ -12,7 +12,8 @@ import {
   CBadge,
   CCardHeader,
   CPagination,
-  CPaginationItem
+  CPaginationItem,
+  CFormSwitch
 } from "@coreui/react";
 import { useGetPermissionsQuery } from "../../../state/adminApi";
 import CIcon from '@coreui/icons-react';
@@ -24,12 +25,14 @@ import {
   cilSearch,
   cilShieldAlt,
   cilChevronLeft,
-  cilChevronRight
+  cilChevronRight,
+  cilFilter
 } from '@coreui/icons';
 
 const AccessReview = () => {
   const { data, error, isLoading } = useGetPermissionsQuery(); // RTK Query hook
   const [currentPage, setCurrentPage] = useState(1);
+  const [showOnlyWithPermissions, setShowOnlyWithPermissions] = useState(true); // Default to showing only users with permissions
   const itemsPerPage = 10; // Number of users to display per page
 
   // Get role-specific badge color
@@ -96,16 +99,27 @@ const AccessReview = () => {
     );
   }
 
+  // Filter users based on permission status
+  const filteredUsers = showOnlyWithPermissions
+    ? data?.users?.filter(user => user.permissions && user.permissions.length > 0)
+    : data?.users;
+
   // Calculate pagination values
-  const totalUsers = data?.users?.length || 0;
+  const totalUsers = filteredUsers?.length || 0;
   const totalPages = Math.ceil(totalUsers / itemsPerPage);
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-  const currentUsers = data?.users?.slice(indexOfFirstUser, indexOfLastUser) || [];
+  const currentUsers = filteredUsers?.slice(indexOfFirstUser, indexOfLastUser) || [];
 
   // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  // Toggle filter for users with permissions
+  const togglePermissionFilter = () => {
+    setShowOnlyWithPermissions(!showOnlyWithPermissions);
+    setCurrentPage(1); // Reset to first page when toggling filter
   };
 
   // Generate pagination items
@@ -153,11 +167,24 @@ const AccessReview = () => {
   return (
     <CContainer className="mt-4">
       <CCard className="mb-4 shadow-sm">
-        <CCardHeader className="bg-primary text-white d-flex align-items-center">
-          <CIcon icon={cilLockLocked} size="xl" className="me-2" />
-          <h3 className="mb-0">Access Control Review</h3>
+        <CCardHeader className="bg-primary text-white d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center">
+            <CIcon icon={cilLockLocked} size="xl" className="me-2" />
+            <h3 className="mb-0">Access Control Review</h3>
+          </div>
         </CCardHeader>
         <CCardBody>
+          {/* Filter Controls */}
+          <div className="mb-3 d-flex align-items-center">
+            <CIcon icon={cilFilter} className="me-2" />
+            <CFormSwitch 
+              id="permissionFilter" 
+              label="Show only users with permissions" 
+              checked={showOnlyWithPermissions}
+              onChange={togglePermissionFilter}
+            />
+          </div>
+
           {totalUsers > 0 ? (
             <>
               <CTable hover responsive striped className="border">
@@ -221,7 +248,8 @@ const AccessReview = () => {
               {/* Pagination */}
               <div className="d-flex justify-content-between align-items-center mt-4">
                 <div className="text-muted">
-                  Showing {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, totalUsers)} of {totalUsers} users
+                  Showing {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, totalUsers)} of {totalUsers} 
+                  {showOnlyWithPermissions ? " users with permissions" : " users"}
                 </div>
                 <CPagination aria-label="Page navigation">
                   {renderPaginationItems()}
@@ -229,7 +257,11 @@ const AccessReview = () => {
               </div>
             </>
           ) : (
-            <CAlert color="info">No users found</CAlert>
+            <CAlert color="info">
+              {showOnlyWithPermissions 
+                ? "No users with permissions found" 
+                : "No users found"}
+            </CAlert>
           )}
         </CCardBody>
       </CCard>

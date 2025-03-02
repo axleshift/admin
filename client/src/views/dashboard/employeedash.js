@@ -23,6 +23,8 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
+import AnnouncementBox from '../pages/scene/announce';
+import Loader from '../../components/Loader';  // ✅ Import Loader
 
 const Employeedash = () => {
   const navigate = useNavigate();
@@ -77,8 +79,9 @@ const Employeedash = () => {
     saveAs(blob, 'shipping_transactions.xlsx');
   };
 
+  // ✅ Show the loader while fetching data
   if (isDashboardLoading || isShippingLoading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   return (
@@ -86,16 +89,17 @@ const Employeedash = () => {
       <CRow className="mb-4">
         <CCol xs={12} md={8}>
           <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
+          <AnnouncementBox message="🚀 New HR Features Released! Check them out!" autoClose={false} />
         </CCol>
         <CCol xs={12} md={4} className="d-flex justify-content-md-end align-items-center mb-3 mb-md-0">
-          <button
-            className="download-btn"
-            onClick={handleDownload}
-          >
-            <FontAwesomeIcon icon={faDownload} />
-            &nbsp; Download Reports
-          </button>
         </CCol>
+      </CRow>
+
+      <CRow>
+        <button className="download-btn" onClick={handleDownload}>
+          <FontAwesomeIcon icon={faDownload} />
+          &nbsp; Download Reports
+        </button>
       </CRow>
 
       {/* StatBox Row */}
@@ -196,12 +200,9 @@ const Employeedash = () => {
             <div className="p-3">
               <BreakdownChart />
             </div>
-            <h6 className="p-3">Revenue of this year and Sales</h6>
           </CCard>
         </CCol>
       </CRow>
-
-    
     </CContainer>
   );
 };

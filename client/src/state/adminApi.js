@@ -125,7 +125,31 @@ export const adminApi = createApi({
     // Enable caching
     keepUnusedDataFor: 300, // Keep data for 5 minutes
   }),
-
+  
+  //request 
+  getRequests: build.query({
+    query: () => '/general/requests',
+    providesTags: ['Requests']
+  }),
+  
+  // Receive a request (create or update)
+  receiveRequest: build.mutation({
+    query: (requestData) => ({
+      url: '/general/receive-request',
+      method: 'POST',
+      body: requestData,
+    }),
+    invalidatesTags: ['Requests']
+  }),
+  
+  sendRequest: build.mutation({
+    query: (requestData) => ({
+      url: '/general/send-request', // Removed 'general' since backend doesn't have it
+      method: 'POST',
+      body: requestData,
+    }),
+    invalidatesTags: ['Requests']
+  }),
 
     getPerformance: build.query({
       query: () => 'hr/performance',
@@ -287,10 +311,13 @@ useListBackupsQuery,
 useListCollectionsQuery,
 
 useGetUserActivityQuery,
-useGetUserPermissionsQuery,
+useGetUserPermissionsQuery, 
 useResetPasswordMutation,
 useGetLogsQuery,
 
+useGetRequestsQuery,
+useReceiveRequestMutation, 
+useSendRequestMutation,
 
 //finance
 

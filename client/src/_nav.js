@@ -11,10 +11,17 @@ import {
   faBullhorn,
   faSquarePersonConfined,
   faBell,
-  faGlobe
+  faGlobe,
+  faShield,
+  faHand,
+  faUniversalAccess
 } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Navigation configuration function that returns navigation items based on user role and permissions
+ */
 const _nav = () => {
+  // Get user information from session storage
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
   const userUsername = sessionStorage.getItem('username'); 
@@ -22,6 +29,7 @@ const _nav = () => {
   const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
   const userEmail = sessionStorage.getItem('email');
 
+  // Log session storage values for debugging
   console.log("✅ Session Storage Values:", {
     Role: userRole,
     Department: userDepartment,
@@ -33,6 +41,7 @@ const _nav = () => {
 
   const [allowedRoutes, setAllowedRoutes] = useState([]);
   
+  // Fetch user permissions when component mounts
   useEffect(() => {
     if (!userId) {
       console.error('❌ No userId found in sessionStorage');
@@ -54,6 +63,7 @@ const _nav = () => {
       }
     };
 
+    // Only fetch if no permissions are in session storage
     if (!userPermissions.length) {
       fetchUserPermissions();
     } else {
@@ -61,10 +71,42 @@ const _nav = () => {
     }
   }, [userId]);
 
+  // Array to store navigation items
   const navItems = [];
 
+  // ===== PERMISSION CONFIGURATION =====
+  // This object defines which routes each role+department combination has access to
   const accessPermissions = {
+    // Superadmin permissions by department
     superadmin: {
+      // IMPORTANT: To add new pages for superadmin administrative role, add them to this array
+      Administrative: [
+        '/employeedash',
+        '/hrdash',
+        '/financedash',
+        '/coredash',
+        '/logisticdash',
+        '/worker',
+        '/jobposting',
+        '/payroll',
+        '/freight/transaction',
+        '/oversales',
+        '/customer',
+        '/monthly',
+        '/daily',
+        '/breakdown',
+        '/useractivity/index',
+        '/announce',
+        '/restore',
+        '/tack',
+        '/recovery',
+        '/Toasts',
+        '/chatbox',
+        '/recoverytuts',
+        '/monitoring',
+        // Add your new page routes here, for example:
+        // '/yournewpage',
+      ],
       HR: [
         '/employeedash',
         '/hrdash',
@@ -157,32 +199,9 @@ const _nav = () => {
         '/recovery',
         '/Toasts',
         '/chatbox'
-      ],
-      Administrative: [
-        '/employeedash',
-        '/hrdash',
-        '/financedash',
-        '/coredash',
-        '/logisticdash',
-        '/worker',
-        '/jobposting',
-        '/payroll',
-        '/freight/transaction',
-        '/oversales',
-        '/customer',
-        '/monthly',
-        '/daily',
-        '/breakdown',
-        '/useractivity/index',
-        '/announce',
-        '/restore',
-        '/tack',
-        '/recovery',
-        '/Toasts',
-        '/chatbox',
-        '/recoverytuts'
       ]
     },
+    // Admin permissions by department
     admin: {
       HR: [
         '/hrdash',
@@ -204,7 +223,7 @@ const _nav = () => {
         '/oversales',
       ],
       Logistics: [
-        '/logisticdash',    // Add routes related to logistics
+        '/logisticdash',
         '/shipment',
         '/customer',
         '/monthly',
@@ -217,6 +236,7 @@ const _nav = () => {
         '/restore',
       ]
     },
+    // Manager permissions by department
     Manager: {
       HR: [
         '/hrdash',
@@ -245,8 +265,12 @@ const _nav = () => {
     }
   };
 
+  // Check if current user role and department has any permissions defined
   if (accessPermissions[userRole]?.[userDepartment]) {
-    // Dashboard Section
+    // ===== NAVIGATION SECTIONS BUILDING =====
+    
+    // ===== DASHBOARD SECTION =====
+    // Add main dashboard if user has access
     if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
       navItems.push(
         { 
@@ -259,7 +283,7 @@ const _nav = () => {
       );
     }
 
-    // Department-Specific Dashboards
+    // Add department-specific dashboards
     const dashboards = [
       { path: '/hrdash', name: 'HR Dashboard' },
       { path: '/financedash', name: 'Finance Dashboard' },
@@ -279,7 +303,8 @@ const _nav = () => {
       }
     });
 
-    // Admin Section
+    // ===== ADMIN SECTION =====
+    // Add admin section if user has access to user activity page
     if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
@@ -303,26 +328,40 @@ const _nav = () => {
         },
         {
           component: CNavItem, 
-          name: 'Ex', 
-          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
-          to: '/ex'
+          name: 'PendingRequest', 
+          icon: <FontAwesomeIcon icon={faHand} style={{ marginRight: '8px' }} />, 
+          to: '/PendingRequest'
         },
         {
           component: CNavItem, 
-          name: 'trial', 
-          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
-          to: '/recovery'
+          name: 'AccessReview', 
+          icon: <FontAwesomeIcon icon={faUniversalAccess} style={{ marginRight: '8px' }} />, 
+          to: '/AccessReview'
         },
         {
           component: CNavItem, 
           name: 'NewUser', 
           icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
           to: '/registernew'
+        },
+        {
+          component: CNavItem, 
+          name: 'Security Monitoring', 
+          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />, 
+          to: '/monitoring'
         }
+        // IMPORTANT: This is where you would add new admin section items
+        // Example:
+        // {
+        //   component: CNavItem, 
+        //   name: 'Your New Page', 
+        //   icon: <FontAwesomeIcon icon={faYourIcon} style={{ marginRight: '8px' }} />, 
+        //   to: '/yournewpage'
+        // }
       );
     }
 
-    // HR Section
+    // ===== HR SECTION =====
     if (accessPermissions[userRole][userDepartment].includes('/worker')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
@@ -347,7 +386,7 @@ const _nav = () => {
       );
     }
 
-    // Finance Section
+    // ===== FINANCE SECTION =====
     if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
@@ -384,7 +423,7 @@ const _nav = () => {
       );
     }
 
-    // Core Section
+    // ===== CORE SECTION =====
     if (accessPermissions[userRole][userDepartment].includes('/customer')) {
       navItems.push(
         { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
@@ -420,18 +459,21 @@ const _nav = () => {
         }
       );
     }
-    //logistic
+    
+    // ===== LOGISTIC SECTION =====
     if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
       navItems.push(
-        {   component:CNavTitle, name: 'Logistic', className: 'custom-nav-title'},
+        { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
         {
-          component:CNavTitle,
-          name:'Logistic',
-          icon:<FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px'}}/>,
-          to:'/logistic1/index'
+          component: CNavItem,
+          name: 'Logistic',
+          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          to: '/logistic1/index'
         }
-      )
+      );
     }
+
+    // ===== ACCESS PERMISSIONS SECTION =====
     // Only add Access Permissions section if user is not superadmin
     if (userRole !== 'superadmin') {
       // Add "Access Permissions" section at the end

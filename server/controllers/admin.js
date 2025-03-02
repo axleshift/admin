@@ -5,7 +5,6 @@ import archiver from 'archiver';
 import extract from "extract-zip";
 import { pipeline } from 'stream/promises';
 
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Message from '../model/message.js'
 import User from '../model/User.js'
@@ -13,9 +12,6 @@ import Log from '../model/Log.js';
 import passport from 'passport'
 import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt  from 'jsonwebtoken'
-import dotenv from 'dotenv'
-import axios from 'axios'
-import mongoose from 'mongoose'
 
 
 
@@ -451,32 +447,36 @@ export const restoreDatabase = async (req, res) => {
     }
   }
 };
+//announcement .js
 
 export const generateAnnouncement = async (req, res) => {
-    try {
-        const { input, type } = req.body;
+  try {
+    const { input, type } = req.body;
 
-        let prompt = "";
-        if (type === "achievement") {
-            prompt = `Write a short announcement about this achievement: ${input}`;
-        } else if (type === "event") {
-            prompt = `Write a short announcement about this event: ${input}`;
-        } else if (type === "product") {
-            prompt = `Write a short announcement about this product: ${input}`;
-        } else {
-            return res.status(400).json({ message: "Invalid type" });
-        }
-
-        const model = gemini.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(prompt);
-        const response = result.response.candidates[0].content.parts[0].text;
-
-        res.json({ announcement: response });
-    } catch (error) {
-        console.error("Gemini API Error", error);
-        res.status(500).json({ message: "An error occurred with the Gemini API", error: error.message });
+    let prompt = "";
+    if (type === "achievement") {
+      prompt = `Write a short announcement about this achievement: ${input}`;
+    } else if (type === "event") {
+      prompt = `Write a short announcement about this event: ${input}`;
+    } else if (type === "product") {
+      prompt = `Write a short announcement about this product: ${input}`;
+    } else {
+      return res.status(400).json({ message: "Invalid type" });
     }
+
+    const model = gemini.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(prompt);
+    const response = result.response.candidates[0].content.parts[0].text;
+
+    res.json({ announcement: response });
+  } catch (error) {
+    console.error("Gemini API Error", error);
+    res.status(500).json({ message: "An error occurred with the Gemini API", error: error.message });
+  }
 };
+
+
+//chat.js
 
 export const chatbox = async (req, res) => {
   const { message, conversationHistory } = req.body;

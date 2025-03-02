@@ -9,7 +9,8 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import { createCipheriv } from "crypto";
-
+import Request from "../model/request.js";
+import axios from 'axios'
 dotenv.config();
 
 export const getAllUsers = async (req, res) => {
@@ -218,4 +219,105 @@ export const getDashboardStats = async (req, res) => {
     }
   };
 
-
+  export const receiveREQ = async (req, res) => {
+    try {
+      const requestData = req.body;
+      console.log('Received Request:', requestData);
+      
+      if (!requestData.id) {
+        requestData.id = `req-${Date.now()}`;
+      }
+      
+      requestData.senderUrl = req.headers.referer || req.headers.origin || req.headers.host || "";
+      console.log("Stored sender URL:", requestData.senderUrl);
+      
+      const newRequest = new Request(requestData);
+      await newRequest.save();
+      
+      res.status(200).json({
+        message: 'Request received successfully',
+        data: newRequest
+      });
+    } catch (error) {
+      console.error('Error saving request:', error.message);
+      res.status(500).json({
+        message: 'Error processing request',
+        error: error.message
+      });
+    }
+  };
+  
+  export const sendREQ = async (req, res) => {
+    const requestData = req.body;
+    
+    try {
+      const request = await Request.findOne({ id: requestData.id });
+      if (!request) {
+        return res.status(404).json({ message: 'Request not found' });
+      }
+      
+      // Update request status regardless of callback success
+      const updatedRequest = await Request.findOneAndUpdate(
+        { id: requestData.id },
+        { 
+          status: "approved",
+          approvedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      // Try to send callback if senderUrl exists
+      if (request.senderUrl) {
+        try {
+          // Parse the URL to get the origin
+          const urlObj = new URL(request.senderUrl);
+          // Construct proper API endpoint - this is a common pattern
+          const callbackUrl = `${urlObj.origin}/api/request-callback`;
+          
+          console.log("Attempting to send request status to:", callbackUrl);
+          
+          // Try to send notification but don't fail if it doesn't work
+          try {
+            await axios.post(callbackUrl, {
+              id: request.id,
+              status: "approved",
+              approvedAt: new Date()
+            });
+            console.log("Successfully sent status update to sender");
+          } catch (callbackError) {
+            console.warn("Failed to send status update to sender:", callbackError.message);
+            // Continue processing - don't throw error
+          }
+        } catch (urlError) {
+          console.warn("Invalid sender URL format, skipping callback:", urlError.message);
+          // Continue processing - don't throw error
+        }
+      }
+      
+      // Return success regardless of callback result
+      res.status(200).json({
+        message: 'Request approved successfully',
+        data: updatedRequest
+      });
+    } catch (error) {
+      console.error('Error in sendREQ:', error);
+      res.status(500).json({
+        message: 'Error processing request approval',
+        error: error.message || error.toString()
+      });
+    }
+  };
+  
+  export const getRequests = async (req, res) => {
+    try {
+      const requests = await Request.find().sort({ createdAt: -1 });
+      res.status(200).json(requests);
+    } catch (error) {
+      console.error('Error fetching requests:', error.message);
+      res.status(500).json({
+        message: 'Error fetching requests',
+        error: error.message
+      });
+    }
+  };
+  

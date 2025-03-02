@@ -1,5 +1,5 @@
 import express from "express";
-import { getUser, forgotPassword, resetPassword, getDashboardStats, getAllUsers, updateUser, accessReview } from "../controllers/general.js";
+import { getUser, forgotPassword, resetPassword, getDashboardStats, getAllUsers, updateUser, accessReview,receiveREQ,sendREQ, getRequests } from "../controllers/general.js";
 
 const router = express.Router();
 router.get('/users',getAllUsers)
@@ -13,5 +13,8 @@ router.post("/reset-password/:id/:token", resetPassword);
 
 router.get("/dashboard", getDashboardStats);
 
+router.post('/receive-request', receiveREQ)
+router.post('/send-request', sendREQ)
+router.get('/requests', getRequests);
 
 export default router;

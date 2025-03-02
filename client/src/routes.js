@@ -8,13 +8,12 @@ const HrDash = React.lazy(() => import('./views/dashboard/hrdash'));
 const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
-
-const NewReg = React.lazy(() => import('./views/pages/register/registernew'));
-
+const NewReg = React.lazy(() => import('./views/pages/register/registernew'))
 const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
 const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
-
 const Register = React.lazy(() => import('./views/pages/register/Register'));
+
+const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 // hr
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
@@ -41,7 +40,7 @@ const Monthly = React.lazy(() => import('./views/pages/sales/monthly'));
 const Breakdown = React.lazy(() => import('./views/pages/sales/breakdown'));
 
 const Activity = React.lazy(() => import('./views/pages/useractivity/index'));
-const Recovery = React.lazy(() => import('./views/pages/scene/Recoverytuts'));
+const AccessReview = React.lazy(() => import('./views/pages/scene/AccessReview'));
 const Restore = React.lazy(()=> import('./views/pages/scene/recovery'));
 const Settings = React.lazy(() => import('./views/pages/profile/Settings'));
 const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
@@ -54,7 +53,9 @@ const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'))
 
 const Button = React.lazy(() => import('./views/pages/scene/button'));
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
-const Ex = React.lazy(()=>import ('./views/pages/scene/ex'))
+
+const PendingRequest = React.lazy(()=>import ('./views/pages/scene/PendingRequest'))
+
 const routes = [
   { path: '/', exact: true, name: 'Home' },
 
@@ -81,7 +82,7 @@ const routes = [
   { path: '/freight/transaction', name: 'Freight transaction', element: <ProtectedRoute><Transaction /></ProtectedRoute> },
   { path: '/freight/shipping', name: 'Freight shipping', element: <ProtectedRoute><Shipping /></ProtectedRoute> },
   { path: '/useractivity/index', name: 'ACTIVITY', element: <ProtectedRoute><Activity /></ProtectedRoute> },
-  { path: '/recovery', name: 'RECOVERY', element: <ProtectedRoute><Recovery /></ProtectedRoute> },
+  { path: '/AccessReview', name: 'AccessReview', element: <ProtectedRoute><AccessReview /></ProtectedRoute> },
   { path: '/restore', name: 'RESTORE', element: <ProtectedRoute><Restore /></ProtectedRoute> },
 
   { path: '/Settings', name: 'Settings', element: <ProtectedRoute><Settings /></ProtectedRoute> },
@@ -92,7 +93,9 @@ const routes = [
   { path: '/breakdown', name: 'Breakdown ', element: <ProtectedRoute><Breakdown /></ProtectedRoute> },
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },
   { path: '/logistic1/pin', name: 'Track', element: <ProtectedRoute><Pin /></ProtectedRoute> },
-
+  { path: '/monitoring', name: 'Monitoring', element: <ProtectedRoute><Monitoring/></ProtectedRoute>},
+  
+  { path: '/PendingRequest', name:'PendingRequest', element: <ProtectedRoute><PendingRequest /></ProtectedRoute>},
 
   //finance
   { path: '/freightaudit', name:'FreightAudit', element: <ProtectedRoute><FreightAudit /></ProtectedRoute> },
@@ -104,7 +107,6 @@ const routes = [
   //trial
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
   { path: '/tack' , name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
-  { path: '/ex', name:'Ex', element: <ProtectedRoute><Ex /></ProtectedRoute>}
 ];
 
 export default routes;

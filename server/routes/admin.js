@@ -24,20 +24,25 @@ import {
 import { logActivity } from '../middleware/logActivity.js';
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
 const router = express.Router();
-router.post('/set-directory', setBackupDirectory);
-router.post('/backup', backupDatabase);
-router.post('/restore', restoreDatabase);
-// New routes for listing backups and collections
-router.get('/list-backups', listBackups);
-router.get('/list-collections/:backupName', listCollections);
+
+//backup
+    router.post('/set-directory', setBackupDirectory);
+    router.post('/backup', backupDatabase);
+    router.post('/restore', restoreDatabase);
+    // New routes for listing backups and collections
+    router.get('/list-backups', listBackups);
+    router.get('/list-collections/:backupName', listCollections);
 
 router.get('/github', githubAuth);
 router.get('/github/callback',githubCallback, sendToken)
 
 router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
 
-
+//announce.js
 router.post('/generate', generateAnnouncement)
+
+//chat.js
+
 router.post('/chat',chatbox)
 router.post('/status-update', handleStatusUpdate);
 router.get('/request-status/:username', getRequestStatus);
