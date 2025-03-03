@@ -146,9 +146,40 @@ const userSchema = new mongoose.Schema(
     backupDirectory: { type: String},
     permissions: { type: [String], default: [] }, // Store only permission names
     expiryMap: { type: Map, of: Date, default: {} }, // Map permission name → expiry date
+    accountLocked: {
+      type: Boolean,
+      default: false
+      },
+      lockExpiration: {
+          type: Date,
+          default: null
+      },
+      passwordResetToken: String,
+      passwordResetExpires: Date,
+      isActive: {
+          type: Boolean,
+          default: true
+      }
   },
   { timestamps: true }
 );
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
 
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 const User = mongoose.model("User", userSchema);
 export default User;

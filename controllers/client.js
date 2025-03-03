@@ -10,6 +10,15 @@ import Joi from "joi";
 import PasswordComplexity from "joi-password-complexity";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 import { io } from "../index.js"; // Import Socket.IO instance
+import {
+    logLoginAttempt,
+    checkForUnusualLogin,
+    getRecentFailedAttempts,
+    createSecurityAlert,
+    checkLoginRateLimit,
+    createAccountLockoutAlert,
+    createLogger
+} from '../UTIL/securityUtils.js';
 
   
 const passwordComplexityOptions = {
@@ -103,79 +112,181 @@ export const registerUser = async (req, res) => {
 // Login endpoint
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
-
-    if (!identifier || !password) {
-        return res.status(400).json({ message: "Identifier and password are required" });
-    }
-
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    
     try {
-        const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
-
-        if (!user) {
-            return res.status(400).json({ message: "User not found" });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        // Check if the user has one of the allowed roles: admin, superadmin, or manager
-        const allowedRoles = ["admin", "superadmin", "manager"];
-        if (!allowedRoles.includes(user.role)) {
-            return res.status(403).json({ message: "You do not have permission to access this application." });
-        }
-
-        // Generate JWT Access Token
-        const accessToken = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "15m" }
-        );
-
-        // Generate Refresh Token
-        const refreshToken = jwt.sign(
-            { id: user._id },
-            process.env.JWT_REFRESH_SECRET,
-            { expiresIn: "7d" }
-        );
-
-        // Save the refresh token in the database
-        user.refreshToken = refreshToken;
-        await user.save();
-
-        // ✅ Log User Data Before Setting Session
-        console.log("User Object Before Session Set:", user);
-
-        // Set session data
-        req.session.user = { 
-            id: user._id, 
-            username: user.username, 
-            name: user.name, 
-            email: user.email,
-            role: user.role, 
-            department: user.department,
-            permissions: user.permissions
-        };
+        // Find user by email or username
+        const user = await User.findOne({
+            $or: [
+                { email: identifier },
+                { username: identifier }
+            ]
+        });
         
-        console.log("✅ Session Data Set:", req.session.user);
-        // Log the login action
-        await createLog(req.session.user, 'Login', 'User logged into the system');
-
-        // ✅ Return session data along with tokens
-        res.status(200).json({
+        // Check if this specific account is locked (only if user exists)
+        if (user && user.accountLocked && user.lockExpiration > new Date()) {
+            // Log the blocked attempt for a locked account
+            await logLoginAttempt({
+                identifier,
+                userId: user._id,
+                ipAddress,
+                userAgent,
+                status: 'unauthorized',
+                reason: 'Account locked'
+            });
+            
+            return res.status(429).json({
+                message: "This account is temporarily locked due to too many failed attempts.",
+                lockedUntil: user.lockExpiration,
+                remainingTime: Math.ceil((user.lockExpiration - new Date()) / 1000)
+            });
+        }
+        
+        // If account was locked but lock has expired, unlock it
+        if (user && user.accountLocked && user.lockExpiration <= new Date()) {
+            user.accountLocked = false;
+            user.lockExpiration = null;
+            await user.save();
+        }
+        
+        // If user doesn't exist, log attempt but don't reveal this info
+        if (!user) {
+            await logLoginAttempt({
+                identifier,
+                ipAddress,
+                userAgent,
+                status: 'failed',
+                reason: 'User not found'
+            });
+            
+            // Check if there are too many failed attempts for this specific identifier
+            const failedAttempts = await getRecentFailedAttempts(null, identifier);
+            
+            // We won't lock anything here since the user doesn't exist
+            // Just return the generic error
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+        
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        if (!isPasswordValid) {
+            // Log failed login attempt
+            await logLoginAttempt({
+                userId: user._id,
+                identifier,
+                ipAddress,
+                userAgent,
+                status: 'failed',
+                reason: 'Incorrect password'
+            });
+            
+            // Check for too many failed attempts for this specific user
+            const failedAttempts = await getRecentFailedAttempts(user._id, identifier);
+            
+            if (failedAttempts >= 5) {
+                // Lock this specific account in the database
+                const lockoutEnd = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+                
+                user.accountLocked = true;
+                user.lockExpiration = lockoutEnd;
+                await user.save();
+                
+                // Create security alert for account lockout
+                await createAccountLockoutAlert(user._id, ipAddress, userAgent);
+                
+                return res.status(429).json({
+                    message: "Too many failed login attempts. This account has been temporarily locked.",
+                    lockedUntil: lockoutEnd,
+                    remainingTime: 300 // 5 minutes in seconds
+                });
+            }
+            
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+        
+        // Login successful - generate JWT tokens
+        const accessToken = jwt.sign(
+            { userId: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        
+        const refreshToken = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: '7d' }
+        );
+        
+        // Log successful login
+        await logLoginAttempt({
+            userId: user._id,
+            identifier,
+            ipAddress,
+            userAgent,
+            status: 'success'
+        });
+        
+        // Check for unusual login patterns
+        let securityAlert = null;
+        const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
+        
+        if (unusualLogin) {
+            securityAlert = {
+                type: 'unusual_login_detected',
+                message: "We noticed a login from a new location or device."
+            };
+            
+            // Create security alert
+            await createSecurityAlert(user._id, 'unusual_login_detected', {
+                currentIp: ipAddress,
+                currentUserAgent: userAgent,
+                previousIp: unusualLogin.previousIp,
+                previousUserAgent: unusualLogin.previousUserAgent
+            });
+        }
+        
+        // Update last login info
+        user.lastLogin = new Date();
+        user.lastIpAddress = ipAddress;
+        await user.save();
+        
+        // Return user data and tokens
+        return res.status(200).json({
+            message: "Login successful",
+            user: {
+                id: user._id,
+                username: user.username,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                department: user.department,
+                permissions: user.permissions
+            },
             accessToken,
             refreshToken,
-            user: req.session.user, // Return session data
+            securityAlert
         });
-
+        
     } catch (error) {
         console.error("Login error:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        
+        // Log error
+        await logLoginAttempt({
+            identifier,
+            ipAddress,
+            userAgent,
+            status: 'error',
+            error: error.message
+        });
+        
+        return res.status(500).json({
+            message: "An error occurred during login."
+        });
     }
 };
-
-
+  
 
 
 export const refreshToken = async (req, res) => {
