@@ -20,7 +20,7 @@ export const adminApi = createApi({
     'Sales',
     'Dashboard',
     "Notif",
-    "Backup"
+    "Backup",
   ],
   endpoints: (build) => ({
     // Fetch user data by ID
@@ -125,18 +125,8 @@ export const adminApi = createApi({
     // Enable caching
     keepUnusedDataFor: 300, // Keep data for 5 minutes
   }),
-  getSecurityIncidents: build.query({
-    query: ({ page, limit, filters }) => ({
-      url: `/security/security-incidents`,
-      method: 'GET',
-      params: {
-        page,
-        limit,
-        ...filters
-      }
-    }),
-    providesTags: ['SecurityIncidents']
-  }),
+
+ 
   //request 
   getRequests: build.query({
     query: () => '/general/requests',
@@ -163,7 +153,27 @@ export const adminApi = createApi({
   }),
 
   //security
-  
+  getLoginAttempts: build.query({
+    query: (params) => ({
+      url: 'client/login-attempts',
+      method: 'GET',
+      params
+    })
+  }),
+  getSecurityAlerts: build.query({
+    query: (params) => ({
+      url: 'client/alerts',
+      method: 'GET',
+      params
+    })
+  }),
+  resolveAlert: build.mutation({
+    query: ({ alertId, resolution }) => ({
+      url: `client/alerts/${alertId}`,
+      method: 'PATCH',
+      body: { status: 'resolved', resolution }
+    })
+  }),
 
     getPerformance: build.query({
       query: () => 'hr/performance',
@@ -328,7 +338,10 @@ useGetUserActivityQuery,
 useGetUserPermissionsQuery, 
 useResetPasswordMutation,
 useGetLogsQuery,
-useGetSecurityIncidentsQuery, 
+//securtity
+useGetLoginAttemptsQuery, 
+  useGetSecurityAlertsQuery,
+  useResolveAlertMutation,
 
 useGetRequestsQuery,
 useReceiveRequestMutation, 
