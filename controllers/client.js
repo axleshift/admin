@@ -19,7 +19,6 @@ import {
     createAccountLockoutAlert,
     createLogger
 } from '../UTIL/securityUtils.js';
-
   
 const passwordComplexityOptions = {
     min: 8,

@@ -11,9 +11,7 @@ import {
     githubCallback,
     sendToken,
     getUsersBy ,
-    getLogs, 
-    logFrontendActivity, 
-    getUserActivity,
+   
     
     setBackupDirectory, 
     backupDatabase, 
@@ -51,13 +49,7 @@ router.post('/sendmessage', sendMessage);
 router.get('/getmessages/:department', getDepartmentMessages);
 router.put('/messages/:id/status', updateMessageStatus);
 
-router.get('/logs', getLogs);
 
-// Log frontend activity
-router.post('/logs/activity', logFrontendActivity); 
-
-
-router.get("/user-activity", getUserActivity);
 
 
 
