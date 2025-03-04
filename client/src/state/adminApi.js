@@ -153,27 +153,7 @@ export const adminApi = createApi({
   }),
 
   //security
-  getLoginAttempts: build.query({
-    query: (params) => ({
-      url: 'client/login-attempts',
-      method: 'GET',
-      params
-    })
-  }),
-  getSecurityAlerts: build.query({
-    query: (params) => ({
-      url: 'client/alerts',
-      method: 'GET',
-      params
-    })
-  }),
-  resolveAlert: build.mutation({
-    query: ({ alertId, resolution }) => ({
-      url: `client/alerts/${alertId}`,
-      method: 'PATCH',
-      body: { status: 'resolved', resolution }
-    })
-  }),
+
 
     getPerformance: build.query({
       query: () => 'hr/performance',
@@ -339,9 +319,7 @@ useGetUserPermissionsQuery,
 useResetPasswordMutation,
 useGetLogsQuery,
 //securtity
-useGetLoginAttemptsQuery, 
-  useGetSecurityAlertsQuery,
-  useResolveAlertMutation,
+
 
 useGetRequestsQuery,
 useReceiveRequestMutation, 
