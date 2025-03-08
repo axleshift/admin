@@ -1,0 +1,63 @@
+.forgot-pass-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    padding: 20px;
+  }
+  
+  .forgot-pass-card {
+    width: 100%;
+    max-width: 400px;
+    background-color: #2d2d2d !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  .forgot-pass-card-body {
+    padding: 2rem !important;
+  }
+  
+  .forgot-pass-title {
+    color: #ffffff !important;
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .forgot-pass-input {
+    background-color: #3d3d3d !important;
+    border: 1px solid #4d4d4d !important;
+    color: #ffffff !important;
+    margin-bottom: 1rem;
+  }
+  
+  .forgot-pass-input::placeholder {
+    color: #8c8c8c !important;
+  }
+  
+  .forgot-pass-input:focus {
+    background-color: #3d3d3d !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+  }
+  
+  .forgot-pass-button {
+    width: 100%;
+    padding: 0.75rem !important;
+    font-size: 1rem;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+  }
+  
+  .forgot-pass-button:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+  }
+  
+  .alert {
+    background-color: #3d3d3d !important;
+    color: #ffffff !important;
+    border: 1px solid #4d4d4d !important;
+  }
