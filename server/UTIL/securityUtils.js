@@ -148,7 +148,7 @@ export const checkLoginRateLimit = async (userId, identifier, ipAddress) => {
                 .limit(1);
             
             if (mostRecentAttempt) {
-                const lockoutUntil = new Date(mostRecentAttempt.timestamp.getTime() + 5 * 60 * 1000);
+                const lockoutUntil = new Date(mostRecentAttempt.timestamp.getTime() + 15 * 60 * 1000); // 15 minutes
                 const now = new Date();
                 
                 if (now < lockoutUntil) {
@@ -187,6 +187,7 @@ export const checkLoginRateLimit = async (userId, identifier, ipAddress) => {
         return { isLocked: false }; // Default to not locked if there's an error
     }
 };
+
 
 export const createAccountLockoutAlert = async (userId, ipAddress, userAgent) => {
     return await createSecurityAlert(userId, 'account_locked', {

@@ -81,7 +81,7 @@ const Login = () => {
       
       // Store user data in SessionStorage
       const { id, name, username, role, email, department, permissions } = response.user;
-      sessionStorage.setItem("userId", id);
+      sessionStorage.setItem("userid", id);  // Changed from "userId" to "userid"
       sessionStorage.setItem("username", username || "");
       sessionStorage.setItem("name", name || "");
       sessionStorage.setItem("email", email || "");
@@ -112,48 +112,42 @@ const Login = () => {
           navigate("/logisticdash");
           break;
         default:
-          navigate("/dashboard"); // Default dashboard if department is not recognized
+          navigate("/"); // Default dashboard if department is not recognized
       }
       
     } catch (err) {
       console.error("Login Failed:", err);
-      
+    
       // Handle account locking (429 Too Many Requests)
       if (err.status === 429) {
-        // Mark just this account as locked, not the entire login form
         setAccountLocked(true);
-        
-        // If server provided a lockout time
+    
         if (err.data?.lockedUntil) {
           const lockoutTime = new Date(err.data.lockedUntil);
           const currentTime = new Date();
           const timeRemaining = Math.ceil((lockoutTime - currentTime) / 1000);
-          
-          if (timeRemaining > 0) {
-            setRemainingTime(timeRemaining);
-            setLockExpiration(lockoutTime);
-          } else {
-            setRemainingTime(300); // Default to 5 minutes if calculation is off
-            
-            const defaultExpiration = new Date();
-            defaultExpiration.setMinutes(defaultExpiration.getMinutes() + 5);
-            setLockExpiration(defaultExpiration);
-          }
+    
+          setRemainingTime(timeRemaining > 0 ? timeRemaining : 900);  // 15 minutes in seconds
+          setLockExpiration(lockoutTime);
         } else {
-          // Default lockout of 5 minutes if server doesn't provide exact time
-          setRemainingTime(300);
-          
+          setRemainingTime(900);  // Default to 15 minutes if no time is provided
           const defaultExpiration = new Date();
-          defaultExpiration.setMinutes(defaultExpiration.getMinutes() + 5);
+          defaultExpiration.setMinutes(defaultExpiration.getMinutes() + 15); // 15 minutes
           setLockExpiration(defaultExpiration);
         }
-        
+    
         setErrorMessage(err.data?.message || "Too many failed login attempts. This account is temporarily locked.");
       } else {
-        // Handle other error types
-        setErrorMessage(err.data?.message || "Login failed. Please check your credentials and try again.");
+        // Show remaining attempts if provided
+        const remainingAttempts = err.data?.remainingAttempts;
+        if (remainingAttempts !== undefined) {
+          setErrorMessage(`Invalid credentials. You have ${remainingAttempts} attempts remaining.`);
+        } else {
+          setErrorMessage(err.data?.message || "Login failed. Please check your credentials and try again.");
+        }
       }
     }
+    
   };
 
   // Format remaining time as MM:SS
@@ -184,7 +178,7 @@ const Login = () => {
                         <strong>Security Notice:</strong> {securityNotice}
                       </CAlert>
                     )}
-
+  
                     {/* Account Lockout Message - Only show if the current username is locked */}
                     {isCurrentAccountLocked && (
                       <CAlert color="danger">
@@ -196,12 +190,12 @@ const Login = () => {
                         )}
                       </CAlert>
                     )}
-
+  
                     {/* Error Message */}
                     {!isCurrentAccountLocked && errorMessage && (
                       <CAlert color="danger">{errorMessage}</CAlert>
                     )}
-
+  
                     {/* Email/Username Input */}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
@@ -224,7 +218,7 @@ const Login = () => {
                         required
                       />
                     </CInputGroup>
-
+  
                     {/* Password Input */}
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
@@ -240,8 +234,8 @@ const Login = () => {
                         required
                       />
                     </CInputGroup>
-
-                    {/* Login Button */}
+  
+                    {/* Login Button Row */}
                     <CRow>
                       <CCol xs={6}>
                         <CButton 
@@ -269,6 +263,22 @@ const Login = () => {
                         </Link>
                       </CCol>
                     </CRow>
+  
+                    {/* OTP Button - New Addition */}
+                    {isCurrentAccountLocked && (
+                      <CRow className="mt-3">
+                        <CCol xs={12}>
+                          <CButton 
+                            type="button" 
+                            color="secondary" 
+                            className="w-100" 
+                            onClick={() => window.location.href = "/OTP"}
+                          >
+                            Use OTP to Unlock Account
+                          </CButton>
+                        </CCol>
+                      </CRow>
+                    )}
                   </CForm>
                 </CCardBody>
               </CCard>

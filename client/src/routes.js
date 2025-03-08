@@ -1,6 +1,5 @@
 import React from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
-import apislice from './util/apislice';
 
 //dashboard
 const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'));
@@ -8,11 +7,11 @@ const HrDash = React.lazy(() => import('./views/dashboard/hrdash'));
 const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
-const NewReg = React.lazy(() => import('./views/pages/register/registernew'))
 const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
 const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
 const Register = React.lazy(() => import('./views/pages/register/Register'));
 
+const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 // hr
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
@@ -25,9 +24,9 @@ const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"
 const FreightAudit = React.lazy(() => import("./views/pages/integrate/finance/freightaudit"))
 const FinancialAnalytics = React.lazy(() => import("./views/pages/integrate/finance/financialanalytics"))
 const Invoice = React.lazy(() => import("./views/pages/integrate/finance/invoice"))
-
+const Customers = React.lazy(() => import('./views/pages/integrate/finance/customer'));
 // logistics
-const Customers = React.lazy(() => import('./views/customers/index'));
+
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'));
 const Land = React.lazy(() => import('./views/pages/freight/land'));
 const Transaction = React.lazy(() => import('./views/pages/freight/transaction'));
@@ -66,12 +65,13 @@ const routes = [
   { path: '/coredash', name: 'Dashboard', element: <ProtectedRoute><CoreDash /></ProtectedRoute> },
   { path: '/financedash', name: 'Dashboard', element: <ProtectedRoute><FinanceDash /></ProtectedRoute> },
 
-  { path: '/registernew', name: 'Register', element: <ProtectedRoute><NewReg /></ProtectedRoute> },
 
   { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
   { path: '/chatbox' , name:'chatbox', element: <ProtectedRoute><Chatbox/></ProtectedRoute>},
 
   { path: '/register', name: 'Register', element: <ProtectedRoute><Register /> </ProtectedRoute>},
+
+  { path: '/request', name: 'Request', element: <ProtectedRoute><Request /> </ProtectedRoute>},
 
   { path: '/customer', name: 'Customer', element: <ProtectedRoute><Customers /></ProtectedRoute> },
    { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },

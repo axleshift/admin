@@ -30,7 +30,15 @@ export const getAllLoginAttempts = async (req, res) => {
         // Create a filter object dynamically
         const filter = {};
         if (userId) filter.userId = userId;
-        if (status) filter.status = status;
+        
+        // Case-insensitive status filtering
+        if (status) {
+            // Use regex for case-insensitive matching
+            filter.status = { 
+                $regex: new RegExp(`^${status}$`, 'i') 
+            };
+        }
+        
         if (ipAddress) filter.ipAddress = ipAddress;
 
         // Fetch login attempts with filters, sorted by latest

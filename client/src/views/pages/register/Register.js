@@ -16,7 +16,6 @@ import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilPhone, cilUser } from '@coreui/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useRegisterUserMutation } from '../../../state/adminApi';
 
 const Register = () => {
   const [data, setData] = useState({
@@ -26,56 +25,48 @@ const Register = () => {
     password: '',
     repeatPassword: '',
     role: '',
-    department: '',
+    adminUsername: '', // New field for admin's username
+    department: '', // New field for department
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [registerUser] = useRegisterUserMutation()
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const errors = {}
-
-    // Validate fields
-    if (!data.name) errors.name = true
-    if (!data.email) errors.email = true
-    if (!data.phoneNumber) errors.phoneNumber = true
-    if (!data.password) errors.password = true
-    if (data.password !== data.repeatPassword) errors.repeatPassword = true
-    if (!data.role) errors.role = true
-    if (!data.department) errors.department = true
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors)
-      setError('Please fill all required fields')
-      return
+    // Validate password match
+    if (data.password !== data.repeatPassword) {
+      setError('Passwords do not match');
+      return;
     }
 
-    // Clear errors if valid
-    setValidationErrors({})
-    setError('')
-
-    const requestData = {
-      ...data,
-      adminUsername: data.role === 'admin' ? data.name : undefined,
+    // Check for empty fields
+    if (!data.name || !data.email || !data.password || !data.role || !data.department) {
+      setError('All fields are required');
+      return;
     }
 
-    setLoading(true)
+    // If role is admin, employee, or manager, check for admin username
+    if (['admin', 'manager', 'employee'].includes(data.role) && !data.adminUsername) {
+      setError('Admin username is required for the selected role');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await registerUser(requestData).unwrap()
-      console.log(response)
-      navigate('/worker')
+      const response = await axios.post('http://localhost:5053/client/register', data);
+      console.log(response.data);
+      navigate('/login');
     } catch (err) {
-      console.error('Registration error:', err)
-      setError(err.data?.error || 'Registration failed')
+      console.error('Registration error:', err);
+      setError(err.response?.data?.error || 'Registration failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -87,7 +78,6 @@ const Register = () => {
                   <h1>Register</h1>
                   <p className="text-body-secondary">Create your account</p>
                   {error && <p style={{ color: 'red' }}>{error}</p>}
-
                   <CInputGroup className="mb-3">
                     <CInputGroupText>
                       <CIcon icon={cilUser} />
@@ -97,12 +87,8 @@ const Register = () => {
                       autoComplete="name"
                       value={data.name}
                       onChange={(e) => setData({ ...data, name: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.name ? 'red' : '',
-                      }}
                     />
                   </CInputGroup>
-
                   <CInputGroup className="mb-3">
                     <CInputGroupText>@</CInputGroupText>
                     <CFormInput
@@ -110,12 +96,8 @@ const Register = () => {
                       autoComplete="email"
                       value={data.email}
                       onChange={(e) => setData({ ...data, email: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.email ? 'red' : '',
-                      }}
                     />
                   </CInputGroup>
-
                   <CInputGroup className="mb-4">
                     <CInputGroupText>
                       <CIcon icon={cilPhone} />
@@ -125,12 +107,8 @@ const Register = () => {
                       autoComplete="phoneNumber"
                       value={data.phoneNumber}
                       onChange={(e) => setData({ ...data, phoneNumber: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.phoneNumber ? 'red' : '',
-                      }}
                     />
                   </CInputGroup>
-
                   <CInputGroup className="mb-3">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -141,12 +119,8 @@ const Register = () => {
                       autoComplete="new-password"
                       value={data.password}
                       onChange={(e) => setData({ ...data, password: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.password ? 'red' : '',
-                      }}
                     />
                   </CInputGroup>
-
                   <CInputGroup className="mb-4">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -157,44 +131,43 @@ const Register = () => {
                       autoComplete="new-password"
                       value={data.repeatPassword}
                       onChange={(e) => setData({ ...data, repeatPassword: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.repeatPassword ? 'red' : '',
-                      }}
                     />
                   </CInputGroup>
-
                   <CInputGroup className="mb-4">
                     <CFormSelect
                       aria-label="Select role"
                       value={data.role}
                       onChange={(e) => setData({ ...data, role: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.role ? 'red' : '',
-                      }}
                     >
-                      <option value="">Select Role</option>
-                      <option value="superadmin">Super Admin</option>
+                      <option value="user">User</option>
                       <option value="admin">Admin</option>
                       <option value="manager">Manager</option>
+                      <option value="employee">Employee</option>
                     </CFormSelect>
                   </CInputGroup>
 
+                  {/* Conditionally display admin username input */}
+                  {['admin', 'manager', 'employee'].includes(data.role) && (
+                    <CInputGroup className="mb-4">
+                      <CInputGroupText>
+                        <CIcon icon={cilUser} />
+                      </CInputGroupText>
+                      <CFormInput
+                        placeholder="Admin Username"
+                        value={data.adminUsername}
+                        onChange={(e) => setData({ ...data, adminUsername: e.target.value })}
+                      />
+                    </CInputGroup>
+                  )}
+
+                  {/* Department input */}
                   <CInputGroup className="mb-4">
                     <CInputGroupText>Department</CInputGroupText>
-                    <CFormSelect
+                    <CFormInput
+                      placeholder="Department"
                       value={data.department}
                       onChange={(e) => setData({ ...data, department: e.target.value })}
-                      style={{
-                        borderColor: validationErrors.department ? 'red' : '',
-                      }}
-                    >
-                      <option value="">Select Department</option>
-                      <option value="HR">HR</option>
-                      <option value="Core">Core</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Logistics">Logistics</option>
-                      <option value="Administrative">Administrative</option>
-                    </CFormSelect>
+                    />
                   </CInputGroup>
 
                   <CButton type="submit" color="success" disabled={loading}>

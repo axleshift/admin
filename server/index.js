@@ -1,5 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -16,10 +17,10 @@ import coreRoutes from "./routes/core.js";
 import logisticsRoutes from "./routes/logistics.js";
 import financeRoutes from "./routes/finance.js";
 import adminRoutes from './routes/admin.js';
-import tryRoutes from './routes/try.js';
+import securityRoutes from './routes/security.js'
 
-import session from "express-session";
-import MongoStore from "connect-mongo";
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 
 import { Server } from "socket.io";
 import http from "http";
@@ -52,6 +53,7 @@ app.set("io", io);
 
 // ✅ 5. Middleware
 app.use(express.json());
+app.use(cookieParser()); 
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
@@ -61,24 +63,29 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(
     cors({
-        origin: "http://localhost:3000",
+        origin: process.env.CLIENT_URL,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     })
 );
 
 // ✅ 6. Set up session middleware before routes
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        store: MongoStore.create({
-            mongoUrl: process.env.MONGO_URL,
-        }),
-        cookie: { secure: false, httpOnly: true }, // 1 day
-    })
-);
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URL,
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 14 * 24 * 60 * 60 * 1000
+    }
+  }));
 
 // ✅ 7. Register routes
 app.use("/client", clientRoutes);
@@ -86,8 +93,7 @@ app.use("/general", generalRoutes);
 app.use("/management", managementRoutes);
 app.use("/sales", salesRoutes);
 app.use("/admin", adminRoutes);
-app.use("/try", tryRoutes); 
-
+app.use('/security', securityRoutes)
 // ✅ 8. Integration routes
 app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);

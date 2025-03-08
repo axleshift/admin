@@ -2,31 +2,14 @@ import User from "../model/User.js";
 import { generateUsername } from "../UTIL/generateCode.js";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
-import { getCustomers } from "./client.js";
 import {io}  from '../index.js'
-import axios from 'axios'
-
-const hrdata = 'http://axleshifthr.com/users'
-
-export async function fetchhrdata(){
-  try{
-    const response = await axios.get(hrdata)
-
-    console.log('fetch data', response.data)
-
-    return response.data
-  } catch (error){
-    console.error('Failed to fetch',error)
-    throw error
-  }
-}
 
   
 
 
 export const getWorker = async (req, res) => {
     try {
-      const workers = await User.find({ role: { $in: ["manager", 'superadmin',"admin", "employee","Admin","Manager","Superadmin","Employee"] } }).select("-password");
+      const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
   
       // Ensure consistent data
       const sanitizedWorkers = workers.map((worker) => ({
@@ -170,145 +153,145 @@ export const getJobPostings = async (req, res) => {
       res.status(500).json({ message: "Failed to fetch Payroll" });
     }
   };
+  
+  export const getHrDashStats = async (req,res)=>{
+    try{
+      const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
+  
+  
+      const totalWorkers = workers.length;
+  
+      const hrStats = {
+        totalWorkers,}
+        res.status(200).json(hrStats);
+      } catch (error) {
+          console.error("Error fetching HR Dashboard stats:", error);
+          res.status(500).json({ message: "Failed to fetch HR Dashboard stats" });
+      }
+    } 
 
-
-export const getHrDashStats = async (req,res)=>{
-  try{
-    const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
-
-
-    const totalWorkers = workers.length;
-
-    const hrStats = {
-      totalWorkers,}
-      res.status(200).json(hrStats);
-    } catch (error) {
-        console.error("Error fetching HR Dashboard stats:", error);
-        res.status(500).json({ message: "Failed to fetch HR Dashboard stats" });
-    }
-  }
-   
   export const getUserPermissions = async (req, res) => {
+      try {
+          const { userId } = req.params;
+    
+          const user = await User.findById(userId);
+          if (!user) return res.status(404).json({ message: 'User not found' });
+  
+          console.log("🔹 Sending user permissions:", user.permissions || []);
+    
+          res.json({ permissions: user.permissions || [] });
+      } catch (error) {
+          res.status(500).json({ message: 'Error fetching permissions', error });
+      }
+  };
+  
+  export const access = async (req, res) => {
     try {
-        const { userId } = req.params;
+      const { userId, newPermissions, grantedBy } = req.body; // Add 'grantedBy' to track the user who granted access
   
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        console.log("🔹 Sending user permissions:", user.permissions || []);
+      if (!userId || !newPermissions || !Array.isArray(newPermissions)) {
+        return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+      }
   
-        res.json({ permissions: user.permissions || [] });
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      const now = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(now.getDate() + 1);
+  
+      const updatedPermissions = new Set(user.permissions || []);
+      const updatedExpiryMap = new Map(user.expiryMap || {});
+  
+      newPermissions.forEach((perm) => {
+        updatedPermissions.add(perm);
+        updatedExpiryMap.set(perm, expiryDate);
+      });
+  
+      user.permissions = [...updatedPermissions];
+      user.expiryMap = Object.fromEntries(updatedExpiryMap);
+  
+      await user.save();
+  
+      // Emit an event through the socket, including the granted permissions
+      io.emit('permissionUpdated', {
+        userId,
+        grantedBy,
+        name: user.name,
+        permissions: newPermissions, // Include granted permissions
+      });
+  
+      res.json({
+        message: 'Permissions granted successfully',
+        permissions: user.permissions,
+        expiryMap: user.expiryMap,
+      });
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching permissions', error });
+      console.error("❌ Error granting access:", error);
+      res.status(500).json({ message: 'Error granting access', error });
     }
-};
-
-export const access = async (req, res) => {
-  try {
-    const { userId, newPermissions, grantedBy } = req.body; // Add 'grantedBy' to track the user who granted access
-
-    if (!userId || !newPermissions || !Array.isArray(newPermissions)) {
-      return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+  };
+  
+  
+  export const revokeAccess = async (req, res) => {
+    try {
+      const { userId, permissionsToRemove } = req.body;
+  
+      if (!userId || !permissionsToRemove || !Array.isArray(permissionsToRemove)) {
+        return res.status(400).json({ message: 'User ID and valid permissions array are required' });
+      }
+  
+      const user = await User.findById(userId);
+      if (!user) {
+        console.log("❌ User not found:", userId);
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // Debug before updating
+      console.log("🔹 User Permissions Before:", user.permissions);
+  
+      // Remove permissions from the user
+      user.permissions = (user.permissions || []).filter(
+        (perm) => !permissionsToRemove.includes(perm)
+      );
+  
+      // Remove from expiryMap
+      const updatedExpiryMap = new Map(user.expiryMap || {});
+      permissionsToRemove.forEach((perm) => {
+        updatedExpiryMap.delete(perm);
+      });
+      user.expiryMap = Object.fromEntries(updatedExpiryMap);
+  
+      // Debug after updating
+      console.log("🔹 User Permissions After:", user.permissions);
+  
+      await user.save();
+  
+      // Emit an event for revoked permissions
+      console.log("📢 Emitting permissionRevoked event:", {
+        userId,
+        name: user.name,
+        revokedPermissions: permissionsToRemove,
+      });
+  
+      io.emit('permissionRevoked', {
+        userId,
+        name: user.name,
+        revokedPermissions: permissionsToRemove,
+      });
+  
+      res.json({
+        message: 'Permissions revoked successfully',
+        permissions: user.permissions,
+        expiryMap: user.expiryMap,
+      });
+    } catch (error) {
+      console.error("❌ Error revoking access:", error);
+      res.status(500).json({ message: 'Error revoking access', error });
     }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const now = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(now.getDate() + 1);
-
-    const updatedPermissions = new Set(user.permissions || []);
-    const updatedExpiryMap = new Map(user.expiryMap || {});
-
-    newPermissions.forEach((perm) => {
-      updatedPermissions.add(perm);
-      updatedExpiryMap.set(perm, expiryDate);
-    });
-
-    user.permissions = [...updatedPermissions];
-    user.expiryMap = Object.fromEntries(updatedExpiryMap);
-
-    await user.save();
-
-    // Emit an event through the socket, including the granted permissions
-    io.emit('permissionUpdated', {
-      userId,
-      grantedBy,
-      name: user.name,
-      permissions: newPermissions, // Include granted permissions
-    });
-
-    res.json({
-      message: 'Permissions granted successfully',
-      permissions: user.permissions,
-      expiryMap: user.expiryMap,
-    });
-  } catch (error) {
-    console.error("❌ Error granting access:", error);
-    res.status(500).json({ message: 'Error granting access', error });
-  }
-};
-
-
-export const revokeAccess = async (req, res) => {
-  try {
-    const { userId, permissionsToRemove } = req.body;
-
-    if (!userId || !permissionsToRemove || !Array.isArray(permissionsToRemove)) {
-      return res.status(400).json({ message: 'User ID and valid permissions array are required' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      console.log("❌ User not found:", userId);
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Debug before updating
-    console.log("🔹 User Permissions Before:", user.permissions);
-
-    // Remove permissions from the user
-    user.permissions = (user.permissions || []).filter(
-      (perm) => !permissionsToRemove.includes(perm)
-    );
-
-    // Remove from expiryMap
-    const updatedExpiryMap = new Map(user.expiryMap || {});
-    permissionsToRemove.forEach((perm) => {
-      updatedExpiryMap.delete(perm);
-    });
-    user.expiryMap = Object.fromEntries(updatedExpiryMap);
-
-    // Debug after updating
-    console.log("🔹 User Permissions After:", user.permissions);
-
-    await user.save();
-
-    // Emit an event for revoked permissions
-    console.log("📢 Emitting permissionRevoked event:", {
-      userId,
-      name: user.name,
-      revokedPermissions: permissionsToRemove,
-    });
-
-    io.emit('permissionRevoked', {
-      userId,
-      name: user.name,
-      revokedPermissions: permissionsToRemove,
-    });
-
-    res.json({
-      message: 'Permissions revoked successfully',
-      permissions: user.permissions,
-      expiryMap: user.expiryMap,
-    });
-  } catch (error) {
-    console.error("❌ Error revoking access:", error);
-    res.status(500).json({ message: 'Error revoking access', error });
-  }
-};
-
+  };
+  
+    
   

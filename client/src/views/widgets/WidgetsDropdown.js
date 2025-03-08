@@ -13,8 +13,7 @@ import { getStyle } from '@coreui/utils';
 import { CChartLine } from '@coreui/react-chartjs';
 import CIcon from '@coreui/icons-react';
 import { cilOptions } from '@coreui/icons';
-import { useGetLogisticsQuery } from '../../state/logisticApi';
-import { useGetWorkersQuery } from '../../state/hrApi';
+import { useGetLogisticsQuery, useGetWorkersQuery } from '../../state/api';
 
 const WidgetsDropdown = (props) => {
   const widgetChartRef1 = useRef(null);

@@ -1,37 +1,46 @@
-import { exec } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { mkdirSync } from 'fs';
-import os from 'os';
+@echo off
+setlocal enabledelayedexpansion
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+:: Get current date and time for the backup timestamp in 'yyyy-MM-dd_hh-mm-ss-APM' format
+for /f "tokens=1-4 delims=/ " %%a in ('date /t') do (
+  set year=%%d
+  set month=%%b
+  set day=%%c
+)
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://shiroshinomiya3013:maricar3013@cluster0.lzfzy.mongodb.net/adminis';
-const desktopDir = path.join(os.homedir(), 'Desktop', 'backup');
-const BACKUP_DIR = process.env.BACKUP_DIR || desktopDir;
+:: Get the current hour and minute
+for /f "tokens=1-2 delims=: " %%a in ('time /t') do (
+  set hour=%%a
+  set minute=%%b
+)
 
-const now = new Date();
-let hours = now.getHours();
-const minutes = now.getMinutes().toString().padStart(2, '0');
-const seconds = now.getSeconds().toString().padStart(2, '0');
-const ampm = hours >= 12 ? 'PM' : 'AM';
-hours = hours % 12;
-hours = hours ? hours : 12;
+:: Determine AM/PM and convert hour to 12-hour format
+set ampm=AM
+if %hour% geq 12 (
+  set ampm=PM
+  if %hour% gtr 12 (
+    set /a hour=%hour%-12
+  )
+)
+if %hour% lss 10 set hour=0%hour%
 
-const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${hours.toString().padStart(2, '0')}-${minutes}-${seconds}-${ampm}`;
-const backupPath = path.join(BACKUP_DIR, timestamp);
+:: Format timestamp as yyyy-MM-dd_hh-mm-ss-APM
+set timestamp=%year%-%month%-%day%_%hour%-%minute%-00-%ampm%
 
-mkdirSync(backupPath, { recursive: true });
+:: Set Mongo URI and backup directory
+set MONGO_URI=mongodb+srv://shiroshinomiya3013:maricar3013@cluster0.lzfzy.mongodb.net/adminis
+set BACKUP_DIR="C:\Users\ryans\OneDrive\Desktop\capstone\shesh\admin\backup\%timestamp%"
 
-exec(
-  `mongodump --uri="${MONGO_URI}" --out="${backupPath}"`,
-  (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Backup failed: ${stderr}`);
-      process.exit(1);
-    }
-    console.log(`Backup completed: ${stdout}`);
-    console.log(`Backup created at ${backupPath}`);
-  }
-);
+:: Create backup directory
+mkdir "%BACKUP_DIR%"
+
+:: Run mongodump (no database specified, so it backs up the entire MongoDB instance)
+mongodump --uri="%MONGO_URI%" --out="%BACKUP_DIR%"
+
+:: Check if mongodump was successful
+if %ERRORLEVEL% equ 0 (
+  echo Backup successfully created at %BACKUP_DIR%
+) else (
+  echo Backup failed!
+  exit /b 1
+)

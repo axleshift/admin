@@ -4,6 +4,9 @@ import mongoose from "mongoose";
 const loginAttemptSchema = new mongoose.Schema({
     identifier: String,
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    name: String,
+    department: String,
+    role: String,
     ipAddress: String,
     userAgent: String,
     timestamp: { type: Date, default: Date.now },

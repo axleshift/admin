@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { CModal, CModalHeader, CModalBody, CModalFooter, CButton, CFormCheck } from '@coreui/react';
-import axios from 'axios';
+import { 
+  useGetUserPermissionsQuery, 
+  useGrantAccessMutation, 
+  useRevokeAccessMutation 
+} from '../../../state/hrApi'; // Adjust the import path as needed
 
 const GrantAccessModal = ({ visible, onClose, userId }) => {
   const [selectedPermissions, setSelectedPermissions] = useState([]);
-  const [currentPermissions, setCurrentPermissions] = useState([]);
-  const name = sessionStorage.getItem('name')
+  const name = sessionStorage.getItem('name');
 
   // List of all permissions that can be granted
   const allPermissions = [
@@ -25,26 +28,19 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     { name: 'Breakdown', to: '/breakdown' },
   ];
 
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      if (userId) {
-        try {
-          const response = await axios.get(
-            `http://localhost:5053/hr/user/permissions/${userId}`
-          );
-          setCurrentPermissions(response.data.permissions || []);
-        } catch (error) {
-          console.error('Error fetching permissions:', error);
-        }
-      }
-    };
+  // Fetch current user permissions
+  const { data, isLoading, error } = useGetUserPermissionsQuery(userId);
 
-    fetchPermissions();
-  }, [userId]);
+  // Safely extract permissions, defaulting to an empty array
+  const currentPermissions = Array.isArray(data?.permissions) 
+    ? data.permissions 
+    : (Array.isArray(data) 
+      ? data 
+      : []);
 
-  useEffect(() => {
-    console.log('GrantAccessModal received userId:', userId);
-  }, [userId]);
+  // Mutations for granting and revoking access
+  const [grantAccessMutation] = useGrantAccessMutation();
+  const [revokeAccessMutation] = useRevokeAccessMutation();
 
   // Prevent clicks inside the modal from closing it
   const handleModalClick = (e) => {
@@ -57,7 +53,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     );
   };
 
-  // Grant Access API Call
+  // Grant Access 
   const handleGrant = async () => {
     if (!userId) {
       console.error("❌ Error: userId is null before making the API request.");
@@ -65,13 +61,13 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     }
   
     try {
-      const response = await axios.post('http://localhost:5053/hr/user/grant-access', {
+      await grantAccessMutation({
         userId,
         newPermissions: selectedPermissions,
         grantedBy: name,
-      });
+      }).unwrap();
   
-      console.log("✅ Access granted:", response.data);
+      console.log("✅ Access granted successfully");
       alert('Permissions granted successfully');
       onClose();
     } catch (error) {
@@ -80,6 +76,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     }
   };
 
+  // Revoke Access
   const handleRevoke = async () => {
     if (!userId) {
       console.error('❌ Error: userId is null before making the API request.');
@@ -87,29 +84,29 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     }
   
     try {
-      const response = await axios.post(
-        'http://localhost:5053/hr/user/revoke-access',
-        {
-          userId,
-          permissionsToRemove: selectedPermissions,
-        }
-      );
+      await revokeAccessMutation({
+        userId,
+        permissionsToRemove: selectedPermissions,
+      }).unwrap();
   
-      console.log('✅ Access revoked:', response.data);
+      console.log('✅ Access revoked successfully');
       alert('Permissions revoked successfully');
-  
-      // Refresh current permissions
-      const updatedPermissionsResponse = await axios.get(
-        `http://localhost:5053/hr/user/permissions/${userId}`
-      );
-      setCurrentPermissions(updatedPermissionsResponse.data.permissions || []);
-  
       onClose();
     } catch (error) {
       console.error('❌ Error revoking access:', error);
       alert('Failed to revoke access.');
     }
   };
+
+  // Render loading state if permissions are being fetched
+  if (isLoading) {
+    return <div>Loading permissions...</div>;
+  }
+
+  // Render error state if there was an issue fetching permissions
+  if (error) {
+    return <div>Error loading permissions: {error.toString()}</div>;
+  }
 
   return (
     <CModal visible={visible} onClose={onClose} onClick={handleModalClick}>

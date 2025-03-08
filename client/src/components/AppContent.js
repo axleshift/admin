@@ -1,16 +1,19 @@
-import React, { Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { CContainer, CSpinner } from '@coreui/react'
-
-// routes config
-import routes from '../routes'
+import React, { Suspense } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { CContainer, CSpinner } from '@coreui/react';
+import routes from '../routes';
 
 const AppContent = () => {
+  console.log('Current routes:', routes);
+  console.log('Current user role:', sessionStorage.getItem('role'));
+  console.log('Current department:', sessionStorage.getItem('department'));
+
   return (
-    <CContainer className="px-4" lg>
+    <CContainer lg>
       <Suspense fallback={<CSpinner color="primary" />}>
         <Routes>
           {routes.map((route, idx) => {
+            console.log(`Processing route: ${route.path}`);
             return (
               route.element && (
                 <Route
@@ -21,13 +24,13 @@ const AppContent = () => {
                   element={route.element}
                 />
               )
-            )
+            );
           })}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/employeedash" replace />} />
         </Routes>
       </Suspense>
     </CContainer>
-  )
-}
+  );
+};
 
-export default React.memo(AppContent)
+export default AppContent;

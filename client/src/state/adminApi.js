@@ -106,32 +106,33 @@ export const adminApi = createApi({
         body: { password },
       }),
   }),
-  getLogs: build.query({
-    query: (params) => ({
-      url: 'admin/logs',
-      params: {
-        page: params.page || 1,
-        limit: params.limit || 50,
-        sort: 'timestamp',
-        order: 'desc',
-        ...params.filters
-      }
-    }),
-    transformResponse: (response) => ({
-      logs: response.logs,
-      total: response.total,
-      pages: response.pages
-    }),
-    // Enable caching
-    keepUnusedDataFor: 300, // Keep data for 5 minutes
-  }),
 
+  //access request
+  getDepartmentMessages: build.query({
+    query: ({ department, role }) => 
+      `/admin/getmessages/${department}?role=${role}`, // GET Request
+  }),
+  updateMessageStatus: build.mutation({
+    query: ({ id, status, responderUsername }) => ({
+      url: `/admin/messages/${id}/status`,
+      method: "PUT",
+      body: { status, responderUsername },
+    }),
+  }),
+  sendMessage: build.mutation({
+    query: (messageData) => ({
+      url: "/admin/sendmessage",
+      method: "POST",
+      body: messageData,
+    }),
+  }),
  
   //request 
   getRequests: build.query({
     query: () => '/general/requests',
     providesTags: ['Requests']
   }),
+  
   
   // Receive a request (create or update)
   receiveRequest: build.mutation({
@@ -153,21 +154,39 @@ export const adminApi = createApi({
   }),
 
   //security
+  getSecurityAlerts: build.query({
+    query: (params = {}) => ({
+      url: 'security/security-alert',
+      params
+    })
+  }),
+  getLoginAttempts: build.query({
+    query: (params = {}) => ({
+      url: 'security/login-attemp',
+      params
+    })
+  }),
 
 
     getPerformance: build.query({
       query: () => 'hr/performance',
     }),
  
-
-    // Fetch all customers
-    getCustomers: build.query({
-      query: () => `client/customers/`,
-      providesTags: ["Customers"],
-    }),
-    // Fetch all workers
-    
-
+ generateOTP: build.mutation({
+       query: (email) => ({
+         url: '/client/unlock-request',
+         method: 'POST',
+         body: { email }
+       })
+     }),
+     // Endpoint to verify OTP
+     verifyOTP: build.mutation({
+       query: (data) => ({
+         url: '/client/unlock-verify',
+         method: 'POST',
+         body: data
+       })
+     }),
     
     
 
@@ -217,8 +236,10 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+   
 
-    // Logistics queries and mutations
+
+    
     
 
     getDashboard: build.query({
@@ -319,15 +340,25 @@ useGetUserPermissionsQuery,
 useResetPasswordMutation,
 useGetLogsQuery,
 //securtity
-
+useGetSecurityAlertsQuery, 
+useGetLoginAttemptsQuery ,
+useGenerateOTPMutation, 
+useVerifyOTPMutation,
 
 useGetRequestsQuery,
 useReceiveRequestMutation, 
 useSendRequestMutation,
 
+//access request
+useGetDepartmentMessagesQuery, 
+useUpdateMessageStatusMutation,
+useSendMessageMutation ,
+
+
+
 //finance
 
-  useGetCustomersQuery,
+
  
  
   useGetPerformanceQuery,
@@ -337,7 +368,6 @@ useSendRequestMutation,
   useUpdateShippingMutation,
   useDeleteShippingMutation,
   useUpdateUserMutation,
-
  
   useGetDashboardQuery,
   useGetNotifQuery,
@@ -348,7 +378,7 @@ useSendRequestMutation,
   usePostsetDirectoryMutation,
 
 
-  usePostForgotPasswordMutation ,
+  usePostForgotPasswordMutation,
 
 
 

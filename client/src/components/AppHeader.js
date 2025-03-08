@@ -32,9 +32,6 @@ import {
 
 import { AppBreadcrumb } from './index';
 import { AppHeaderDropdown } from './header/index';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import socket from '../util/socket';
 import Message from '../views/pages/scene/message'; // Import your Message component
 
 const AppHeader = () => {
@@ -47,33 +44,7 @@ const AppHeader = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false); // State to toggle Message modal
 
-  useEffect(() => {
-    document.addEventListener('scroll', () => {
-      headerRef.current &&
-        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0);
-    });
 
-    const handleNewNotification = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: (
-          <>
-            <strong>{data?.user?.name || 'A user'}</strong> has registered as{' '}
-            {data?.user?.role || 'a user'}
-          </>
-        ),
-      };
-
-      setNotifications((prevNotifications) => [newNotification, ...prevNotifications]);
-      toast(newNotification.message);
-    };
-
-    socket.on('newUserRegistered', handleNewNotification);
-
-    return () => {
-      socket.off('newUserRegistered', handleNewNotification);
-    };
-  }, []);
 
   const handleBellClick = () => {
     setShowDropdown(!showDropdown);
@@ -102,27 +73,9 @@ const AppHeader = () => {
             
           </CHeaderNav>
           <CHeaderNav className="ms-auto">
-            <CNavItem>
-              <CNavLink onClick={handleBellClick} style={{ cursor: 'pointer' }}>
-                <CIcon icon={cilBell} size="lg" />
-              </CNavLink>
-            </CNavItem>
-            <CDropdown placement="bottom-end">
-  <CDropdownToggle onClick={() => setShowDropdown(!showDropdown)}>
-    <CIcon icon={cilBell} size="lg" />
-  </CDropdownToggle>
-  {showDropdown && (
-    <CDropdownMenu className="mt-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      {notifications.length === 0 ? (
-        <CDropdownItem>No new notifications</CDropdownItem>
-      ) : (
-        notifications.map((notification) => (
-          <CDropdownItem key={notification.id}>{notification.message}</CDropdownItem>
-        ))
-      )}
-    </CDropdownMenu>
-  )}
-</CDropdown>
+           
+           
+            
             
             <CNavItem>
               {/* Message Icon */}
@@ -184,7 +137,6 @@ const AppHeader = () => {
         <CContainer className="px-4" fluid>
           <AppBreadcrumb />
         </CContainer>
-        <ToastContainer position="top-end" autoClose={5000} /> {/* Add ToastContainer */}
       </CHeader>
 
       {/* Modal for Message */}

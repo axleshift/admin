@@ -13,6 +13,7 @@ import {
   CFormSelect,
   CBadge,
 } from '@coreui/react';
+import { usePostForgotPasswordMutation } from '../../../../state/adminApi';
 import { 
   usePostToHrMutation, 
   usePostToFinanceMutation, 
@@ -27,7 +28,6 @@ import CustomHeader from '../../../../components/header/customhead';
 import ExcelJS from 'exceljs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
-import ActivityTracker from '../../../../util/ActivityTracker'; // Import ActivityTracker
 import GrantAccessModal from '../../scene/modal.js';
 // Import the mutations for the departments
 
@@ -49,6 +49,7 @@ const Works = () => {
   const [deleteTracked, setDeleteTracked] = useState({ userId: null, userName: null }); // State for tracking delete user
   const [showModal, setShowModal] = useState(false);
   const [accessButtonClicked, setAccessButtonClicked] = useState(false);
+  const [forgotPasswordMutation] = usePostForgotPasswordMutation();
 
   // Define hooks for the department mutations
   const [postToHr] = usePostToHrMutation();
@@ -227,11 +228,20 @@ const Works = () => {
   const handleResetPassword = async (userId) => {
     try {
       const user = data.find(user => user._id === userId);
-      const response = await axios.post('http://localhost:5053/general/forgot-password', { email: user.email });
-      alert(response.data.message);
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      alert('Failed to send reset password link.');
+      
+      if (!user || !user.email) {
+        alert('User email not found');
+        return;
+      }
+
+      const response = await forgotPasswordMutation(user.email).unwrap();
+      
+      // Success handling
+      alert(response.message || 'Reset password link sent successfully');
+    } catch (err) {
+      // Error handling
+      console.error('Error resetting password:', err);
+      alert(err.message || 'Failed to send reset password link');
     }
   };
 

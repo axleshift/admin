@@ -60,7 +60,10 @@ const ProtectedRoute = ({ children }) => {
           '/financialanalytics',
           '/shipment',
           '/logistic1/index',
-          '/logistic1/pin'
+          '/logistic1/pin',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Core: [
           '/employeedash',
@@ -84,7 +87,10 @@ const ProtectedRoute = ({ children }) => {
           '/recovery',
           '/Toasts',
           '/chatbox',
-          '/shipment'
+          '/shipment',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Logistic: [
           '/employeedash',
@@ -109,7 +115,10 @@ const ProtectedRoute = ({ children }) => {
           '/Toasts',
           '/chatbox',
           '/logistic1/index',
-          '/logistic1/pin'
+          '/logistic1/pin',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Finance: [
           '/employeedash',
@@ -135,7 +144,10 @@ const ProtectedRoute = ({ children }) => {
           '/chatbox',
           '/freightaudit',
           '/financialanalytics',
-          '/invoice'
+          '/invoice',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Administrative: [
           '/employeedash',
@@ -163,7 +175,17 @@ const ProtectedRoute = ({ children }) => {
           '/registernew',
           '/PendingRequest',
           '/AccessReview',
-          '/monitoring'
+          '/monitoring',
+          '/profile',
+          '/Settings',
+          '/changepass',
+          '/freightaudit',
+          '/financialanalytics',
+          '/invoice',
+          '/shipment',
+          '/settings',
+          '/request',
+          '/logistic1/index'
         ]
       },
       admin: {
@@ -171,7 +193,11 @@ const ProtectedRoute = ({ children }) => {
           '/hrdash',
           '/worker',
           '/jobposting',
-          '/payroll',
+          '/payroll',,
+          '/profile',
+          '/Settings',
+          '/changepass',
+          '/request',
         ],
         Core: [
           '/coredash',
@@ -180,6 +206,9 @@ const ProtectedRoute = ({ children }) => {
           '/monthly',
           '/daily',
           '/breakdown',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Finance: [
           '/financedash',
@@ -187,7 +216,10 @@ const ProtectedRoute = ({ children }) => {
           '/oversales',
           '/freightaudit',
           '/financialanalytics',
-          '/invoice'
+          '/invoice',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Logistics: [
           '/logisticdash',
@@ -197,7 +229,10 @@ const ProtectedRoute = ({ children }) => {
           '/daily',
           '/breakdown',
           '/logistic1/index',
-          '/logistic1/pin'
+          '/logistic1/pin',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Administrative: [
           '/employeedash',
@@ -205,14 +240,20 @@ const ProtectedRoute = ({ children }) => {
           '/restore',
           '/registernew',
           '/PendingRequest',
-          '/AccessReview'
+          '/AccessReview',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ]
       },
       Manager: {
         HR: [
           '/hrdash',
           '/worker',
-          '/jobposting',
+          '/jobposting',,
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Core: [
           '/coredash',
@@ -220,23 +261,35 @@ const ProtectedRoute = ({ children }) => {
           '/monthly',
           '/daily',
           '/breakdown',
-          '/shipment'
+          '/shipment',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Finance: [
           '/financedash',
           '/freight/transaction',
           '/oversales',
           '/freightaudit',
-          '/financialanalytics'
+          '/financialanalytics',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Logistic: [
           '/logisticdash',
           '/logistic1/index',
-          '/logistic1/pin'
+          '/logistic1/pin',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ],
         Administrative: [
           '/employeedash',
           '/useractivity/index',
+          '/profile',
+          '/Settings',
+          '/changepass'
         ]
       }
     };

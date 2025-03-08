@@ -1,72 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-  CCloseButton,
-  CSidebar,
-  CSidebarBrand,
-  CSidebarFooter,
-  CSidebarHeader,
+import { 
+  CSidebar, 
+  CSidebarNav, 
   CSidebarToggler,
-  CImage, // Add CImage for rendering images
-} from '@coreui/react';
+  CSidebarHeader, 
+  CSidebarBrand,  
+  CCloseButton,   
+  CImage     } from '@coreui/react';
 import { AppSidebarNav } from './AppSidebarNav';
 import navigation from '../_nav';
-
+import logo from '../../public/img/admin.png'
+import icon from '../../public/favicon.ico'
 const AppSidebar = () => {
   const dispatch = useDispatch();
   const unfoldable = useSelector((state) => state.changeState.sidebarUnfoldable);
   const sidebarShow = useSelector((state) => state.changeState.sidebarShow);
-
-  const reduxUserRole = useSelector((state) => state.changeState.auth?.role);
-  const reduxUserDepartment = useSelector((state) => state.changeState.auth?.department);
-
-  const [userRole, setUserRole] = useState(sessionStorage.getItem('role') || 'guest');
-  const [userDepartment, setUserDepartment] = useState(sessionStorage.getItem('department') || 'none');
-  const [userPermissions, setUserPermissions] = useState([]);
+  
+  const [userRole, setUserRole] = useState('guest');
+  const [userDepartment, setUserDepartment] = useState('none');
+  const [isReady, setIsReady] = useState(false);
+  const [navItems, setNavItems] = useState([]);
 
   useEffect(() => {
-    const userId = sessionStorage.getItem('userId');
-    if (!userId) return;
+    const userId = sessionStorage.getItem('userid');
+    const role = sessionStorage.getItem('role');
+    const department = sessionStorage.getItem('department');
 
-    const fetchPermissions = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5053/hr/user/permissions/${userId}`);
-        console.log('✅ Permissions from API:', response.data);
-
-        setUserPermissions(response.data.accessPermissions || []);
-      } catch (error) {
-        console.error('❌ Error fetching permissions:', error);
-      }
-    };
-
-    fetchPermissions();
+    if (userId) {
+      setUserRole(role || 'guest');
+      setUserDepartment(department || 'none');
+      setNavItems(navigation(role || 'guest', department || 'none'));
+      setIsReady(true);
+    }
   }, []);
 
-  useEffect(() => {
-    if (reduxUserRole) {
-      setUserRole(reduxUserRole);
-      sessionStorage.setItem('role', reduxUserRole);
-    }
-
-    if (reduxUserDepartment) {
-      setUserDepartment(reduxUserDepartment);
-      sessionStorage.setItem('department', reduxUserDepartment);
-    }
-  }, [reduxUserRole, reduxUserDepartment]);
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <CSidebar
-      className="border-end"
-      colorScheme="dark"
       position="fixed"
+      colorScheme="dark"
       unfoldable={unfoldable}
       visible={sidebarShow}
       onVisibleChange={(visible) => {
         dispatch({ type: 'set', sidebarShow: visible });
       }}
     >
-      <CSidebarHeader className="border-bottom">
+        <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
           {/* Reference assets from the public directory using relative URLs */}
           <CImage fluid src="/img/admin.png" alt="Logo" height={30} className="sidebar-brand-full" />
@@ -78,15 +61,13 @@ const AppSidebar = () => {
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
         />
       </CSidebarHeader>
-
-      {/* Pass updated userPermissions to navigation */}
-      <AppSidebarNav items={navigation(userRole, userDepartment, userPermissions)} />
-
-      <CSidebarFooter className="border-top d-none d-lg-flex">
-        <CSidebarToggler
-          onClick={() => dispatch({ type: 'set', sidebarUnfoldable: !unfoldable })}
-        />
-      </CSidebarFooter>
+      <CSidebarNav>
+        <AppSidebarNav items={navItems} />
+      </CSidebarNav>
+      <CSidebarToggler
+        className="d-none d-lg-flex"
+        onClick={() => dispatch({ type: 'set', sidebarUnfoldable: !unfoldable })}
+      />
     </CSidebar>
   );
 };

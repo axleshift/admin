@@ -1,6 +1,4 @@
-// SecurityDashboard.jsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import { 
   CCard, 
   CCardBody, 
@@ -31,18 +29,17 @@ import {
   FaClock,
   FaGlobe,
   FaCheck,
-  FaTimes
+  FaTimes,
+  FaQuestion,
+  FaBuilding,
+  FaSuitcaseRolling
 } from 'react-icons/fa';
 
-// Import the CSS file
+// Import the security API slice
+import { useGetSecurityAlertsQuery, useGetLoginAttemptsQuery } from '../../../state/adminApi';
 
 const SecurityDashboard = () => {
   const [activeTab, setActiveTab] = useState('alerts');
-  const [securityAlerts, setSecurityAlerts] = useState([]);
-  const [loginAttempts, setLoginAttempts] = useState([]);
-  const [alertsLoading, setAlertsLoading] = useState(true);
-  const [loginsLoading, setLoginsLoading] = useState(true);
-  const [error, setError] = useState(null);
   
   // Filter states
   const [alertFilters, setAlertFilters] = useState({
@@ -57,52 +54,54 @@ const SecurityDashboard = () => {
     ipAddress: ''
   });
 
-  // Base URL for API
-  const API_URL = 'http://localhost:5053/security';
-
-  // Fetch security alerts
-  const fetchSecurityAlerts = async () => {
-    setAlertsLoading(true);
-    setError(null);
+  // Prepare a modified query object for login attempts to handle the "attempt" status specially
+  const prepareLoginQuery = () => {
+    const queryParams = { ...loginFilters };
     
-    try {
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (alertFilters.userId) params.append('userId', alertFilters.userId);
-      if (alertFilters.alertType) params.append('alertType', alertFilters.alertType);
-      if (alertFilters.status) params.append('status', alertFilters.status);
-      
-      const response = await axios.get(`${API_URL}/security-alert`, { params });
-      setSecurityAlerts(response.data);
-    } catch (err) {
-      console.error('Error fetching security alerts:', err);
-      setError('Failed to load security alerts. Please try again.');
-    } finally {
-      setAlertsLoading(false);
+    // Special handling for "attempt" status - we need to find records with missing or empty userId
+    if (queryParams.status === 'attempt') {
+      // Set up a special flag that your backend can interpret to look for empty userIds
+      // OR handle it on the frontend by removing the status filter and filtering the results after fetching
+      delete queryParams.status;
+      queryParams.emptyUserId = true;
     }
+    
+    return queryParams;
   };
 
-  // Fetch login attempts
-  const fetchLoginAttempts = async () => {
-    setLoginsLoading(true);
-    setError(null);
-    
-    try {
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (loginFilters.userId) params.append('userId', loginFilters.userId);
-      if (loginFilters.status) params.append('status', loginFilters.status);
-      if (loginFilters.ipAddress) params.append('ipAddress', loginFilters.ipAddress);
-      
-      const response = await axios.get(`${API_URL}/login-attemp`, { params });
-      setLoginAttempts(response.data);
-    } catch (err) {
-      console.error('Error fetching login attempts:', err);
-      setError('Failed to load login attempts. Please try again.');
-    } finally {
-      setLoginsLoading(false);
+  // Use RTK Query hooks
+  const {
+    data: securityAlerts = [], 
+    isLoading: alertsLoading, 
+    error: alertsError
+  } = useGetSecurityAlertsQuery(alertFilters);
+
+  const {
+    data: loginAttemptsRaw = [], 
+    isLoading: loginsLoading, 
+    error: loginsError
+  } = useGetLoginAttemptsQuery(prepareLoginQuery());
+
+  // Post-process login attempts based on filter
+  const loginAttempts = React.useMemo(() => {
+    if (loginFilters.status === 'attempt') {
+      // If filtering for "attempt", only show records with empty userId
+      return loginAttemptsRaw.filter(attempt => 
+        !attempt.userId || attempt.userId === '' || 
+        attempt.userId === null || attempt.userId === undefined
+      );
+    } else if (loginFilters.status === 'success' || loginFilters.status === 'failed') {
+      // For success/failed, ensure we only show records with matching status AND non-empty userIds
+      return loginAttemptsRaw.filter(attempt => 
+        attempt.status === loginFilters.status && 
+        attempt.userId && attempt.userId !== '' && 
+        attempt.userId !== null && attempt.userId !== undefined
+      );
+    } else {
+      // If no status filter, show all
+      return loginAttemptsRaw;
     }
-  };
+  }, [loginAttemptsRaw, loginFilters.status]);
 
   // Handle alerts filter change
   const handleAlertFilterChange = (e) => {
@@ -121,15 +120,6 @@ const SecurityDashboard = () => {
       [name]: value
     }));
   };
-
-  // Initial data fetch
-  useEffect(() => {
-    if (activeTab === 'alerts') {
-      fetchSecurityAlerts();
-    } else {
-      fetchLoginAttempts();
-    }
-  }, [activeTab]);
   
   // Format timestamp
   const formatDate = (timestamp) => {
@@ -139,7 +129,8 @@ const SecurityDashboard = () => {
   // Get badge color based on status
   const getStatusBadgeColor = (status, isLoginAttempt = false) => {
     if (isLoginAttempt) {
-      return status === 'SUCCESS' ? 'success' : 'danger';
+      if (status === 'attempt') return 'warning';
+      return status === 'success' ? 'success' : 'danger';
     }
     
     switch (status) {
@@ -174,12 +165,20 @@ const SecurityDashboard = () => {
     return data;
   };
 
+  // Helper to determine login status based on userId and status
+  const determineLoginStatus = (attempt) => {
+    // If userId is missing or empty, mark as "attempt"
+    if (!attempt.userId || attempt.userId === '' || attempt.userId === null || attempt.userId === undefined) {
+      return 'attempt';
+    }
+    // Otherwise use the original status
+    return attempt.status;
+  };
+
   return (
     <div className="security-dashboard">
       <CRow>
         <CCol>
-         
-          
           <CNav variant="tabs" className="mb-4">
             <CNavItem>
               <CNavLink 
@@ -247,16 +246,14 @@ const SecurityDashboard = () => {
                       <option value="FALSE_POSITIVE">False Positive</option>
                     </CFormSelect>
                   </CCol>
-                  <CCol sm={3}>
-                    <CButton color="primary" onClick={fetchSecurityAlerts}>
-                      Apply Filters
-                    </CButton>
-                  </CCol>
                 </CRow>
                 
-                {/* Alerts Table */}
-                {error && <div className="alert alert-danger">{error}</div>}
+                {/* Error Handling */}
+                {alertsError && <div className="alert alert-danger">
+                  Failed to load security alerts: {alertsError.toString()}
+                </div>}
                 
+                {/* Alerts Table */}
                 {alertsLoading ? (
                   <div className="text-center py-5">
                     <CSpinner color="primary" />
@@ -358,20 +355,19 @@ const SecurityDashboard = () => {
                       className="mb-2"
                     >
                       <option value="">All Statuses</option>
-                      <option value="SUCCESS">Success</option>
-                      <option value="FAILED">Failed</option>
+                      <option value="success">Success</option>
+                      <option value="failed">Failed</option>
+                      <option value="attempt">Attempt</option>
                     </CFormSelect>
-                  </CCol>
-                  <CCol sm={3}>
-                    <CButton color="primary" onClick={fetchLoginAttempts}>
-                      Apply Filters
-                    </CButton>
                   </CCol>
                 </CRow>
                 
-                {/* Login Attempts Table */}
-                {error && <div className="alert alert-danger">{error}</div>}
+                {/* Error Handling */}
+                {loginsError && <div className="alert alert-danger">
+                  Failed to load login attempts: {loginsError.toString()}
+                </div>}
                 
+                {/* Login Attempts Table */}
                 {loginsLoading ? (
                   <div className="text-center py-5">
                     <CSpinner color="primary" />
@@ -382,52 +378,59 @@ const SecurityDashboard = () => {
                     <CTableHead>
                       <CTableRow>
                         <CTableHeaderCell>Status</CTableHeaderCell>
-                        <CTableHeaderCell>User ID</CTableHeaderCell>
-                        <CTableHeaderCell>IP Address</CTableHeaderCell>
+                        <CTableHeaderCell>Name</CTableHeaderCell>
+                        <CTableHeaderCell>Role</CTableHeaderCell>
+                        <CTableHeaderCell>Department</CTableHeaderCell>
                         <CTableHeaderCell>Device/Browser</CTableHeaderCell>
-                        <CTableHeaderCell>Location</CTableHeaderCell>
                         <CTableHeaderCell>Timestamp</CTableHeaderCell>
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
                       {loginAttempts.length === 0 ? (
                         <CTableRow>
-                          <CTableDataCell colSpan="6" className="text-center">
+                          <CTableDataCell colSpan="7" className="text-center">
                             No login attempts found
                           </CTableDataCell>
                         </CTableRow>
                       ) : (
-                        loginAttempts.map(attempt => (
-                          <CTableRow key={attempt._id}>
-                            <CTableDataCell>
-                              <CBadge color={getStatusBadgeColor(attempt.status, true)}>
-                                {renderSafely(attempt.status) === 'SUCCESS' ? (
-                                  <><FaCheck className="me-1" /> SUCCESS</>
-                                ) : (
-                                  <><FaTimes className="me-1" /> FAILED</>
-                                )}
-                              </CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaUserShield className="me-1" />
-                              {renderSafely(attempt.userId)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaGlobe className="me-1" />
-                              {renderSafely(attempt.ipAddress)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {renderSafely(attempt.userAgent)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {renderSafely(attempt.location)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaClock className="me-1" />
-                              {attempt.timestamp ? formatDate(attempt.timestamp) : '-'}
-                            </CTableDataCell>
-                          </CTableRow>
-                        ))
+                        loginAttempts.map(attempt => {
+                          const loginStatus = determineLoginStatus(attempt);
+                          return (
+                            <CTableRow key={attempt._id}>
+                              <CTableDataCell>
+                                <CBadge color={getStatusBadgeColor(loginStatus, true)}>
+                                  {loginStatus === 'success' ? (
+                                    <><FaCheck className="me-1" /> SUCCESS</>
+                                  ) : loginStatus === 'attempt' ? (
+                                    <><FaQuestion className="me-1" /> ATTEMPT</>
+                                  ) : (
+                                    <><FaTimes className="me-1" /> FAILED</>
+                                  )}
+                                </CBadge>
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                <FaUserShield className="me-1" />
+                                {renderSafely(attempt.name)}
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                <FaSuitcaseRolling className="me-1" />
+                                {renderSafely(attempt.role)}
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                <FaBuilding className="me-1" />
+                                {renderSafely(attempt.department)}
+                              </CTableDataCell>
+                             
+                              <CTableDataCell>
+                                {renderSafely(attempt.userAgent)}
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                <FaClock className="me-1" />
+                                {attempt.timestamp ? formatDate(attempt.timestamp) : '-'}
+                              </CTableDataCell>
+                            </CTableRow>
+                          );
+                        })
                       )}
                     </CTableBody>
                   </CTable>

@@ -1,74 +1,13 @@
 import User from "../model/User.js";
-import Employee from '../model/employee.js';
-
-import transaction from "../model/transaction.js";
 import Overall from '../model/overall.js';
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
-import { createCipheriv } from "crypto";
-import Request from "../model/request.js";
-import axios from 'axios'
+import Request from '../model/request.js'
+
 dotenv.config();
-
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find(); // Fetch all users
-        res.status(200).json(users);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
-export const updateUser = async (req, res) => {
-    const { role, department, password } = req.body;
-    
-    try {
-        let updateFields = { role, department };
-
-        // If password is provided, hash and update it
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            updateFields.password = await bcrypt.hash(password, salt);
-        } else {
-            updateFields.$unset = { password: "" }; // Remove password if empty
-        }
-
-        // Find and update the user
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            updateFields,
-            { new: true }
-        );
-
-        if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Find and update Employee record
-        const employeeData = {
-            userId: updatedUser._id,
-            role: updatedUser.role,
-            department: updatedUser.department
-        };
-
-        let employee = await Employee.findOneAndUpdate(
-            { userId: updatedUser._id }, 
-            employeeData, 
-            { upsert: true, new: true }
-        );
-
-        // ✅ Correct response
-        return res.status(200).json({ updatedUser, employee });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Server Error', error: err.message });
-    }
-};
-
-//access reviews and recertification
 export const accessReview = async (req, res) => {
     try {
         const users = await User.find({}, "name role department permissions");
@@ -82,7 +21,6 @@ export const accessReview = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
-
 export const getUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -98,7 +36,7 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     try {
-        console.log("Received email:", email); // Debug email
+        console.log("Received email:", email);
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -106,22 +44,26 @@ export const forgotPassword = async (req, res) => {
         }
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
-        console.log("Generated token:", token); // Debug token
+        console.log("Generated token:", token);
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.EMAIL_USER, // Use env variables
+                user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
         });
 
         // Verify transporter configuration
-        transporter.verify((error, success) => {
-            if (error) {
-                console.error("Email server configuration error:", error);
-                return res.status(500).json({ message: "Email server error", error: error.message });
-            }
+        await new Promise((resolve, reject) => {
+            transporter.verify((error, success) => {
+                if (error) {
+                    console.error("Email server configuration error:", error);
+                    reject(error);
+                } else {
+                    resolve(success);
+                }
+            });
         });
 
         const mailOptions = {
@@ -132,14 +74,20 @@ export const forgotPassword = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully"); // Debug email sent
-        res.status(200).json({ message: "Reset link sent to your email" });
+        console.log("Email sent successfully");
+        
+        res.status(200).json({ 
+            message: "Reset link sent to your email",
+            userId: user._id
+        });
     } catch (err) {
-        console.error("Server error:", err); // Log error
-        res.status(500).json({ message: "Server error", error: err.message });
+        console.error("Server error:", err);
+        res.status(500).json({ 
+            message: "Server error", 
+            error: err.message 
+        });
     }
 };
-
 export const resetPassword = async (req, res) => {
     const { id, token } = req.params;
     const { password } = req.body;
@@ -151,15 +99,9 @@ export const resetPassword = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
-        
-        // Normalize role to be case-insensitive
-        if (user.role) {
-            user.role = user.role.toLowerCase();
-        }
-
         await user.save();
-        res.json({ Status: "Success" });
 
+        res.json({ Status: "Success" });
     } catch (err) {
         if (err.name === "JsonWebTokenError") {
             return res.status(400).json({ Status: "Error with token" });
@@ -169,7 +111,6 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ Status: "Internal Server Error", error: err.message });
     }
 };
-
 
 
 

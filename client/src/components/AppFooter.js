@@ -1,10 +1,12 @@
 import React from 'react'
-import { CButton, CFooter } from '@coreui/react'
+import { CFooter } from '@coreui/react'
 
 const AppFooter = () => {
   return (
     <CFooter className="px-4">
-     
+      <div>
+        
+      </div>
     </CFooter>
   )
 }

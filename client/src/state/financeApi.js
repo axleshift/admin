@@ -13,12 +13,16 @@ export const financeApi = createApi({ // ✅ Changed to lowercase to match impor
     getFreightAudits: build.query({
         query: () => 'finance/getfreightaudit',
       }),
-      getFreightInvoice: build.query({
+    getFreightInvoice: build.query({
         query: () => 'finance/invoices',
       }),
-      getSales: build.query({
+    getSales: build.query({
         query: () => 'sales/sales',
         providesTags: ['Sales'],
+      }),
+      getCustomers: build.query({
+        query: () => `client/customers/`,
+        providesTags: ["Customers"],
       }),
 
   }),
@@ -28,5 +32,6 @@ export const {
     useGetFreightAuditsQuery,
     useGetFreightInvoiceQuery,
     useGetSalesQuery,
+    useGetCustomersQuery,
   
 } = financeApi; // ✅ Export hook correctly

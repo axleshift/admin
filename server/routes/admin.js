@@ -6,6 +6,8 @@ import {
     getDepartmentMessages,
     updateMessageStatus, 
     handleStatusUpdate, 
+    getallmessage,
+
     getRequestStatus,
     githubAuth, 
     githubCallback,
@@ -19,7 +21,6 @@ import {
     listBackups, 
     listCollections 
 } from "../controllers/admin.js";
-import { logActivity } from '../middleware/logActivity.js';
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
 const router = express.Router();
 
@@ -44,6 +45,7 @@ router.post('/generate', generateAnnouncement)
 router.post('/chat',chatbox)
 router.post('/status-update', handleStatusUpdate);
 router.get('/request-status/:username', getRequestStatus);
+router.get('/getmessage',getallmessage);
 
 router.post('/sendmessage', sendMessage);
 router.get('/getmessages/:department', getDepartmentMessages);

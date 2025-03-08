@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useResetPasswordMutation } from '../../../state/adminApi'
+import axios from 'axios'
 
 function ResetPass() {
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
   const { id, token } = useParams()
-  const [resetPassword] = useResetPasswordMutation()
+
+  axios.defaults.withCredentials = true
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -16,16 +17,22 @@ function ResetPass() {
     console.log('Password:', password)
 
     try {
-      const res = await resetPassword({ id, token, password }).unwrap()
-      console.log('Response:', res)
+      const res = await axios.post(`http://localhost:5053/general/reset-password/${id}/${token}`, {
+        password,
+      })
+      console.log('Response:', res.data)
 
-      if (res.Status === 'Success') {
+      if (res.data.Status === 'Success') {
         navigate('/login')
       } else {
-        console.error('Reset failed:', res)
+        console.error('Reset failed:', res.data)
       }
     } catch (err) {
       console.error('Error:', err.message)
+      if (err.response) {
+        console.error('Server responded with status:', err.response.status)
+        console.error('Response data:', err.response.data)
+      }
     }
   }
 

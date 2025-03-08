@@ -23,7 +23,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
-import AnnouncementBox from '../pages/scene/announce';
+
 import Loader from '../../components/Loader';  // ✅ Import Loader
 
 const Employeedash = () => {
@@ -89,7 +89,6 @@ const Employeedash = () => {
       <CRow className="mb-4">
         <CCol xs={12} md={8}>
           <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
-          <AnnouncementBox message="🚀 New HR Features Released! Check them out!" autoClose={false} />
         </CCol>
         <CCol xs={12} md={4} className="d-flex justify-content-md-end align-items-center mb-3 mb-md-0">
         </CCol>

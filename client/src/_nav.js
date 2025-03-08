@@ -1,6 +1,3 @@
-import React, {useState, useEffect} from 'react';
-import axios from 'axios';
-import '../src/scss/_custom.scss';
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -14,62 +11,19 @@ import {
   faGlobe,
   faShield,
   faHand,
-  faUniversalAccess
+  faUniversalAccess,
+  faPersonBooth
 } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Navigation configuration function that returns navigation items based on user role and permissions
  */
-const _nav = () => {
-  // Get user information from session storage
-  const userRole = sessionStorage.getItem('role');
-  const userDepartment = sessionStorage.getItem('department');
-  const userUsername = sessionStorage.getItem('username'); 
-  const userId = sessionStorage.getItem('userId');
-  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
-  const userEmail = sessionStorage.getItem('email');
-
+const _nav = (userRole, userDepartment) => {
   // Log session storage values for debugging
   console.log("✅ Session Storage Values:", {
     Role: userRole,
-    Department: userDepartment,
-    Username: userUsername,
-    "User ID": userId,
-    Permissions: userPermissions,
-    Email: userEmail
+    Department: userDepartment
   });
-
-  const [allowedRoutes, setAllowedRoutes] = useState([]);
-  
-  // Fetch user permissions when component mounts
-  useEffect(() => {
-    if (!userId) {
-      console.error('❌ No userId found in sessionStorage');
-      return;
-    }
-
-    const fetchUserPermissions = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5053/hr/user/permissions/${userId}`);
-        console.log('✅ API Response:', response.data);
-        
-        if (response.data.permissions && response.data.permissions.length > 0) {
-          setAllowedRoutes(response.data.permissions);
-        } else {
-          console.warn('⚠️ No permissions found for this user.');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching permissions:', error);
-      }
-    };
-
-    // Only fetch if no permissions are in session storage
-    if (!userPermissions.length) {
-      fetchUserPermissions();
-    } else {
-      setAllowedRoutes(userPermissions);
-    }
-  }, [userId]);
 
   // Array to store navigation items
   const navItems = [];
@@ -79,7 +33,6 @@ const _nav = () => {
   const accessPermissions = {
     // Superadmin permissions by department
     superadmin: {
-      // IMPORTANT: To add new pages for superadmin administrative role, add them to this array
       Administrative: [
         '/employeedash',
         '/hrdash',
@@ -104,8 +57,7 @@ const _nav = () => {
         '/chatbox',
         '/recoverytuts',
         '/monitoring',
-        // Add your new page routes here, for example:
-        // '/yournewpage',
+        '/Request'
       ],
       HR: [
         '/employeedash',
@@ -349,15 +301,7 @@ const _nav = () => {
           name: 'Security Monitoring', 
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />, 
           to: '/monitoring'
-        }
-        // IMPORTANT: This is where you would add new admin section items
-        // Example:
-        // {
-        //   component: CNavItem, 
-        //   name: 'Your New Page', 
-        //   icon: <FontAwesomeIcon icon={faYourIcon} style={{ marginRight: '8px' }} />, 
-        //   to: '/yournewpage'
-        // }
+        },
       );
     }
 

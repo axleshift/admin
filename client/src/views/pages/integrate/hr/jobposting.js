@@ -18,7 +18,6 @@ import {
   CModalFooter,
 } from '@coreui/react';
 import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi'; // Path to the RTK query API slice
-import ActivityTracker from '../../../../util/ActivityTracker'; // Import ActivityTracker
 
 const RecruitmentModule = () => {
   const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();

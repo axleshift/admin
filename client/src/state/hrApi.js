@@ -76,6 +76,32 @@ export const hrApi = createApi({ // ✅ Changed to lowercase to match imports in
     getpayroll:build.query({
         query: (id) => `hr/payroll`,
       }),
+    getUserPermissions: build.query({
+        query: (userId) => ({
+          url: `hr/permissions/${userId}`,
+          method: 'GET'
+        }),
+          
+      }),
+    grantAccess: build.mutation({
+        query: (body) => ({
+          url: 'hr/grant-access',
+          method: 'POST',
+          body
+        }),
+        invalidatesTags: (result, error, { userId }) => 
+          error ? [] : [{ type: 'UserPermissions', id: userId }]
+      }),
+    revokeAccess: build.mutation({
+        query: (body) => ({
+          url: 'hr/revoke-access',
+          method: 'POST',
+          body
+        }),
+        invalidatesTags: (result, error, { userId }) => 
+          error ? [] : [{ type: 'UserPermissions', id: userId }]
+      })  ,
+      
   }),
 });
 
@@ -93,4 +119,7 @@ export const {
     useGetJobPostingsQuery, 
     useGetJobPostingByIdQuery,
     useGetpayrollQuery,
+    useGetUserPermissionsQuery,
+    useGrantAccessMutation,
+    useRevokeAccessMutation,
 } = hrApi; // ✅ Export hook correctly

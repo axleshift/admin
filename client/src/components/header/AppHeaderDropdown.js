@@ -23,7 +23,7 @@ import {
 } from '@coreui/icons'
 import avatar8 from './../../assets/images/avatars/8.jpg'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons'
+import { faPersonBooth, faGears, faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -48,15 +48,20 @@ const AppHeaderDropdown = () => {
       <span className="ms-2" style={{ position: 'relative', top: '2px' }} >{name ? `Welcome, ${name}` : 'Welcome, Guest'}</span>
     </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
-        <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>
+    
         <CDropdownItem href="/profile">
-          <CIcon icon={cilUser} className="me-2" />
+          <FontAwesomeIcon icon={faUser} className="me-2" />
           Profile
         </CDropdownItem>
         <CDropdownItem href="/settings">
-          <CIcon icon={cilSettings} className="me-2" />
+          <FontAwesomeIcon icon={faGears} className="me-2" />
           Settings
         </CDropdownItem>
+        <CDropdownItem href="/request">
+          <FontAwesomeIcon icon={faPersonBooth} className="me-2 "/>
+          Access Request
+        </CDropdownItem>
+       
         <CDropdownDivider />
         <CDropdownItem>
           <CButton onClick={handleLogout}>

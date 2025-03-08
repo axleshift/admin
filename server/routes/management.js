@@ -1,5 +1,5 @@
 import express from "express";
-import { sendToLogistics,sendTocore,sendTofinance,sendToHR} from "../controllers/management.js";
+import { sendToLogistics,sendTocore,sendTofinance,sendToHR,} from "../controllers/management.js";
 const router = express.Router();
 
 router.post("/logistics", sendToLogistics);
