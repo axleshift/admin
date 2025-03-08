@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types'; // ✅ Import prop-types
 import { Navigate } from 'react-router-dom';
 
 const RedirectIfAuthenticated = ({ children }) => {
@@ -13,12 +14,10 @@ const RedirectIfAuthenticated = ({ children }) => {
   });
 
   if (accessToken) {
-    // For superadmin, redirect to employeedash regardless of department
     if (role?.toLowerCase() === 'superadmin') {
       return <Navigate to="/employeedash" replace />;
     }
 
-    // For other roles, redirect based on department
     switch (department?.toLowerCase()) {
       case "administrative":
         return <Navigate to="/employeedash" replace />;
@@ -36,6 +35,11 @@ const RedirectIfAuthenticated = ({ children }) => {
   }
 
   return children;
+};
+
+// ✅ Define prop types
+RedirectIfAuthenticated.propTypes = {
+  children: PropTypes.node.isRequired, // Ensures `children` is passed
 };
 
 export default RedirectIfAuthenticated;
