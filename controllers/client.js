@@ -1,15 +1,13 @@
-
-import Log from '../model/Log.js';
-import { createLog } from '../controllers/try.js';  
+import Product from "../model/Product.js";
 import Customer from "../model/Customer.js";
 import User from "../model/User.js";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateUsername } from "../UTIL/generateCode.js";
 import Joi from "joi";
 import PasswordComplexity from "joi-password-complexity";
 import {generateOAuthToken }from '../UTIL/jwt.js'
-import { io } from "../index.js"; // Import Socket.IO instance
 import {
     logLoginAttempt,
     checkForUnusualLogin,
@@ -19,6 +17,10 @@ import {
     createAccountLockoutAlert,
     createLogger
 } from '../UTIL/securityUtils.js';
+import { sendOTPEmail } from "../UTIL/emailService.js";
+import OTP from '../model/OTP.js'; // Ensure the correct path
+import {resetFailedAttempts} from '../UTIL/resetFailedAttempts'
+const OTP_EXPIRY = 10 * 60 * 1000; 
   
 const passwordComplexityOptions = {
     min: 8,
@@ -33,87 +35,81 @@ const passwordComplexityOptions = {
 
 
 
-
 // Register User
 
-
 export const registerUser = async (req, res) => {
-    const { name, email, password, phoneNumber, role, department } = req.body;
-  
-    // Validate the request payload
-    const schema = Joi.object({
-      name: Joi.string().required(),
-      email: Joi.string().email().required(),
-      password: Joi.string()
-        .min(8)
-        .pattern(/[a-z]/, "lowercase")
-        .pattern(/[A-Z]/, "uppercase")
-        .pattern(/[0-9]/, "numbers")
-        .pattern(/[@$!%*?&#]/, "special characters")
-        .required(),
-      phoneNumber: Joi.string().optional(),
-      role: Joi.string().valid("admin", "manager", "superadmin").required(),
-      department: Joi.string().valid("HR", "Core", "Logistics", "Finance", "Administrative").required(),
-    });
-  
-    const { error } = schema.validate({ name, email, password, phoneNumber, role, department });
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
-  
-    try {
-      // Check if the email already exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ error: "Email already exists" });
-      }
-  
-      // Generate a hashed password
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const username = generateUsername(role);
-  
-      // Create the new user
-      const newUser = new User({
-        name,
-        email,
-        password: hashedPassword,
-        phoneNumber,
-        role,
-        department,
-        username,
-      });
-  
-      // Save the user in the database
-      const savedUser = await newUser.save();
-      const userResponse = savedUser.toObject();
-      delete userResponse.password;
-  
-      // Emit event via Socket.IO
-      io.emit("newUserRegistered", {
-        message: "A new user has registered!",
-        user: {
-          id: savedUser._id,
-          name: savedUser.name,
-          email: savedUser.email,
-          role: savedUser.role,
-          department: savedUser.department,
-        },
-      });
-  
-      res.status(201).json(userResponse);
-    } catch (error) {
-      console.error("Registration error:", error.message);
-      res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
-    }
-  };
+    const { name, email, password, phoneNumber, role, adminUsername, department } = req.body;
+    console.log("Received registration data:", req.body);
 
-  
+    // Validate input
+    const schema = Joi.object({
+        name: Joi.string().required(),
+        email: Joi.string().email().required(),
+        password: Joi.string()
+            .min(8)
+            .pattern(/[a-z]/, "lowercase")
+            .pattern(/[A-Z]/, "uppercase")
+            .pattern(/[0-9]/, "numbers")
+            .pattern(/[@$!%*?&#]/, "special characters")
+            .required(),
+        phoneNumber: Joi.string().optional(),
+        role: Joi.string().valid("admin", "manager", "employee", "user").required(),
+        adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
+        department: Joi.string().required() // New field for department
+    });
+
+    const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername, department });
+    if (error) {
+        return res.status(400).json({ error: error.details[0].message });
+    }
+
+    try {
+        // Check for existing user
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: "Email already exists" });
+        }
+
+        // Check for admin username if applicable
+        if (["admin", "manager", "employee"].includes(role)) {
+            const existingAdmin = await User.findOne({ username: adminUsername, role: "admin" });
+            if (!existingAdmin) {
+                return res.status(400).json({ error: "Invalid admin username" });
+            }
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Save user
+        const newUser = new User({
+            name,
+            email,
+            password: hashedPassword,
+            phoneNumber,
+            role,
+            department, // Save the department
+            username: generateUsername(role), // Example username generation
+        });
+
+        const savedUser = await newUser.save();
+        const userResponse = savedUser.toObject();
+        delete userResponse.password; // Don't send password back to client
+
+        res.status(201).json(userResponse);
+    } catch (error) {
+        console.error("Registration error:", error.message);
+        res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
+    }
+};
 // Login endpoint
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'];
-    
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
     try {
         // Find user by email or username
         const user = await User.findOne({
@@ -122,33 +118,37 @@ export const loginUser = async (req, res) => {
                 { username: identifier }
             ]
         });
-        
-        // Check if this specific account is locked (only if user exists)
+
+        if (user.accountLocked && user.lockExpiration>Date.now()){
+            return res.status(429).json({message:"Account is Lock. Use OTP to login"})
+        }
         if (user && user.accountLocked && user.lockExpiration > new Date()) {
-            // Log the blocked attempt for a locked account
             await logLoginAttempt({
                 identifier,
                 userId: user._id,
+                name: user.name,
+                department: user.department,
+                role: user.role,
                 ipAddress,
                 userAgent,
                 status: 'unauthorized',
                 reason: 'Account locked'
             });
-            
+
             return res.status(429).json({
                 message: "This account is temporarily locked due to too many failed attempts.",
                 lockedUntil: user.lockExpiration,
                 remainingTime: Math.ceil((user.lockExpiration - new Date()) / 1000)
             });
         }
-        
+
         // If account was locked but lock has expired, unlock it
         if (user && user.accountLocked && user.lockExpiration <= new Date()) {
             user.accountLocked = false;
             user.lockExpiration = null;
             await user.save();
         }
-        
+
         // If user doesn't exist, log attempt but don't reveal this info
         if (!user) {
             await logLoginAttempt({
@@ -158,86 +158,79 @@ export const loginUser = async (req, res) => {
                 status: 'failed',
                 reason: 'User not found'
             });
-            
-            // Check if there are too many failed attempts for this specific identifier
-            const failedAttempts = await getRecentFailedAttempts(null, identifier);
-            
-            // We won't lock anything here since the user doesn't exist
-            // Just return the generic error
-            return res.status(401).json({ message: "Invalid credentials" });
+
+            return res.status(401).json({
+                message: "Invalid credentials",
+                remainingAttempts: MAX_ATTEMPTS - 1
+            });
         }
-        
+
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        
+
         if (!isPasswordValid) {
-            // Log failed login attempt
+            // Count failed login attempts
+            const failedAttempts = await getRecentFailedAttempts(user._id, identifier);
+            const remainingAttempts = MAX_ATTEMPTS - failedAttempts - 1;
+
+            // Log failed attempt
             await logLoginAttempt({
-                userId: user._id,
                 identifier,
+                userId: user._id,
+                name: user.name,
+                department: user.department,
+                role: user.role,
                 ipAddress,
                 userAgent,
                 status: 'failed',
                 reason: 'Incorrect password'
             });
-            
-            // Check for too many failed attempts for this specific user
-            const failedAttempts = await getRecentFailedAttempts(user._id, identifier);
-            
-            if (failedAttempts >= 5) {
-                // Lock this specific account in the database
-                const lockoutEnd = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-                
+
+            if (failedAttempts + 1 >= MAX_ATTEMPTS) {
+                // Lock the account for 15 minutes
+                const lockoutEnd = new Date(Date.now() + LOCKOUT_DURATION);
+
                 user.accountLocked = true;
                 user.lockExpiration = lockoutEnd;
                 await user.save();
-                
-                // Create security alert for account lockout
+
                 await createAccountLockoutAlert(user._id, ipAddress, userAgent);
-                
+
                 return res.status(429).json({
                     message: "Too many failed login attempts. This account has been temporarily locked.",
                     lockedUntil: lockoutEnd,
-                    remainingTime: 300 // 5 minutes in seconds
+                    remainingTime: Math.ceil((lockoutEnd - new Date()) / 1000) // 15 minutes in seconds
                 });
             }
-            
-            return res.status(401).json({ message: "Invalid credentials" });
+
+            return res.status(401).json({
+                message: "Invalid credentials",
+                remainingAttempts
+            });
         }
-        
-        // Login successful - generate JWT tokens
-        const accessToken = jwt.sign(
-            { userId: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-        
-        const refreshToken = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_REFRESH_SECRET,
-            { expiresIn: '7d' }
-        );
-        
+
         // Log successful login
         await logLoginAttempt({
             userId: user._id,
             identifier,
+            name: user.name,
+            department: user.department,
+            role: user.role,
             ipAddress,
             userAgent,
             status: 'success'
         });
-        
+
         // Check for unusual login patterns
         let securityAlert = null;
         const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
-        
+
         if (unusualLogin) {
             securityAlert = {
                 type: 'unusual_login_detected',
                 message: "We noticed a login from a new location or device."
             };
-            
-            // Create security alert
+
             await createSecurityAlert(user._id, 'unusual_login_detected', {
                 currentIp: ipAddress,
                 currentUserAgent: userAgent,
@@ -245,15 +238,37 @@ export const loginUser = async (req, res) => {
                 previousUserAgent: unusualLogin.previousUserAgent
             });
         }
-        
+
+        // Reset failed attempts counter (if needed)
+        await resetFailedAttempts(user._id);
+          // Generate JWT Access Token
+          const accessToken = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+
+        // Generate Refresh Token
+        const refreshToken = jwt.sign(
+            { id: user._id },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: "7d" }
+        );
+
         // Update last login info
         user.lastLogin = new Date();
-        user.lastIpAddress = ipAddress;
+        user.lastIpAddress = ipAddress
+        user.refreshToken = refreshToken;
         await user.save();
-        
-        // Return user data and tokens
+
+        res.cookie('accessToken', accessToken, { httpOnly: true });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true });
+
+
         return res.status(200).json({
             message: "Login successful",
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 username: user.username,
@@ -263,15 +278,12 @@ export const loginUser = async (req, res) => {
                 department: user.department,
                 permissions: user.permissions
             },
-            accessToken,
-            refreshToken,
             securityAlert
         });
-        
+
     } catch (error) {
         console.error("Login error:", error);
-        
-        // Log error
+
         await logLoginAttempt({
             identifier,
             ipAddress,
@@ -279,15 +291,12 @@ export const loginUser = async (req, res) => {
             status: 'error',
             error: error.message
         });
-        
+
         return res.status(500).json({
             message: "An error occurred during login."
         });
     }
 };
-  
-
-
 export const refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
@@ -311,6 +320,37 @@ export const refreshToken = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 };
+
+export const getUser = async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Not Authenticated' });
+    }
+  
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password');
+      
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+  
+      res.json({
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          department: user.department,
+          username: user.username
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(401).json({ message: 'Invalid token' });
+    }
+  };
 
 export const getCustomers = async (req, res) => {
     try {
@@ -382,6 +422,72 @@ export const changePassword = async (req, res) => {
         return res.json({ success: true, message: "Password changed successfully" });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+
+export const generateOTP = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Add error handling for the User.findOne call
+        let user;
+        try {
+            user = await User.findOne({ email });
+        } catch (dbError) {
+            console.error("Database error when finding user:", dbError);
+            return res.status(500).json({ message: "Database error when finding user" });
+        }
+
+        if (!user || !user.accountLocked) {
+            return res.status(400).json({ message: "Account not locked or user not found" });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY);
+
+        // Add error handling for the OTP.create call
+        try {
+            await OTP.create({ email, otp, expiresAt: otpExpiresAt });
+        } catch (dbError) {
+            console.error("Database error when creating OTP:", dbError);
+            return res.status(500).json({ message: "Database error when creating OTP" });
+        }
+
+        // Add error handling for the sendOTPEmail call
+        try {
+            await sendOTPEmail(email, otp);
+        } catch (emailError) {
+            console.error("Email sending error:", emailError);
+            return res.status(500).json({ message: "Failed to send OTP email" });
+        }
+
+        res.status(200).json({ message: "OTP sent to your email" });
+
+    } catch (error) {
+        console.error("Unexpected error in generateOTP:", error);
+        res.status(500).json({ message: "Error generating OTP" });
+    }
+}
+export const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const validOTP = await OTP.findOne({ email, otp });
+        console.log("Found OTP:", validOTP);
+        if (!validOTP || new Date(validOTP.expiresAt) < new Date()) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+
+        await User.updateOne({ email }, { accountLocked: false, lockExpiration: null });
+
+        await OTP.deleteOne({ email });
+
+        res.status(200).json({ message: "Account unlocked successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: "Error verifying OTP" });
     }
 };
 

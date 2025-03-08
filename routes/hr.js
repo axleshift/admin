@@ -7,17 +7,14 @@ import {
     deleteUser, 
     getJobPostings, 
     getJobPostingById,
-    getpayroll,
-    getHrDashStats,
+    getpayroll,   
+    getHrDashStats, 
     access,
     getUserPermissions,
     revokeAccess,
-    fetchhrdata,
   } from "../controllers/hr.js";
 
 const router = express.Router();
-router.get('/hr',fetchhrdata)
-
 router.get("/worker", getWorker);
 
 router.post('/generate/:userId', generateOAuth);
@@ -38,7 +35,7 @@ router.get("/payroll", getpayroll);
 
 router.get('/hrdash', getHrDashStats)
 
-router.post('/user/grant-access', access);
-router.get('/user/permissions/:userId', getUserPermissions);
-router.post('/user/revoke-access',revokeAccess);
+router.post('/grant-access', access);
+router.get('/permissions/:userId', getUserPermissions);
+router.post('/revoke-access',revokeAccess);
 export default router;

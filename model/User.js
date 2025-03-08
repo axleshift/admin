@@ -141,7 +141,6 @@ const userSchema = new mongoose.Schema(
         default: 0, // Number of sick leave days available
       },
     },
-    accessToken:{ type:String}, 
     refreshToken: { type: String },
     backupDirectory: { type: String},
     permissions: { type: [String], default: [] }, // Store only permission names
@@ -159,7 +158,9 @@ const userSchema = new mongoose.Schema(
       isActive: {
           type: Boolean,
           default: true
-      }
+      },
+      otp:{type:String},
+      otpExpires:{type:Date}
   },
   { timestamps: true }
 );

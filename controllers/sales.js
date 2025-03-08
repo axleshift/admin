@@ -1,5 +1,5 @@
 import Shipping from "../model/Shipping.js";
-import Overall from "../model/Overall.js";
+import Overall from "../model/overall.js";
 
 // Fetch shipping data based on customerId and product
 export const getShipping = async (req, res) => {
