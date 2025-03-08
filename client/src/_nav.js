@@ -219,11 +219,13 @@ const _nav = (userRole, userDepartment) => {
 
   // Check if current user role and department has any permissions defined
   if (accessPermissions[userRole]?.[userDepartment]) {
+    const allowedRoutes = accessPermissions[userRole][userDepartment]; // Define allowedRoutes here
+
     // ===== NAVIGATION SECTIONS BUILDING =====
     
     // ===== DASHBOARD SECTION =====
     // Add main dashboard if user has access
-    if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
+    if (allowedRoutes.includes('/employeedash')) {
       navItems.push(
         { 
           component: CNavItem,
@@ -244,7 +246,7 @@ const _nav = (userRole, userDepartment) => {
     ];
 
     dashboards.forEach(dashboard => {
-      if (accessPermissions[userRole][userDepartment].includes(dashboard.path)) {
+      if (allowedRoutes.includes(dashboard.path)) {
         navItems.push({
           component: CNavItem,
           name: dashboard.name,
@@ -257,7 +259,7 @@ const _nav = (userRole, userDepartment) => {
 
     // ===== ADMIN SECTION =====
     // Add admin section if user has access to user activity page
-    if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
+    if (allowedRoutes.includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
         { 
@@ -306,7 +308,7 @@ const _nav = (userRole, userDepartment) => {
     }
 
     // ===== HR SECTION =====
-    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
+    if (allowedRoutes.includes('/worker')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
         { 
@@ -331,7 +333,7 @@ const _nav = (userRole, userDepartment) => {
     }
 
     // ===== FINANCE SECTION =====
-    if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
+    if (allowedRoutes.includes('/freight/transaction')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
         { 
@@ -368,7 +370,7 @@ const _nav = (userRole, userDepartment) => {
     }
 
     // ===== CORE SECTION =====
-    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
+    if (allowedRoutes.includes('/customer')) {
       navItems.push(
         { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
         { 
@@ -405,7 +407,7 @@ const _nav = (userRole, userDepartment) => {
     }
     
     // ===== LOGISTIC SECTION =====
-    if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
+    if (allowedRoutes.includes('/logisticdash')){
       navItems.push(
         { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
         {
