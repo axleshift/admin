@@ -12,14 +12,18 @@ import {
     githubAuth, 
     githubCallback,
     sendToken,
-    getUsersBy ,
+    // getUsersBy ,
    
     
     setBackupDirectory, 
     backupDatabase, 
     restoreDatabase, 
     listBackups, 
-    listCollections 
+    listCollections,
+    getCoreUsers,
+    getFinanceUsers,
+    getHRUsers,
+    getLogisticsUsers 
 } from "../controllers/admin.js";
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
 const router = express.Router();
@@ -35,8 +39,11 @@ const router = express.Router();
 router.get('/github', githubAuth);
 router.get('/github/callback',githubCallback, sendToken)
 
-router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
-
+//router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
+router.get('/users/core', getCoreUsers);
+router.get('/users/finance', getFinanceUsers);
+router.get('/users/hr', getHRUsers);
+router.get('/users/logistics', getLogisticsUsers);
 //announce.js
 router.post('/generate', generateAnnouncement)
 

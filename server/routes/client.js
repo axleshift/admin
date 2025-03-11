@@ -2,25 +2,23 @@ import express from "express";
 import {  
  
     getCustomers,
-    registerUser, 
     loginUser, 
     registerCustomer, 
     changePassword, 
     generateOTP, 
     verifyOTP,
-    refreshToken,
-    getUser
+    saveUser
 } from "../controllers/client.js";
+import detectAnomaly from "../middleware/detectAnomaly.js";
 const router = express.Router();
+router.post('/save-user', saveUser)
 
 router.get('/customers', getCustomers);
-// Register
-router.post("/register", registerUser);
+
 
 // Login
-router.post("/login", loginUser);
-router.post('/refresh-token',refreshToken)
-router.get('/user',getUser)
+router.post("/login",detectAnomaly,loginUser);
+
 // Register a customer
 router.post("/registercustomer", registerCustomer);
 // Check user authentication

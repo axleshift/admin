@@ -4,7 +4,85 @@ import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
 import {io}  from '../index.js'
 
-  
+export const ExternalHR = async (req, res) => {
+  try {
+    const externalSystemUrl = process.env.EXTERNALHr;
+    console.log("External HR URL:", externalSystemUrl);
+
+    // Check if we're in development mode or the URL isn't configured
+    if (!externalSystemUrl || process.env.NODE_ENV === 'development') {
+      console.log("Using mock data for HR users");
+      
+      // Return mock data instead of making an API call
+      return res.status(200).json([
+        { 
+          id: 1, 
+          firstName: 'John', 
+          lastName: 'Doe', 
+          email: 'john.doe@example.com',
+          department: 'IT',
+          role: 'Developer'
+        },
+        { 
+          id: 2, 
+          firstName: 'Jane', 
+          lastName: 'Smith', 
+          email: 'jane.smith@example.com',
+          department: 'Finance',
+          role: 'Analyst'
+        },
+        { 
+          id: 3, 
+          firstName: 'Michael', 
+          lastName: 'Johnson', 
+          email: 'michael.j@example.com',
+          department: 'HR',
+          role: 'Manager'
+        },
+        { 
+          id: 4, 
+          firstName: 'Sarah', 
+          lastName: 'Williams', 
+          email: 'sarah.w@example.com',
+          department: 'Marketing',
+          role: 'Specialist'
+        },
+        { 
+          id: 5, 
+          firstName: 'Robert', 
+          lastName: 'Brown', 
+          email: 'robert.b@example.com',
+          department: 'Operations',
+          role: 'Director'
+        }
+      ]);
+    }
+
+    // If we're not in development mode and have a URL, proceed with the API call
+    try {
+      const response = await axios.get(`${externalSystemUrl}/users`);
+      res.status(200).json(response.data);
+    } catch (axiosError) {
+      console.error("Axios error:", axiosError.message);
+      if (axiosError.response) {
+        console.error("Response data:", axiosError.response.data);
+        console.error("Response status:", axiosError.response.status);
+        res.status(axiosError.response.status).json({ 
+          error: `External system error: ${axiosError.response.data.message || axiosError.message}` 
+        });
+      } else if (axiosError.request) {
+        console.error("No response received:", axiosError.request);
+        res.status(503).json({ error: "External service unavailable" });
+      } else {
+        res.status(500).json({ error: axiosError.message });
+      }
+    }
+  } catch (error) {
+    console.error("General error in ExternalHR:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 
 export const getWorker = async (req, res) => {

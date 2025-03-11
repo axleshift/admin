@@ -1,6 +1,16 @@
 import LoginAttempt from "../model/LoginAttempt.js";
 import SecurityAlert from "../model/SecurityAlert.js";
+import Anomaly from "../model/Anomaly.js";
 
+export const getAllAnomalies = async (req, res) => {
+    try {
+        const anomalies = await Anomaly.find().populate("userId", "name email").sort({ timestamp: -1 });
+        return res.json(anomalies);
+    } catch (error) {
+        console.error("Error fetching anomalies:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
 export const getAllSecurityAlerts = async (req, res) => {
     try {
         const { userId, alertType, status } = req.query; // Optional filters

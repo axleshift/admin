@@ -1,13 +1,9 @@
-import Product from "../model/Product.js";
 import Customer from "../model/Customer.js";
 import User from "../model/User.js";
 
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { generateUsername } from "../UTIL/generateCode.js";
 import Joi from "joi";
-import PasswordComplexity from "joi-password-complexity";
-import {generateOAuthToken }from '../UTIL/jwt.js'
+import LoginAttempt from '../model/LoginAttempt.js';
+import Anomaly from '../model/Anomaly.js';
 import {
     logLoginAttempt,
     checkForUnusualLogin,
@@ -21,7 +17,7 @@ import { sendOTPEmail } from "../UTIL/emailService.js";
 import OTP from '../model/OTP.js'; // Ensure the correct path
 import {resetFailedAttempts} from '../UTIL/resetFailedAttempts'
 const OTP_EXPIRY = 10 * 60 * 1000; 
-  
+import { generateAccessToken, generateRefreshToken } from '../middleware/generateToken.js';
 const passwordComplexityOptions = {
     min: 8,
     max: 30,
@@ -31,78 +27,410 @@ const passwordComplexityOptions = {
     symbol: 1,
     requirementCount: 4,
 };
+//integrate model
+import coreuser from '../model/coreuser.js'
+import financeuser from '../model/financeuser.js'
+import hruser from '../model/hruser.js';
+import logisticuser from '../model/logisticuser.js'
+import { generateCode, generateUsername } from "../UTIL/generateCode.js";
+import bcrypt from 'bcrypt';
+
 
 
 
 
 // Register User
-
-export const registerUser = async (req, res) => {
-    const { name, email, password, phoneNumber, role, adminUsername, department } = req.body;
-    console.log("Received registration data:", req.body);
-
-    // Validate input
-    const schema = Joi.object({
-        name: Joi.string().required(),
-        email: Joi.string().email().required(),
-        password: Joi.string()
-            .min(8)
-            .pattern(/[a-z]/, "lowercase")
-            .pattern(/[A-Z]/, "uppercase")
-            .pattern(/[0-9]/, "numbers")
-            .pattern(/[@$!%*?&#]/, "special characters")
-            .required(),
-        phoneNumber: Joi.string().optional(),
-        role: Joi.string().valid("admin", "manager", "employee", "user").required(),
-        adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
-        department: Joi.string().required() // New field for department
-    });
-
-    const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername, department });
-    if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-    }
-
+const userSchema = Joi.object({
+    id: Joi.string().optional(), 
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string()
+      .min(8)
+      .pattern(/[a-z]/, "lowercase")
+      .pattern(/[A-Z]/, "uppercase")
+      .pattern(/[0-9]/, "numbers")
+      .pattern(/[@$!%*?&#]/, "special characters")
+      .required(),
+    role: Joi.string().required(),
+    department: Joi.string().required(),
+    phone: Joi.string().optional().allow(''),
+    address: Joi.string().optional().allow(''),
+    image: Joi.string().optional().allow('')
+  });
+  
+  export const saveUser = async (req, res) => {
+    console.log("Received user data:", req.body);
+    
     try {
-        // Check for existing user
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: "Email already exists" });
+      const { 
+        id, 
+        firstName, 
+        lastName, 
+        email, 
+        password, 
+        role, 
+        department,
+        phone = '',
+        address = '',
+        image = '',
+        fullName = '',
+        name = ''
+      } = req.body;
+      
+      // Handle name fields with fallbacks
+      let userFirstName = firstName || '';
+      let userLastName = lastName || '';
+      
+      // Create full name if not provided, using firstName and lastName
+      let userFullName = fullName || '';
+      if (!userFullName && (userFirstName || userLastName)) {
+        userFullName = `${userFirstName} ${userLastName}`.trim();
+      }
+      
+      // Create name if not provided, using fullName or firstName and lastName
+      let userName = name || '';
+      if (!userName) {
+        userName = userFullName || `${userFirstName} ${userLastName}`.trim();
+      }
+      
+      // If we still don't have names, derive them from each other
+      if (!userFullName && userName) {
+        userFullName = userName;
+      }
+      
+      // If we have a fullName but no first/last name, try to split it
+      if (userFullName && !userFirstName && !userLastName) {
+        const nameParts = userFullName.split(' ');
+        if (nameParts.length >= 2) {
+          userFirstName = nameParts[0];
+          userLastName = nameParts.slice(1).join(' ');
+        } else {
+          userFirstName = userFullName;
+          userLastName = '';
         }
-
-        // Check for admin username if applicable
-        if (["admin", "manager", "employee"].includes(role)) {
-            const existingAdmin = await User.findOne({ username: adminUsername, role: "admin" });
-            if (!existingAdmin) {
-                return res.status(400).json({ error: "Invalid admin username" });
-            }
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Save user
-        const newUser = new User({
-            name,
+      }
+      
+      // After all the logic, ensure we have at least some value for the name
+      if (!userName && !userFullName && !userFirstName && !userLastName) {
+        return res.status(400).json({
+          success: false,
+          error: "At least one name field (firstName, lastName, fullName, or name) must be provided"
+        });
+      }
+      
+      // Validate input
+      const { error } = userSchema.validate({ 
+        id, 
+        firstName: userFirstName, 
+        lastName: userLastName, 
+        email, 
+        password, 
+        role, 
+        department, 
+        phone, 
+        address, 
+        image
+      });
+      
+      if (error) {
+        return res.status(400).json({ 
+          success: false,
+          error: error.details[0].message 
+        });
+      }
+      
+      // Check if email already exists in any system
+      const emailExists = await Promise.all([
+        coreuser.findOne({ email }),
+        financeuser.findOne({ email }),
+        hruser.findOne({ email }),
+        logisticuser.findOne({ email }),
+        User.findOne({ email })
+      ]);
+      
+      if (emailExists.some(user => user !== null)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists in the system'
+        });
+      }
+      
+      // Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      
+      // Generate user number
+      const userNumber = generateCode();
+      
+      // Determine which model to use based on department
+      let userModel;
+      let userData = {};
+      
+      // Normalize department and role strings
+      const userDepartment = department?.trim() || 'core';
+      const userRole = role?.trim()?.toLowerCase() || 'employee';
+      
+      // Specific formatting for each department's model
+      switch (userDepartment.toLowerCase()) {
+        case 'finance':
+          userModel = financeuser;
+          userData = {
+            userNumber,
+            fullName: userFullName,
             email,
             password: hashedPassword,
-            phoneNumber,
-            role,
-            department, // Save the department
-            username: generateUsername(role), // Example username generation
-        });
-
-        const savedUser = await newUser.save();
-        const userResponse = savedUser.toObject();
-        delete userResponse.password; // Don't send password back to client
-
-        res.status(201).json(userResponse);
+            role: userRole,
+            phoneNumber: phone || '0000000000',
+            address,
+            image
+          };
+          console.log("User will be stored in finance system");
+          break;
+          
+        case 'hr':
+          userModel = hruser;
+          userData = {
+            userNumber,
+            firstname: userFirstName,
+            lastname: userLastName,
+            email,
+            password: hashedPassword,
+            phoneNumber: phone || '0000000000',
+            role: userRole,
+            department: capitalizeFirstLetter(userDepartment),
+            address,
+            image,
+          };
+          console.log("User will be stored in HR system");
+          break;
+          
+        case 'logistics':
+          userModel = logisticuser;
+          userData = {
+            userNumber,
+            firstname: userFirstName,
+            lastname: userLastName,
+            email,
+            password: hashedPassword,
+            phoneNumber: phone || '0000000000',
+            role: userRole,
+            department: capitalizeFirstLetter(userDepartment),
+            address,
+            image,
+          };
+          console.log("User will be stored in logistic system");
+          break;
+          
+        case 'administrative':
+          // For Administrative, store in the centralized User model only
+          userModel = User;
+          userData = {
+            name: userName,
+            email,
+            password: hashedPassword,
+            phoneNumber: phone || '0000000000',
+            role: userRole,
+            department: capitalizeFirstLetter(userDepartment),
+            username: generateUsername(userRole),
+            // Additional required fields from User model
+            attendance: [],
+            performance: [],
+            benefits: {
+              healthInsurance: false,
+              retirementPlan: false,
+              vacationDays: 0,
+              sickLeave: 0
+            },
+            payroll: {
+              salary: 0,
+              payFrequency: 'monthly',
+              lastPaymentDate: new Date()
+            }
+          };
+          console.log("User will be stored in admin system (centralized User model)");
+          break;
+          
+        case 'core':
+        default:
+          userModel = coreuser;
+          userData = {
+            userNumber,
+            firstname: userFirstName,
+            lastname: userLastName,
+            email,
+            password: hashedPassword,
+            phoneNumber: phone || '0000000000',
+            role: userRole,
+            department: capitalizeFirstLetter(userDepartment),
+            address,
+            image,
+          };
+          console.log("User will be stored in core system");
+          break;
+      }
+      
+      // Save user to the appropriate model (department-specific database)
+      let savedUser = null;
+      
+      // Only save to department-specific database if it's not already administrative
+      if (userDepartment.toLowerCase() !== 'administrative') {
+        const newUser = new userModel(userData);
+        savedUser = await newUser.save();
+      }
+      
+      // ALWAYS create a centralized user record in the administrative system (User model)
+      const centralizedUserData = {
+        name: userName,
+        email,
+        password: hashedPassword,
+        username: generateUsername(userRole),
+        phoneNumber: phone || '0000000000',
+        role: userRole,
+        department: capitalizeFirstLetter(userDepartment),
+        // Additional required fields from User model
+        attendance: [],
+        performance: [],
+        benefits: {
+          healthInsurance: false,
+          retirementPlan: false,
+          vacationDays: 0,
+          sickLeave: 0
+        },
+        payroll: {
+          salary: 0,
+          payFrequency: 'monthly',
+          lastPaymentDate: new Date()
+        }
+      };
+      
+      // If the user is already being saved to the administrative system, use that record
+      let centralizedUser;
+      if (userDepartment.toLowerCase() === 'administrative') {
+        centralizedUser = new User(userData);
+        savedUser = await centralizedUser.save();
+      } else {
+        centralizedUser = new User(centralizedUserData);
+        
+        // Validate before saving
+        const centralizedUserValidation = centralizedUser.validateSync();
+        if (centralizedUserValidation) {
+          console.error("Validation error:", centralizedUserValidation);
+          throw new Error(`Validation failed: ${JSON.stringify(centralizedUserValidation.errors)}`);
+        }
+        
+        await centralizedUser.save();
+      }
+      
+      // Remove password from response
+      const userResponse = savedUser && savedUser.toObject ? savedUser.toObject() : (savedUser || {});
+      delete userResponse.password;
+      
+      // Return success response
+      return res.status(201).json({
+        success: true,
+        message: `User successfully saved to ${userDepartment} system and central administrative system`,
+        user: {
+          ...userResponse,
+          department: capitalizeFirstLetter(userDepartment)
+        }
+      });
+      
     } catch (error) {
-        console.error("Registration error:", error.message);
-        res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
+      console.error("User registration error:", error.message);
+      
+      // Handle specific errors
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already exists in the system',
+          error: error.message
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error saving user',
+        error: error.message
+      });
     }
-};
-// Login endpoint
+  };
+  
+  // Helper function to capitalize the first letter of a string
+  function capitalizeFirstLetter(string) {
+    if (!string) return '';
+    // First convert to lowercase, then capitalize first letter
+    const lowerCaseString = string.toLowerCase();
+    return lowerCaseString.charAt(0).toUpperCase() + lowerCaseString.slice(1);
+  }
+  // Additional user-related controller methods
+ 
+// export const registerUser = async (req, res) => {
+//     const { name, email, password, phoneNumber, role, adminUsername, department } = req.body;
+//     console.log("Received registration data:", req.body);
+
+//     // Validate input
+//     const schema = Joi.object({
+//         name: Joi.string().required(),
+//         email: Joi.string().email().required(),
+//         password: Joi.string()
+//             .min(8)
+//             .pattern(/[a-z]/, "lowercase")
+//             .pattern(/[A-Z]/, "uppercase")
+//             .pattern(/[0-9]/, "numbers")
+//             .pattern(/[@$!%*?&#]/, "special characters")
+//             .required(),
+//         phoneNumber: Joi.string().optional(),
+//         role: Joi.string().valid("admin", "manager", "employee", "user").required(),
+//         adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
+//         department: Joi.string().required() // New field for department
+//     });
+
+//     const { error } = schema.validate({ name, email, password, phoneNumber, role, adminUsername, department });
+//     if (error) {
+//         return res.status(400).json({ error: error.details[0].message });
+//     }
+
+//     try {
+//         // Check for existing user
+//         const existingUser = await User.findOne({ email });
+//         if (existingUser) {
+//             return res.status(400).json({ error: "Email already exists" });
+//         }
+
+//         // Check for admin username if applicable
+//         if (["admin", "manager", "employee"].includes(role)) {
+//             const existingAdmin = await User.findOne({ username: adminUsername, role: "admin" });
+//             if (!existingAdmin) {
+//                 return res.status(400).json({ error: "Invalid admin username" });
+//             }
+//         }
+
+//         // Hash password
+//         const hashedPassword = await bcrypt.hash(password, 10);
+
+//         // Save user
+//         const newUser = new User({
+//             name,
+//             email,
+//             password: hashedPassword,
+//             phoneNumber,
+//             role,
+//             department, // Save the department
+//             username: generateUsername(role), // Example username generation
+//         });
+
+//         const savedUser = await newUser.save();
+//         const userResponse = savedUser.toObject();
+//         delete userResponse.password; // Don't send password back to client
+
+//         res.status(201).json(userResponse);
+//     } catch (error) {
+//         console.error("Registration error:", error.message);
+//         res.status(500).json({ message: "Server error. Please try again later.", error: error.message });
+//     }
+// };
+
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -119,9 +447,10 @@ export const loginUser = async (req, res) => {
             ]
         });
 
-        if (user.accountLocked && user.lockExpiration>Date.now()){
-            return res.status(429).json({message:"Account is Lock. Use OTP to login"})
+        if (user.accountLocked && user.lockExpiration > Date.now()) {
+            return res.status(429).json({ message: "Account is locked. Use OTP to login" });
         }
+
         if (user && user.accountLocked && user.lockExpiration > new Date()) {
             await logLoginAttempt({
                 identifier,
@@ -203,6 +532,9 @@ export const loginUser = async (req, res) => {
                 });
             }
 
+            // Detect anomaly
+            await detectAnomaly(user._id, ipAddress, userAgent);
+
             return res.status(401).json({
                 message: "Invalid credentials",
                 remainingAttempts
@@ -241,34 +573,19 @@ export const loginUser = async (req, res) => {
 
         // Reset failed attempts counter (if needed)
         await resetFailedAttempts(user._id);
-          // Generate JWT Access Token
-          const accessToken = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "15m" }
-        );
-
-        // Generate Refresh Token
-        const refreshToken = jwt.sign(
-            { id: user._id },
-            process.env.JWT_REFRESH_SECRET,
-            { expiresIn: "7d" }
-        );
 
         // Update last login info
         user.lastLogin = new Date();
-        user.lastIpAddress = ipAddress
-        user.refreshToken = refreshToken;
+        user.lastIpAddress = ipAddress;
         await user.save();
 
-        res.cookie('accessToken', accessToken, { httpOnly: true });
-        res.cookie('refreshToken', refreshToken, { httpOnly: true });
+        // Generate tokens
+        const accessToken = generateAccessToken({ id: user._id, username: user.username });
+        const refreshToken = generateRefreshToken({ id: user._id, username: user.username });
 
-
-        return res.status(200).json({
+        // Send tokens in response
+        res.status(200).json({
             message: "Login successful",
-            accessToken,
-            refreshToken,
             user: {
                 id: user._id,
                 username: user.username,
@@ -278,6 +595,8 @@ export const loginUser = async (req, res) => {
                 department: user.department,
                 permissions: user.permissions
             },
+            accessToken,
+            refreshToken,
             securityAlert
         });
 
@@ -297,60 +616,25 @@ export const loginUser = async (req, res) => {
         });
     }
 };
-export const refreshToken = async (req, res) => {
-    const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-        return res.status(400).json({ message: 'Refresh token is required' });
-    }
+const detectAnomaly = async (userId, ipAddress, userAgent) => {
+    const recentAttempts = await LoginAttempt.find({ userId, ipAddress }).sort({ timestamp: -1 }).limit(5);
 
-    try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const user = await User.findById(decoded.id);
+    if (recentAttempts.length >= 5) {
+        const lastAttempt = recentAttempts[0];
+        const timeDiff = new Date() - new Date(lastAttempt.timestamp);
 
-        if (!user || user.refreshToken !== refreshToken) {
-            return res.status(400).json({ message: 'Invalid refresh token' });
+        if (timeDiff < 60000) { // If there are 5 attempts within a minute
+            const anomaly = new Anomaly({
+                userId,
+                ipAddress,
+                userAgent,
+                reason: 'Multiple login attempts in a short period'
+            });
+            await anomaly.save();
         }
-
-        const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-
-        res.status(200).json({ accessToken });
-    } catch (error) {
-        console.error("Refresh token error:", error); // Log the error for debugging
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 };
-
-export const getUser = async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Not Authenticated' });
-    }
-  
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password');
-      
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' });
-      }
-  
-      res.json({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          department: user.department,
-          username: user.username
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      res.status(401).json({ message: 'Invalid token' });
-    }
-  };
 
 export const getCustomers = async (req, res) => {
     try {

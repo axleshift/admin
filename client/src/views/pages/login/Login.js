@@ -81,7 +81,7 @@ const Login = () => {
       
       // Store user data in SessionStorage
       const { id, name, username, role, email, department, permissions } = response.user;
-      sessionStorage.setItem("userid", id);  // Changed from "userId" to "userid"
+      sessionStorage.setItem("userId", id);
       sessionStorage.setItem("username", username || "");
       sessionStorage.setItem("name", name || "");
       sessionStorage.setItem("email", email || "");
@@ -112,7 +112,7 @@ const Login = () => {
           navigate("/logisticdash");
           break;
         default:
-          navigate("/"); // Default dashboard if department is not recognized
+          navigate("/dashboard"); // Default dashboard if department is not recognized
       }
       
     } catch (err) {

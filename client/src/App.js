@@ -1,13 +1,10 @@
-import React, { useEffect, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import usePersistentLogin from './components/hooks/PersistentLogin';
+import React, { Suspense, useEffect } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
-import ProtectedLogin from './components/ProtectedLogin';
-import RedirectIfAuthenticated from './components/RedirectIfAuthenticated';
-import ErrorBoundary from './components/ErrorBoundary';
-
+import { trackActivity } from './utils/trackActivity.js';
 import "./scss/style.scss";
+
 const DefaultLayout = React.lazy(() => import("./layout/DefaultLayout"));
 const Login = React.lazy(() => import("./views/pages/login/Login"));
 const SystemLogin = React.lazy(() => import("./views/pages/login/systemlogin"));
@@ -17,10 +14,9 @@ const Page404 = React.lazy(() => import("./views/pages/page404/Page404"));
 const Page500 = React.lazy(() => import("./views/pages/page500/Page500"));
 const Forgotpass = React.lazy(() => import("./views/pages/profile/forgotpass"));
 const Resetpass = React.lazy(() => import("./views/pages/profile/resetpass"));
-const OTP = React.lazy(() => import("./views/pages/profile/OTP"));
+const OTP = React.lazy(()=> import ("./views/pages/profile/OTP"))
 
 const App = () => {
-    const { isAuthenticated, loading } = usePersistentLogin();
     const { isColorModeSet, setColorMode } = useColorModes("coreui-free-react-admin-template-theme");
     const storedTheme = useSelector((state) => state.changeState.theme);
 
@@ -35,15 +31,21 @@ const App = () => {
         if (!isColorModeSet()) {
             setColorMode(storedTheme);
         }
-    }, [isColorModeSet, setColorMode, storedTheme]);
 
-    if (loading) {
-        return (
-            <div className="pt-3 text-center">
-                <CSpinner color="primary" variant="grow" />
-            </div>
-        );
-    }
+        // Tracking user activity
+        const userId = sessionStorage.getItem('userid') 
+        const name = sessionStorage.getItem('name') 
+        const department = sessionStorage.getItem('department') 
+        const role = sessionStorage.getItem('role') 
+        trackActivity({
+            userId: userId,
+            name: name,
+            department: department,
+            role: role,
+            actionType: 'Page Visit',
+            actionDescription: `Visited ${window.location.pathname}`
+        });
+    }, [isColorModeSet, setColorMode, storedTheme]);
 
     return (
         <BrowserRouter>
@@ -55,13 +57,7 @@ const App = () => {
                 }
             >
                 <Routes>
-                    <Route path="/login" element={
-                        <RedirectIfAuthenticated>
-                            <ErrorBoundary>
-                                <Login />
-                            </ErrorBoundary>
-                        </RedirectIfAuthenticated>
-                    } />
+                    <Route path="/login" element={<Login />} />
                     <Route path="/OTP" element={<OTP />} />
                     <Route path="/systemlogin" element={<SystemLogin />} />
                     <Route path="/logout" element={<Logout />} />
@@ -70,13 +66,7 @@ const App = () => {
                     <Route path="/register" element={<Register />} />
                     <Route path="/404" element={<Page404 />} />
                     <Route path="/500" element={<Page500 />} />
-                    <Route path="*" element={
-                        <ProtectedLogin>
-                            <ErrorBoundary>
-                                <DefaultLayout />
-                            </ErrorBoundary>
-                        </ProtectedLogin>
-                    } />
+                    <Route path="*" element={<DefaultLayout />} />
                 </Routes>
             </Suspense>
         </BrowserRouter>

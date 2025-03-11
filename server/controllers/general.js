@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
-
+import ActivityTracker from '../model/ActivityTracker.js';
 dotenv.config();
 export const accessReview = async (req, res) => {
     try {
@@ -262,3 +262,46 @@ export const getDashboardStats = async (req, res) => {
     }
   };
   
+
+
+
+
+export const activityLogger = async (req, res, next) => {
+    if (req.user) {
+      const { userId, name, role, department } = req.user;
+      const { actionType, actionDescription } = req.body;
+  
+      try {
+        const newActivity = new ActivityTracker({
+          userId,
+          name,
+          role,
+          department,
+          actionType,
+          actionDescription,
+        });
+  
+        await newActivity.save();
+        res.status(201).send({ message: 'Activity Logged Successfully' });
+      } catch (error) {
+        console.error('❌ Error saving user activity:', error);
+        res.status(500).send({ error: 'Failed to log activity' });
+      }
+    } else {
+      res.status(403).send({ error: 'Unauthorized' });
+    }
+};
+  // Endpoint to retrieve user activity logs
+export const getUserActivity = async (req, res) => {
+    try {
+      const { userId } = req.query;
+  
+      const activities = await ActivityTracker.find({ userId })
+        .sort({ timestamp: -1 });
+  
+      res.status(200).json(activities);
+    } catch (error) {
+      console.error('❌ Error retrieving user activity:', error);
+      res.status(500).json({ error: 'Server Error' });
+    }
+  };

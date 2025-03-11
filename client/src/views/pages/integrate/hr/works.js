@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   CContainer,
   CRow,
@@ -15,7 +14,6 @@ import {
   CBadge,
 } from '@coreui/react';
 import { usePostForgotPasswordMutation } from '../../../../state/adminApi';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   usePostToHrMutation, 
   usePostToFinanceMutation, 
@@ -27,9 +25,13 @@ import {
    usePostgenerateMutation 
   } from '../../../../state/hrApi';
 import CustomHeader from '../../../../components/header/customhead';
-import GrantAccessModal from '../../scene/modal.js';
 import ExcelJS from 'exceljs';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import GrantAccessModal from '../../scene/modal.js';
 // Import the mutations for the departments
+
+import axios from 'axios'; 
 
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
@@ -300,6 +302,30 @@ const Works = () => {
           </CCol>
         </CRow>
 
+        {/* Track Download All button click */}
+        {downloadAllClicked && (
+          <ActivityTracker
+            action="Download All"
+            description="User downloaded all employee data as an Excel file"
+          />
+        )}
+
+        {/* Track Role Change */}
+        {roleChangeTracked.userId && (
+          <ActivityTracker
+            action="Change Role"
+            description={`Changed role for user ${roleChangeTracked.userName} to ${roleChangeTracked.newRole}`}
+          />
+        )}
+
+        {/* Track Delete User */}
+        {deleteTracked.userId && (
+          <ActivityTracker
+            action="Delete User"
+            description={`Deleted user ${deleteTracked.userName}`}
+          />
+        )}
+
         {filteredData.map((item) => (
           <CCard
           key={item._id}
@@ -432,12 +458,6 @@ const Works = () => {
       </CRow>
     </CContainer>
   );
-};
-
-Works.propTypes = {
-  data: PropTypes.array, // Array of employees
-  isLoading: PropTypes.bool, // Loading state
-  error: PropTypes.object, // Error object
 };
 
 export default Works;

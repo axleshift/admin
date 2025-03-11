@@ -1,4 +1,6 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
+import axios from 'axios';
+import '../src/scss/_custom.scss';
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -19,12 +21,56 @@ import {
 /**
  * Navigation configuration function that returns navigation items based on user role and permissions
  */
-const _nav = (userRole, userDepartment) => {
+const _nav = () => {
+  // Get user information from session storage
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
+  const userUsername = sessionStorage.getItem('username'); 
+  const userId = sessionStorage.getItem('userId');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+  const userEmail = sessionStorage.getItem('email');
+
   // Log session storage values for debugging
   console.log("✅ Session Storage Values:", {
     Role: userRole,
-    Department: userDepartment
+    Department: userDepartment,
+    Username: userUsername,
+    "User ID": userId,
+    Permissions: userPermissions,
+    Email: userEmail
   });
+
+  const [allowedRoutes, setAllowedRoutes] = useState([]);
+  
+  // Fetch user permissions when component mounts
+  useEffect(() => {
+    if (!userId) {
+      console.error('❌ No userId found in sessionStorage');
+      return;
+    }
+
+    const fetchUserPermissions = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/hr/permissions/${userId}`);
+        console.log('✅ API Response:', response.data);
+        
+        if (response.data.permissions && response.data.permissions.length > 0) {
+          setAllowedRoutes(response.data.permissions);
+        } else {
+          console.warn('⚠️ No permissions found for this user.');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching permissions:', error);
+      }
+    };
+
+    // Only fetch if no permissions are in session storage
+    if (!userPermissions.length) {
+      fetchUserPermissions();
+    } else {
+      setAllowedRoutes(userPermissions);
+    }
+  }, [userId]);
 
   // Array to store navigation items
   const navItems = [];
@@ -34,6 +80,7 @@ const _nav = (userRole, userDepartment) => {
   const accessPermissions = {
     // Superadmin permissions by department
     superadmin: {
+      // IMPORTANT: To add new pages for superadmin administrative role, add them to this array
       Administrative: [
         '/employeedash',
         '/hrdash',
@@ -58,7 +105,8 @@ const _nav = (userRole, userDepartment) => {
         '/chatbox',
         '/recoverytuts',
         '/monitoring',
-        '/Request'
+        '/Request',
+        './usermanagement'
       ],
       HR: [
         '/employeedash',
@@ -220,13 +268,11 @@ const _nav = (userRole, userDepartment) => {
 
   // Check if current user role and department has any permissions defined
   if (accessPermissions[userRole]?.[userDepartment]) {
-    const allowedRoutes = accessPermissions[userRole][userDepartment]; // Define allowedRoutes here
-
     // ===== NAVIGATION SECTIONS BUILDING =====
     
     // ===== DASHBOARD SECTION =====
     // Add main dashboard if user has access
-    if (allowedRoutes.includes('/employeedash')) {
+    if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
       navItems.push(
         { 
           component: CNavItem,
@@ -247,7 +293,7 @@ const _nav = (userRole, userDepartment) => {
     ];
 
     dashboards.forEach(dashboard => {
-      if (allowedRoutes.includes(dashboard.path)) {
+      if (accessPermissions[userRole][userDepartment].includes(dashboard.path)) {
         navItems.push({
           component: CNavItem,
           name: dashboard.name,
@@ -260,7 +306,7 @@ const _nav = (userRole, userDepartment) => {
 
     // ===== ADMIN SECTION =====
     // Add admin section if user has access to user activity page
-    if (allowedRoutes.includes('/useractivity/index')) {
+    if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
         { 
@@ -305,11 +351,19 @@ const _nav = (userRole, userDepartment) => {
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />, 
           to: '/monitoring'
         },
+        {
+          component:CNavItem,
+          name:'UserManagement',
+          icon:<FontAwesomeIcon icon={faUserGroup} style = {{ marginRight: '8px'}}/>,
+          to:'/usermanagement'
+        }
+        
+       
       );
     }
 
     // ===== HR SECTION =====
-    if (allowedRoutes.includes('/worker')) {
+    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
         { 
@@ -334,7 +388,7 @@ const _nav = (userRole, userDepartment) => {
     }
 
     // ===== FINANCE SECTION =====
-    if (allowedRoutes.includes('/freight/transaction')) {
+    if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
         { 
@@ -371,7 +425,7 @@ const _nav = (userRole, userDepartment) => {
     }
 
     // ===== CORE SECTION =====
-    if (allowedRoutes.includes('/customer')) {
+    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
       navItems.push(
         { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
         { 
@@ -408,7 +462,7 @@ const _nav = (userRole, userDepartment) => {
     }
     
     // ===== LOGISTIC SECTION =====
-    if (allowedRoutes.includes('/logisticdash')){
+    if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
       navItems.push(
         { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
         {

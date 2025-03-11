@@ -1,58 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index';
-import { Navigate } from 'react-router-dom';
-import ErrorBoundary from '../components/ErrorBoundary'; // Import ErrorBoundary
+import React from 'react'
+import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
+import { useGetUserQuery } from '../state/adminApi'
+import { useSelector } from 'react-redux'
 
 const DefaultLayout = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = () => {
-      const userId = sessionStorage.getItem('userid');
-      const accessToken = localStorage.getItem('accessToken');
-      const role = sessionStorage.getItem('role');
-      const department = sessionStorage.getItem('department');
-      
-      console.log('DefaultLayout Auth Check:', {
-        userId,
-        hasAccessToken: !!accessToken,
-        role,
-        department
-      });
-      
-      if (userId && accessToken) {
-        setIsAuthenticated(true);
-      }
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, []); // Add an empty dependency array to run this effect only once
+  const userId = useSelector((state) => state.changeState.userId)
+  const { data, isLoading, error } = userId
+    ? useGetUserQuery(userId)
+    : { data: null, isLoading: false, error: null }
 
   if (isLoading) {
-    return <div>Loading authentication state...</div>;
+    return <div>Loading...</div>
   }
 
-  if (!isAuthenticated) {
-    console.log('Not authenticated, redirecting to login');
-    return <Navigate to="/login" />;
+  if (error) {
+    console.error('Error fetching user:', error)
+    return (
+      <div>
+        An error occurred: {error.status}: {JSON.stringify(error.data)}
+      </div>
+    ) // Show status and error data
   }
 
   return (
     <div>
-      <AppSidebar />
+      <AppSidebar user={data || {}} />
       <div className="wrapper d-flex flex-column min-vh-100">
         <AppHeader />
         <div className="body flex-grow-1">
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
+          <AppContent />
         </div>
         <AppFooter />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DefaultLayout;
+export default DefaultLayout

@@ -7,7 +7,9 @@ import { getUser,
     accessReview,
     receiveREQ,
     sendREQ, 
-    getRequests 
+    getRequests,
+    activityLogger, 
+    getUserActivity
  } from "../controllers/general.js";
 
 const router = express.Router();
@@ -23,4 +25,7 @@ router.get("/dashboard", getDashboardStats);
 router.post('/receive-request', receiveREQ)
 router.post('/send-request', sendREQ)
 router.get('/requests', getRequests);
+
+router.post('/log', activityLogger); 
+router.get('/getUserActivity', getUserActivity); 
 export default router;

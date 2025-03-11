@@ -9,10 +9,12 @@ const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
 const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
 const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
-const Register = React.lazy(() => import('./views/pages/register/Register'));
+const Register = React.lazy(() => import('./views/pages/register/registerNew'));
 
 const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
+
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
+const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagement'))
 // hr
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
@@ -69,7 +71,7 @@ const routes = [
   { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
   { path: '/chatbox' , name:'chatbox', element: <ProtectedRoute><Chatbox/></ProtectedRoute>},
 
-  { path: '/register', name: 'Register', element: <ProtectedRoute><Register /> </ProtectedRoute>},
+  { path: '/registerNew', name: 'Register New Users', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
   { path: '/request', name: 'Request', element: <ProtectedRoute><Request /> </ProtectedRoute>},
 
@@ -94,7 +96,7 @@ const routes = [
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },
   { path: '/logistic1/pin', name: 'Track', element: <ProtectedRoute><Pin /></ProtectedRoute> },
   { path: '/monitoring', name: 'Monitoring', element: <ProtectedRoute><Monitoring/></ProtectedRoute>},
-  
+  { path: '/usermanagement', name:'User Management', element: <ProtectedRoute><UserManager/></ProtectedRoute>},
   { path: '/PendingRequest', name:'PendingRequest', element: <ProtectedRoute><PendingRequest /></ProtectedRoute>},
 
   //finance

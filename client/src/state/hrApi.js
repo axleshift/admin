@@ -8,6 +8,11 @@ export const hrApi = createApi({ // ✅ Changed to lowercase to match imports in
   reducerPath: "hrApi", // ✅ Updated to lowercase for consistency
   tagTypes: ["Workers"], // ✅ Fixed spelling
   endpoints: (build) => ({
+    getNewUser:build.query({
+      query: () => "hr/newUser",
+      invalidatesTags: [],
+    }),
+
     gethrdash: build.query({
         query: () => 'hr/hrdash',
         providesTags: ['Dashboard'],
@@ -106,7 +111,7 @@ export const hrApi = createApi({ // ✅ Changed to lowercase to match imports in
 });
 
 export const { 
-    
+    useGetNewUserQuery,
     useGethrdashQuery,
     useGetWorkersQuery ,
     usePostgenerateMutation,

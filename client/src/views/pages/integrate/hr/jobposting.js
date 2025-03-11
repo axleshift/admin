@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types'; // ✅ Import prop-types
 import {
   CCard,
   CCardBody,
@@ -24,14 +23,40 @@ const RecruitmentModule = () => {
   const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [activityTracked, setActivityTracked] = useState({ jobId: null, jobTitle: null, jobDepartment: null }); // State for tracking activity
 
   const { data: jobDetails, isLoading: isJobLoading } = useGetJobPostingByIdQuery(selectedJobId, {
     skip: !selectedJobId, // Only fetch details when a job is selected
   });
 
+  const trackActivity = (jobId, action) => {
+    const job = jobPostings.find((job) => job._id === jobId);
+    const jobTitle = job ? job.title : 'Unknown Job';
+    const jobDepartment = job ? job.department : 'Unknown Department';
+
+    // Track the activity
+    setActivityTracked({ jobId, jobTitle, jobDepartment });
+
+    // Log the action (optional, for debugging)
+    console.log(`${action} job: ${jobTitle}`);
+  };
+
   const viewApplications = (jobId) => {
     setSelectedJobId(jobId);
     setModalVisible(true);
+    trackActivity(jobId, 'View');
+  };
+
+  const editJob = (jobId) => {
+    trackActivity(jobId, 'Edit');
+    // Add your edit logic here
+    console.log(`Editing job: ${jobId}`);
+  };
+
+  const deleteJob = (jobId) => {
+    trackActivity(jobId, 'Delete');
+    // Add your delete logic here
+    console.log(`Deleting job: ${jobId}`);
   };
 
   const closeModal = () => {
@@ -74,6 +99,7 @@ const RecruitmentModule = () => {
                         View
                       </CButton>
                     </CTableDataCell>
+                    
                   </CTableRow>
                 ))}
               </CTableBody>
@@ -81,6 +107,14 @@ const RecruitmentModule = () => {
           )}
         </CCardBody>
       </CCard>
+
+      {/* Track Activity */}
+      {activityTracked.jobId && (
+        <ActivityTracker
+          action={`Interacted with ${activityTracked.jobTitle}`}
+          description={`Interacted with job: ${activityTracked.jobTitle} in the ${activityTracked.jobDepartment} department`}
+        />
+      )}
 
       {/* Modal to view applications */}
       <CModal visible={modalVisible} onClose={closeModal}>
@@ -126,13 +160,6 @@ const RecruitmentModule = () => {
       </CModal>
     </div>
   );
-};
-
-// ✅ Add Prop Validation
-RecruitmentModule.propTypes = {
-  jobPostings: PropTypes.array, // Array of job postings (fetched from API)
-  error: PropTypes.object, // Error state from API
-  isLoading: PropTypes.bool, // Loading state from API
 };
 
 export default RecruitmentModule;

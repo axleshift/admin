@@ -312,8 +312,18 @@ export const adminApi = createApi({
       }),
     }),
 
-
+    getAnomalies: build.query({
+      query: () => '/security/anomalies',
+  }),
   
+  saveUser: build.mutation({
+    query: (userData) => ({
+      url: '/client/save-user', // Your endpoint route
+      method: 'POST',
+      body: userData,
+      headers: { 'Content-Type': 'application/json' }
+    }),
+  }),
     
   }),
 
@@ -334,6 +344,8 @@ useBackupDatabaseMutation,
 useRestoreDatabaseMutation,
 useListBackupsQuery,
 useListCollectionsQuery,
+useSaveUserMutation,
+
 
 useGetUserActivityQuery,
 useGetUserPermissionsQuery, 
@@ -386,6 +398,7 @@ useSendMessageMutation ,
   usePosttryRestoreMutation,
   usePosttrySaveMutation,
 
+  useGetAnomaliesQuery,
 } = adminApi;
 
 

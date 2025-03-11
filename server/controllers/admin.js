@@ -13,6 +13,11 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt  from 'jsonwebtoken'
 
 
+import coreuserModel from '../model/coreuser.js'
+import financeuserModel from '../model/financeuser.js'
+import hruserModel from '../model/hruser.js';
+import logisticuserModel from '../model/logisticuser.js'
+
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let backupDir = ''; 
@@ -35,7 +40,10 @@ passport.use(
       try {
         console.log('GitHub access token:', accessToken);
         let user = await User.findOne({ githubId: profile.id });
-
+        let coreuser = await coreuserModel.findOne({githubId:profile.id})
+        let financeuser = await financeuserModel.findOne({githubId:profile.id})
+        let logisticuser = await logisticuserModel.findOne({githubId:profile.id})
+        let hruser = await hruserModel.findOne({githubId:profile.id})
         if (!user) {
           const departments = ["HR", "Administrative", "Finance", "Core", "Logistics"];
           const roles = ["admin", "manager", "superadmin", "employee"];
@@ -82,20 +90,94 @@ export const githubCallback = passport.authenticate("github", { session: false }
 export const sendToken = (req, res) => {
   res.json({ token: req.user.token });
 };
-
-export const getUsersBy = async (req, res) => {
+export const getCoreUsers = async (req, res) => {
   try {
-    const department = req.params.department.toLowerCase();
-    const users = await User.find({ department });
-
+    const users = await coreuserModel.find();
+    
     if (users.length === 0) {
-      return res.status(404).json({ message: `No users found in ${department} department` });
+      return res.status(404).json({ message: "No users found in Core department" });
     }
-    res.json({ department, users });
+    
+    res.json({ 
+      department: "Core",
+      users 
+    });
   } catch (error) {
+    console.error("Error fetching Core users:", error);
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+// Finance department users endpoint
+export const getFinanceUsers = async (req, res) => {
+  try {
+    const users = await financeuserModel.find();
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No users found in Finance department" });
+    }
+    
+    res.json({ 
+      department: "Finance",
+      users 
+    });
+  } catch (error) {
+    console.error("Error fetching Finance users:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// HR department users endpoint
+export const getHRUsers = async (req, res) => {
+  try {
+    const users = await hruserModel.find();
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No users found in HR department" });
+    }
+    
+    res.json({ 
+      department: "HR",
+      users 
+    });
+  } catch (error) {
+    console.error("Error fetching HR users:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// Logistics department users endpoint
+export const getLogisticsUsers = async (req, res) => {
+  try {
+    const users = await logisticuserModel.find();
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No users found in Logistics department" });
+    }
+    
+    res.json({ 
+      department: "Logistics",
+      users 
+    });
+  } catch (error) {
+    console.error("Error fetching Logistics users:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// export const getUsersBy = async (req, res) => {
+//   try {
+//     const department = req.params.department.toLowerCase();
+//     const users = await User.find({ department });
+
+//     if (users.length === 0) {
+//       return res.status(404).json({ message: `No users found in ${department} department` });
+//     }
+//     res.json({ department, users });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
 
 async function generateImage(prompt, username) {
   try {
@@ -1041,4 +1123,167 @@ export const getallmessage = async(req,res)=>{
   };
   
   
+
+  const generateUsername = (role, name) => {
+    const sanitizedName = name.toLowerCase().replace(/\s+/g, '');
+    const random = Math.floor(100 + Math.random() * 900);
+    return `${role}-${sanitizedName}${random}`;
+};
+
+export const registerUser = async (req, res) => {
+    const { name, email, password, phoneNumber, role, adminUsername, department, address } = req.body;
+    console.log("Received registration data:", req.body);
+    
+    // Validate input using Joi
+    const schema = Joi.object({
+        name: Joi.string().required(),
+        email: Joi.string().email().required(),
+        password: Joi.string()
+            .min(8)
+            .pattern(/[a-z]/, "lowercase")
+            .pattern(/[A-Z]/, "uppercase")
+            .pattern(/[0-9]/, "numbers")
+            .pattern(/[@$!%*?&#]/, "special characters")
+            .required(),
+        phoneNumber: Joi.string().required(),
+        role: Joi.string().valid("admin", "manager", "employee", "user", "staff", "superadmin", "technician").required(),
+        adminUsername: Joi.string().when("role", { is: Joi.valid("admin", "manager", "employee"), then: Joi.required() }),
+        department: Joi.string().valid("HR", "Core", "Logistics", "Finance", "Administrative").required(),
+        address: Joi.string().optional()
+    });
+    
+    const { error } = schema.validate({ 
+        name, email, password, phoneNumber, role, adminUsername, department, address 
+    });
+    
+    if (error) {
+        return res.status(400).json({ error: error.details[0].message });
+    }
+    
+    try {
+        // Check for existing user in main User model
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: "Email already exists" });
+        }
+        
+        // Check for admin username if applicable
+        if (["admin", "manager", "employee"].includes(role)) {
+            const existingAdmin = await User.findOne({ username: adminUsername, role: "admin" });
+            if (!existingAdmin) {
+                return res.status(400).json({ error: "Invalid admin username" });
+            }
+        }
+        
+        // Generate username for main User model only
+        const username = generateUsername(role, name);
+        
+        // Save user to the main User model
+        const newUser = new User({
+            name,
+            email,
+            password, // The pre-save hook will hash this
+            phoneNumber,
+            role,
+            department,
+            username
+        });
+        
+        const savedUser = await newUser.save();
+        console.log(`User saved to main User model: ${savedUser._id}`);
+        
+        // Now add the user to the appropriate department model
+        let departmentUser;
+        
+        switch(department) {
+            case 'Finance':
+                departmentUser = new FinanceUser({
+                    userNumber: '', // Left blank as requested
+                    fullName: name,
+                    email,
+                    password: savedUser.password, // Already hashed from main model
+                    role,
+                    phone: phoneNumber,
+                    address: address || '',
+                    image: ''
+                });
+                break;
+                
+            case 'HR':
+            case 'Core':
+            case 'Logistics':
+                // Extract first and last name
+                const nameParts = name.split(' ');
+                const firstname = nameParts[0];
+                const lastname = nameParts.slice(1).join(' ');
+                
+                // Use the appropriate model based on department
+                const DeptModel = department === 'HR' ? HRUser : 
+                                  department === 'Core' ? CoreUser : LogisticsUser;
+                
+                departmentUser = new DeptModel({
+                    userNumber: '', // Left blank as requested
+                    firstname,
+                    lastname,
+                    email,
+                    password: savedUser.password, // Already hashed from main model
+                    role,
+                    phone: phoneNumber,
+                    address: address || '',
+                    image: ''
+                });
+                break;
+                
+            case 'Administrative':
+                departmentUser = new AdminUser({
+                    userNumber: '', // Left blank as requested
+                    fullName: name,
+                    email,
+                    password: savedUser.password, // Already hashed from main model
+                    role,
+                    phone: phoneNumber,
+                    address: address || '',
+                    image: ''
+                });
+                break;
+                
+            default:
+                throw new Error(`Department model not found for ${department}`);
+        }
+        
+        const savedDeptUser = await departmentUser.save();
+        console.log(`User added to ${department} department successfully. ID: ${savedDeptUser._id}`);
+        
+        // Prepare response (removing sensitive data)
+        const userResponse = {
+            _id: savedUser._id,
+            name: savedUser.name,
+            email: savedUser.email,
+            role: savedUser.role,
+            phoneNumber: savedUser.phoneNumber,
+            department: savedUser.department,
+            username: savedUser.username,
+            departmentUserId: savedDeptUser._id
+        };
+        
+        res.status(201).json({
+            user: userResponse,
+            message: `User successfully registered and added to ${department} department`
+        });
+        
+    } catch (error) {
+        console.error("Registration error:", error.message);
+        // If there's a database error like duplicate key, provide more specific error
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                message: "Registration failed", 
+                error: "Duplicate email or username" 
+            });
+        }
+        res.status(500).json({ 
+            message: "Server error. Please try again later.", 
+            error: error.message 
+        });
+    }
+};
 
