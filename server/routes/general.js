@@ -8,8 +8,8 @@ import { getUser,
     receiveREQ,
     sendREQ, 
     getRequests,
-    activityLogger, 
-    getUserActivity
+    logActivity,
+    getActivities
  } from "../controllers/general.js";
 
 const router = express.Router();
@@ -25,7 +25,9 @@ router.get("/dashboard", getDashboardStats);
 router.post('/receive-request', receiveREQ)
 router.post('/send-request', sendREQ)
 router.get('/requests', getRequests);
+ 
+router.post('/logact', logActivity);
 
-router.post('/log', activityLogger); 
-router.get('/getUserActivity', getUserActivity); 
+// Get activity logs with filtering
+router.get('/getact', getActivities);
 export default router;

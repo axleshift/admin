@@ -92,8 +92,6 @@ const Works = () => {
       const user = data.find((user) => user._id === userId);
       const userName = user ? user.name : 'Unknown User';
 
-      // Track the role change activity with the user's name
-      setRoleChangeTracked({ userId, userName, newRole });
     } catch (err) {
       alert('Error updating role');
     }
@@ -109,8 +107,6 @@ const Works = () => {
         const user = data.find((user) => user._id === userId);
         const userName = user ? user.name : 'Unknown User';
 
-        // Track the delete user activity
-        setDeleteTracked({ userId, userName });
       } catch (err) {
         alert('Error deleting user');
       }
@@ -303,28 +299,11 @@ const Works = () => {
         </CRow>
 
         {/* Track Download All button click */}
-        {downloadAllClicked && (
-          <ActivityTracker
-            action="Download All"
-            description="User downloaded all employee data as an Excel file"
-          />
-        )}
+   
 
-        {/* Track Role Change */}
-        {roleChangeTracked.userId && (
-          <ActivityTracker
-            action="Change Role"
-            description={`Changed role for user ${roleChangeTracked.userName} to ${roleChangeTracked.newRole}`}
-          />
-        )}
+      
 
-        {/* Track Delete User */}
-        {deleteTracked.userId && (
-          <ActivityTracker
-            action="Delete User"
-            description={`Deleted user ${deleteTracked.userName}`}
-          />
-        )}
+      
 
         {filteredData.map((item) => (
           <CCard

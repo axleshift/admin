@@ -127,7 +127,7 @@ const Login = () => {
           const currentTime = new Date();
           const timeRemaining = Math.ceil((lockoutTime - currentTime) / 1000);
     
-          setRemainingTime(timeRemaining > 0 ? timeRemaining : 900);  // 15 minutes in seconds
+          setRemainingTime(timeRemaining > 0 ? timeRemaining : 900);  // Default to 15 minutes if calculation is off
           setLockExpiration(lockoutTime);
         } else {
           setRemainingTime(900);  // Default to 15 minutes if no time is provided
@@ -137,18 +137,20 @@ const Login = () => {
         }
     
         setErrorMessage(err.data?.message || "Too many failed login attempts. This account is temporarily locked.");
+        
+        // If the user can use OTP to bypass the lock, show this option
+        setShowOtpOption(true);
       } else {
         // Show remaining attempts if provided
         const remainingAttempts = err.data?.remainingAttempts;
         if (remainingAttempts !== undefined) {
-          setErrorMessage(`Invalid credentials. You have ${remainingAttempts} attempts remaining.`);
+          setErrorMessage(`Invalid credentials. You have ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining.`);
         } else {
           setErrorMessage(err.data?.message || "Login failed. Please check your credentials and try again.");
         }
       }
     }
-    
-  };
+};
 
   // Format remaining time as MM:SS
   const formatRemainingTime = () => {

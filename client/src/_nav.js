@@ -99,7 +99,6 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-        '/tack',
         '/recovery',
         '/Toasts',
         '/chatbox',
@@ -126,7 +125,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-        '/tack',
+
         '/recovery',
         '/Toasts',
         '/chatbox',
@@ -150,7 +149,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-        '/tack',
+
         '/recovery',
         '/Toasts',
         '/chatbox'
@@ -173,7 +172,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-        '/tack',
+
         '/recovery',
         '/Toasts',
         '/chatbox'
@@ -196,7 +195,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-        '/tack',
+
         '/recovery',
         '/Toasts',
         '/chatbox'

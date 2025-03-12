@@ -263,45 +263,83 @@ export const getDashboardStats = async (req, res) => {
   };
   
 
-
-
-
-export const activityLogger = async (req, res, next) => {
-    if (req.user) {
-      const { userId, name, role, department } = req.user;
-      const { actionType, actionDescription } = req.body;
-  
-      try {
-        const newActivity = new ActivityTracker({
-          userId,
-          name,
-          role,
-          department,
-          actionType,
-          actionDescription,
-        });
-  
-        await newActivity.save();
-        res.status(201).send({ message: 'Activity Logged Successfully' });
-      } catch (error) {
-        console.error('❌ Error saving user activity:', error);
-        res.status(500).send({ error: 'Failed to log activity' });
-      }
-    } else {
-      res.status(403).send({ error: 'Unauthorized' });
-    }
-};
-  // Endpoint to retrieve user activity logs
-export const getUserActivity = async (req, res) => {
+  export const logActivity = async (req, res) => {
     try {
-      const { userId } = req.query;
-  
-      const activities = await ActivityTracker.find({ userId })
-        .sort({ timestamp: -1 });
-  
-      res.status(200).json(activities);
+      const { userId, name, role, department, actionType, actionDescription } = req.body;
+      
+      if (!userId || !name || !role || !department || !actionType || !actionDescription) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+      
+      const newActivity = new ActivityTracker({
+        userId,
+        name,
+        role,
+        department,
+        actionType,
+        actionDescription,
+        timestamp: new Date()
+      });
+      
+      await newActivity.save();
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Activity logged successfully',
+        data: newActivity
+      });
     } catch (error) {
-      console.error('❌ Error retrieving user activity:', error);
-      res.status(500).json({ error: 'Server Error' });
+      console.error('Error logging activity:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to log activity',
+        error: error.message
+      });
     }
   };
+  
+  export const getActivities = async (req, res) => {
+    try {
+      const { userId, actionType, startDate, endDate, limit = 50, page = 1 } = req.query;
+      
+      // Build query
+      const query = {};
+      
+      if (userId) query.userId = userId;
+      if (actionType) query.actionType = actionType;
+      
+      if (startDate || endDate) {
+        query.timestamp = {};
+        if (startDate) query.timestamp.$gte = new Date(startDate);
+        if (endDate) query.timestamp.$lte = new Date(endDate);
+      }
+      
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      
+      const activities = await ActivityTracker.find(query)
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+      
+      const total = await ActivityTracker.countDocuments(query);
+      
+      return res.status(200).json({
+        success: true,
+        count: activities.length,
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        data: activities
+      });
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch activities',
+        error: error.message
+      });
+    }
+  };
+
+
+

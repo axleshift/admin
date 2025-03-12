@@ -1,6 +1,5 @@
 import Customer from "../model/Customer.js";
 import User from "../model/User.js";
-
 import Joi from "joi";
 import LoginAttempt from '../model/LoginAttempt.js';
 import Anomaly from '../model/Anomaly.js';
@@ -431,190 +430,186 @@ const userSchema = Joi.object({
 //     }
 // };
 
+
 export const loginUser = async (req, res) => {
-    const { identifier, password } = req.body;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-    const MAX_ATTEMPTS = 5;
-    const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const { identifier, password } = req.body;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+  const MAX_ATTEMPTS = 5;
 
-    try {
-        // Find user by email or username
-        const user = await User.findOne({
-            $or: [
-                { email: identifier },
-                { username: identifier }
-            ]
-        });
+  try {
+      // Step 1: Check if we're already rate-limited based on IP
+      // For IP-based rate limiting only, don't use identifier here
+      const initialRateCheck = await checkLoginRateLimit(null, null, ipAddress);
+      
+      if (initialRateCheck.isLocked) {
+          return res.status(429).json({
+              message: "Too many failed login attempts. Please try again later.",
+              lockedUntil: initialRateCheck.lockedUntil,
+              remainingTime: initialRateCheck.remainingTime
+          });
+      }
 
-        if (user.accountLocked && user.lockExpiration > Date.now()) {
-            return res.status(429).json({ message: "Account is locked. Use OTP to login" });
-        }
+      // Step 2: Find user by email or username
+      const user = await User.findOne({
+          $or: [
+              { email: identifier },
+              { username: identifier }
+          ]
+      });
 
-        if (user && user.accountLocked && user.lockExpiration > new Date()) {
-            await logLoginAttempt({
-                identifier,
-                userId: user._id,
-                name: user.name,
-                department: user.department,
-                role: user.role,
-                ipAddress,
-                userAgent,
-                status: 'unauthorized',
-                reason: 'Account locked'
-            });
+      // Step 3: Check if the user account is already locked
+      if (user && user.accountLocked && user.lockExpiration > new Date()) {
+          await logLoginAttempt({
+              identifier,
+              userId: user._id,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              ipAddress,
+              userAgent,
+              status: 'unauthorized',
+              reason: 'Account locked'
+          });
 
-            return res.status(429).json({
-                message: "This account is temporarily locked due to too many failed attempts.",
-                lockedUntil: user.lockExpiration,
-                remainingTime: Math.ceil((user.lockExpiration - new Date()) / 1000)
-            });
-        }
+          return res.status(429).json({
+              message: "This account is temporarily locked due to too many failed attempts.",
+              lockedUntil: user.lockExpiration,
+              remainingTime: Math.ceil((user.lockExpiration - new Date()) / 1000)
+          });
+      }
 
-        // If account was locked but lock has expired, unlock it
-        if (user && user.accountLocked && user.lockExpiration <= new Date()) {
-            user.accountLocked = false;
-            user.lockExpiration = null;
-            await user.save();
-        }
+      // If account was locked but lock has expired, unlock it
+      if (user && user.accountLocked && user.lockExpiration <= new Date()) {
+          user.accountLocked = false;
+          user.lockExpiration = null;
+          await user.save();
+      }
 
-        // If user doesn't exist, log attempt but don't reveal this info
-        if (!user) {
-            await logLoginAttempt({
-                identifier,
-                ipAddress,
-                userAgent,
-                status: 'failed',
-                reason: 'User not found'
-            });
+      // Step 4: If user doesn't exist, log attempt but don't reveal this info
+      if (!user) {
+          await logLoginAttempt({
+              identifier,
+              ipAddress,
+              userAgent,
+              status: 'user_not_found',  // Changed from 'failed' to 'user_not_found'
+              reason: 'User not found'
+          });
 
-            return res.status(401).json({
-                message: "Invalid credentials",
-                remainingAttempts: MAX_ATTEMPTS - 1
-            });
-        }
+          // For security, still show generic message but don't show attempt counts
+          return res.status(401).json({
+              message: "Invalid credentials"
+              // Removed remainingAttempts here
+          });
+      }
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+      // Step 5: Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if (!isPasswordValid) {
-            // Count failed login attempts
-            const failedAttempts = await getRecentFailedAttempts(user._id, identifier);
-            const remainingAttempts = MAX_ATTEMPTS - failedAttempts - 1;
+      if (!isPasswordValid) {
+          // Log failed attempt first
+          await logLoginAttempt({
+              identifier,
+              userId: user._id,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              ipAddress,
+              userAgent,
+              status: 'failed',
+              reason: 'Incorrect password'
+          });
 
-            // Log failed attempt
-            await logLoginAttempt({
-                identifier,
-                userId: user._id,
-                name: user.name,
-                department: user.department,
-                role: user.role,
-                ipAddress,
-                userAgent,
-                status: 'failed',
-                reason: 'Incorrect password'
-            });
+          // Check rate limiting after logging the failed attempt
+          const rateCheckResult = await checkLoginRateLimit(user._id, identifier, ipAddress);
+          
+          if (rateCheckResult.isLocked) {
+              return res.status(429).json({
+                  message: "Too many failed login attempts. This account has been temporarily locked.",
+                  lockedUntil: rateCheckResult.lockedUntil,
+                  remainingTime: rateCheckResult.remainingTime
+              });
+          }
 
-            if (failedAttempts + 1 >= MAX_ATTEMPTS) {
-                // Lock the account for 15 minutes
-                const lockoutEnd = new Date(Date.now() + LOCKOUT_DURATION);
+          return res.status(401).json({
+              message: "Invalid credentials",
+              remainingAttempts: rateCheckResult.remainingAttempts
+          });
+      }
 
-                user.accountLocked = true;
-                user.lockExpiration = lockoutEnd;
-                await user.save();
+      // Step 6: Successful login - log it
+      await logLoginAttempt({
+          userId: user._id,
+          identifier,
+          name: user.name,
+          department: user.department,
+          role: user.role,
+          ipAddress,
+          userAgent,
+          status: 'success'
+      });
 
-                await createAccountLockoutAlert(user._id, ipAddress, userAgent);
+      // Step 7: Check for unusual login patterns
+      let securityAlert = null;
+      const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
 
-                return res.status(429).json({
-                    message: "Too many failed login attempts. This account has been temporarily locked.",
-                    lockedUntil: lockoutEnd,
-                    remainingTime: Math.ceil((lockoutEnd - new Date()) / 1000) // 15 minutes in seconds
-                });
-            }
+      if (unusualLogin) {
+          securityAlert = {
+              type: 'unusual_login_detected',
+              message: "We noticed a login from a new location or device."
+          };
 
-            // Detect anomaly
-            await detectAnomaly(user._id, ipAddress, userAgent);
+          await createSecurityAlert(user._id, 'unusual_login_detected', {
+              currentIp: ipAddress,
+              currentUserAgent: userAgent,
+              previousIp: unusualLogin.previousIp,
+              previousUserAgent: unusualLogin.previousUserAgent
+          });
+      }
 
-            return res.status(401).json({
-                message: "Invalid credentials",
-                remainingAttempts
-            });
-        }
+      // Step 8: Reset failed attempts counter on successful login
+      await resetFailedAttempts(user._id, identifier);
 
-        // Log successful login
-        await logLoginAttempt({
-            userId: user._id,
-            identifier,
-            name: user.name,
-            department: user.department,
-            role: user.role,
-            ipAddress,
-            userAgent,
-            status: 'success'
-        });
+      // Step 9: Update last login info
+      user.lastLogin = new Date();
+      user.lastIpAddress = ipAddress;
+      await user.save();
 
-        // Check for unusual login patterns
-        let securityAlert = null;
-        const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
+      // Step 10: Generate tokens and return response
+      const accessToken = generateAccessToken({ id: user._id, username: user.username });
+      const refreshToken = generateRefreshToken({ id: user._id, username: user.username });
 
-        if (unusualLogin) {
-            securityAlert = {
-                type: 'unusual_login_detected',
-                message: "We noticed a login from a new location or device."
-            };
+      res.status(200).json({
+          message: "Login successful",
+          user: {
+              id: user._id,
+              username: user.username,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              department: user.department,
+              permissions: user.permissions
+          },
+          accessToken,
+          refreshToken,
+          securityAlert
+      });
 
-            await createSecurityAlert(user._id, 'unusual_login_detected', {
-                currentIp: ipAddress,
-                currentUserAgent: userAgent,
-                previousIp: unusualLogin.previousIp,
-                previousUserAgent: unusualLogin.previousUserAgent
-            });
-        }
+  } catch (error) {
+      console.error("Login error:", error);
 
-        // Reset failed attempts counter (if needed)
-        await resetFailedAttempts(user._id);
+      await logLoginAttempt({
+          identifier,
+          ipAddress,
+          userAgent,
+          status: 'error',
+          error: error.message
+      });
 
-        // Update last login info
-        user.lastLogin = new Date();
-        user.lastIpAddress = ipAddress;
-        await user.save();
-
-        // Generate tokens
-        const accessToken = generateAccessToken({ id: user._id, username: user.username });
-        const refreshToken = generateRefreshToken({ id: user._id, username: user.username });
-
-        // Send tokens in response
-        res.status(200).json({
-            message: "Login successful",
-            user: {
-                id: user._id,
-                username: user.username,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department,
-                permissions: user.permissions
-            },
-            accessToken,
-            refreshToken,
-            securityAlert
-        });
-
-    } catch (error) {
-        console.error("Login error:", error);
-
-        await logLoginAttempt({
-            identifier,
-            ipAddress,
-            userAgent,
-            status: 'error',
-            error: error.message
-        });
-
-        return res.status(500).json({
-            message: "An error occurred during login."
-        });
-    }
+      return res.status(500).json({
+          message: "An error occurred during login."
+      });
+  }
 };
 
 const detectAnomaly = async (userId, ipAddress, userAgent) => {
@@ -711,67 +706,123 @@ export const changePassword = async (req, res) => {
 
 
 export const generateOTP = async (req, res) => {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    try {
-        // Add error handling for the User.findOne call
-        let user;
-        try {
-            user = await User.findOne({ email });
-        } catch (dbError) {
-            console.error("Database error when finding user:", dbError);
-            return res.status(500).json({ message: "Database error when finding user" });
-        }
+  try {
+      // Find user
+      let user;
+      try {
+          user = await User.findOne({ email });
+      } catch (dbError) {
+          console.error("Database error when finding user:", dbError);
+          return res.status(500).json({ message: "Database error when finding user" });
+      }
 
-        if (!user || !user.accountLocked) {
-            return res.status(400).json({ message: "Account not locked or user not found" });
-        }
+      if (!user || !user.accountLocked) {
+          return res.status(400).json({ message: "Account not locked or user not found" });
+      }
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY);
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY);
 
-        // Add error handling for the OTP.create call
-        try {
-            await OTP.create({ email, otp, expiresAt: otpExpiresAt });
-        } catch (dbError) {
-            console.error("Database error when creating OTP:", dbError);
-            return res.status(500).json({ message: "Database error when creating OTP" });
-        }
+      // Store OTP in database
+      try {
+          await OTP.create({ email, otp, expiresAt: otpExpiresAt });
+      } catch (dbError) {
+          console.error("Database error when creating OTP:", dbError);
+          return res.status(500).json({ message: "Database error when creating OTP" });
+      }
 
-        // Add error handling for the sendOTPEmail call
-        try {
-            await sendOTPEmail(email, otp);
-        } catch (emailError) {
-            console.error("Email sending error:", emailError);
-            return res.status(500).json({ message: "Failed to send OTP email" });
-        }
+      // Send OTP via email
+      try {
+          await sendOTPEmail(email, otp);
+      } catch (emailError) {
+          console.error("Email sending error:", emailError);
+          // Don't return success if email fails!
+          return res.status(500).json({ message: "Failed to send OTP email" });
+      }
 
-        res.status(200).json({ message: "OTP sent to your email" });
+      // Only return success if everything worked
+      res.status(200).json({ message: "OTP sent to your email" });
 
-    } catch (error) {
-        console.error("Unexpected error in generateOTP:", error);
-        res.status(500).json({ message: "Error generating OTP" });
-    }
-}
-export const verifyOTP = async (req, res) => {
-    const { email, otp } = req.body;
-
-    try {
-        const validOTP = await OTP.findOne({ email, otp });
-        console.log("Found OTP:", validOTP);
-        if (!validOTP || new Date(validOTP.expiresAt) < new Date()) {
-            return res.status(400).json({ message: "Invalid or expired OTP" });
-        }
-
-        await User.updateOne({ email }, { accountLocked: false, lockExpiration: null });
-
-        await OTP.deleteOne({ email });
-
-        res.status(200).json({ message: "Account unlocked successfully" });
-
-    } catch (error) {
-        res.status(500).json({ message: "Error verifying OTP" });
-    }
+  } catch (error) {
+      console.error("Unexpected error in generateOTP:", error);
+      res.status(500).json({ message: "Error generating OTP" });
+  }
 };
 
+export const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+  try {
+      // Log debugging information
+      console.log(`Verifying OTP for email: ${email}, IP: ${ipAddress}`);
+      
+      const validOTP = await OTP.findOne({ email, otp });
+      console.log("Found OTP:", validOTP);
+      
+      if (!validOTP || new Date(validOTP.expiresAt) < new Date()) {
+          return res.status(400).json({ message: "Invalid or expired OTP" });
+      }
+
+      // Check if user exists and is locked before attempting to unlock
+      const user = await User.findOne({ email });
+      console.log("User account status before unlock:", 
+          user ? { accountLocked: user.accountLocked, lockExpiration: user.lockExpiration } : "User not found");
+      
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+
+      // More thorough reset of failed attempts
+      try {
+          // Update using direct MongoDB calls to ensure all records are updated
+          await LoginAttempt.updateMany(
+              { 
+                  $or: [
+                      { identifier: email },
+                      { ipAddress: ipAddress }
+                  ],
+                  status: 'failed'
+              },
+              { $set: { status: 'reset' } }
+          );
+          
+          console.log("Reset failed login attempts");
+      } catch (resetError) {
+          console.error("Error resetting failed attempts:", resetError);
+          // Continue execution even if this fails
+      }
+      
+      // Explicitly update the user account to ensure it's unlocked
+      const updateResult = await User.updateOne(
+          { email }, 
+          { 
+              $set: {
+                  accountLocked: false, 
+                  lockExpiration: null
+              },
+              // Also reset any login attempt counters if your schema has them
+              $unset: { failedLoginAttempts: "" }
+          }
+      );
+      
+      console.log("Account unlock result:", updateResult);
+      
+      // Delete the used OTP
+      await OTP.deleteOne({ email });
+      
+      // Verify the account was actually unlocked
+      const updatedUser = await User.findOne({ email });
+      console.log("User account status after unlock:", 
+          updatedUser ? { accountLocked: updatedUser.accountLocked, lockExpiration: updatedUser.lockExpiration } : "User not found after update");
+
+      res.status(200).json({ message: "Account unlocked successfully" });
+
+  } catch (error) {
+      console.error("Error verifying OTP:", error);
+      res.status(500).json({ message: "Error verifying OTP" });
+  }
+};

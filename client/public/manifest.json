@@ -3,7 +3,7 @@
   "name": "Freight Main",
   "icons": [
     {
-      "src": "./assets/img/favicon.png",
+      "src": "./assets/images/favicon.png",
       "sizes": "100x100",
       "type": "image/png"
     }

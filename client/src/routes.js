@@ -52,7 +52,6 @@ const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'))
 
 //trial
 
-const Button = React.lazy(() => import('./views/pages/scene/button'));
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
 
 const PendingRequest = React.lazy(()=>import ('./views/pages/scene/PendingRequest'))
@@ -108,7 +107,6 @@ const routes = [
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
   //trial
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
-  { path: '/tack' , name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
 ];
 
 export default routes;
