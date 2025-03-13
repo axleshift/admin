@@ -1,0 +1,1 @@
+import{z as s,j as e}from"./index-BizKBI6a.js";import{a as o}from"./CFormInput-BYAzJEzi.js";const i=()=>(s(r=>{var t;return(t=r.auth)==null?void 0:t.user}),e.jsx("div",{children:e.jsx(o,{children:"Click me"})}));export{i as default};
