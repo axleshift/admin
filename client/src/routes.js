@@ -12,6 +12,7 @@ const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
 const Register = React.lazy(() => import('./views/pages/register/registerNew'));
 
 const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
+const Cron = React.lazy(()=> import ('./views/pages/scene/cron'))
 
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagement'))
@@ -73,6 +74,7 @@ const routes = [
   { path: '/registerNew', name: 'Register New Users', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
   { path: '/request', name: 'Request', element: <ProtectedRoute><Request /> </ProtectedRoute>},
+  { path: '/cron', name: 'Cron', element: <ProtectedRoute><Cron/> </ProtectedRoute>},
 
   { path: '/customer', name: 'Customer', element: <ProtectedRoute><Customers /></ProtectedRoute> },
    { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },

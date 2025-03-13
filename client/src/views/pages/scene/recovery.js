@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { 
     CContainer, CButton, CRow, CCol, CForm, CFormLabel, CFormInput, 
     CListGroup, CListGroupItem, CCard, CCardBody, CCardHeader, 
@@ -18,7 +20,7 @@ const RecoveryPage = () => {
     const [backupInProgress, setBackupInProgress] = useState(false);
     const [error, setError] = useState('');
     const [directorySet, setDirectorySet] = useState(false);
-
+    const navigate = useNavigate()
     // Restore saved directory on component mount
     useEffect(() => {
         const savedDirectory = localStorage.getItem('backupDirectory');
@@ -164,7 +166,10 @@ const RecoveryPage = () => {
             setLoading(false);
         }
     };
-
+    const handlesched = async () => {
+        navigate('/cron');  // Replace '/cron' with the correct route you want to navigate to
+    };
+    
     return (
         <CContainer>
             {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
@@ -172,7 +177,10 @@ const RecoveryPage = () => {
             <CRow className="mb-4 mt-3">
                 <CCol>
                     <CCard>
-                        <CCardHeader>Backup Configuration</CCardHeader>
+                    <CCardHeader className="d-flex justify-content-between align-items-center">
+                        <div>Backup Configuration</div>
+                        <CButton className="ms-auto"color='primary' onClick={handlesched}>Schedule Backup</CButton>
+                    </CCardHeader>
                         <CCardBody>
                             <CForm>
                                 <CFormLabel>Set Backup Directory</CFormLabel>

@@ -1,14 +1,9 @@
-import path from 'path';
-import { exec } from 'child_process';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-import User from '../model/User.js';
-
-
-const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  
-  const BACKUP_DIR = path.resolve(__dirname, 'C:/Users/ryans/OneDrive/Desktop/capstone/shesh/admin/backup');
+import cron from "node-cron";
+import { exec } from "child_process";
+import path from "path";
+import fs from "fs";
+import express from "express";
+import dotenv from "dotenv";
 
 
 

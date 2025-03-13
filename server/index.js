@@ -6,7 +6,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
-
 import clientRoutes from "./routes/client.js";
 import generalRoutes from "./routes/general.js";
 import managementRoutes from "./routes/management.js";
@@ -18,21 +17,13 @@ import logisticsRoutes from "./routes/logistics.js";
 import financeRoutes from "./routes/finance.js";
 import adminRoutes from './routes/admin.js';
 import securityRoutes from './routes/security.js'
-
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-
 import { Server } from "socket.io";
 import http from "http";
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-import JobPosting from "./model/h2.js";
-import User from "./model/User.js"; // Capitalized "User" for consistency
-import Shipping from "./model/Shipping.js";
-import overall from "./model/overall.js";
-import { employee, mockLogisticsData, users, transactions, overalldata, jobPostings } from "./data/index.js";
-
+import backupRoutes from './routes/backupauto.js'
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
@@ -86,7 +77,7 @@ app.use(session({
       maxAge: 14 * 24 * 60 * 60 * 1000
     }
   }));
-
+app.use('/backupauto/',backupRoutes)
 // ✅ 7. Register routes
 app.use("/client", clientRoutes);
 app.use("/general", generalRoutes);

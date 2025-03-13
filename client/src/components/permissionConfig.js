@@ -38,7 +38,7 @@ const accessPermissions = {
         '/recoverytuts', '/registernew', '/PendingRequest', '/AccessReview',
         '/monitoring', '/profile', '/Settings', '/changepass', '/freightaudit',
         '/financialanalytics', '/invoice', '/shipment', '/settings', '/request',
-        '/logistic1/index','./usermanagement'
+        '/logistic1/index','./usermanagement','/cron'
       ]
     },
     admin: {
@@ -46,7 +46,7 @@ const accessPermissions = {
       Core: ['/coredash', '/shipment', '/customer', '/monthly', '/daily', '/breakdown', '/profile', '/Settings', '/changepass'],
       Finance: ['/financedash', '/freight/transaction', '/oversales', '/freightaudit', '/financialanalytics', '/invoice', '/profile', '/Settings', '/changepass'],
       Logistics: ['/logisticdash', '/shipment', '/customer', '/monthly', '/daily', '/breakdown', '/logistic1/index', '/logistic1/pin', '/profile', '/Settings', '/changepass'],
-      Administrative: ['/employeedash', '/useractivity/index', '/restore', '/registernew', '/PendingRequest', '/AccessReview', '/profile', '/Settings', '/changepass']
+      Administrative: ['/employeedash', '/useractivity/index', '/restore', '/registernew', '/PendingRequest', '/AccessReview', '/profile', '/Settings', '/changepass','/cron']
     },
     Manager: {
       HR: ['/hrdash', '/worker', '/jobposting', '/profile', '/Settings', '/changepass'],
