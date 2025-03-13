@@ -6,7 +6,6 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
-import ActivityTracker from '../model/ActivityTracker.js';
 dotenv.config();
 export const accessReview = async (req, res) => {
     try {
@@ -261,85 +260,3 @@ export const getDashboardStats = async (req, res) => {
       });
     }
   };
-  
-
-  export const logActivity = async (req, res) => {
-    try {
-      const { userId, name, role, department, actionType, actionDescription } = req.body;
-      
-      if (!userId || !name || !role || !department || !actionType || !actionDescription) {
-        return res.status(400).json({ message: 'All fields are required' });
-      }
-      
-      const newActivity = new ActivityTracker({
-        userId,
-        name,
-        role,
-        department,
-        actionType,
-        actionDescription,
-        timestamp: new Date()
-      });
-      
-      await newActivity.save();
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Activity logged successfully',
-        data: newActivity
-      });
-    } catch (error) {
-      console.error('Error logging activity:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to log activity',
-        error: error.message
-      });
-    }
-  };
-  
-  export const getActivities = async (req, res) => {
-    try {
-      const { userId, actionType, startDate, endDate, limit = 50, page = 1 } = req.query;
-      
-      // Build query
-      const query = {};
-      
-      if (userId) query.userId = userId;
-      if (actionType) query.actionType = actionType;
-      
-      if (startDate || endDate) {
-        query.timestamp = {};
-        if (startDate) query.timestamp.$gte = new Date(startDate);
-        if (endDate) query.timestamp.$lte = new Date(endDate);
-      }
-      
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      
-      const activities = await ActivityTracker.find(query)
-        .sort({ timestamp: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-      
-      const total = await ActivityTracker.countDocuments(query);
-      
-      return res.status(200).json({
-        success: true,
-        count: activities.length,
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
-        data: activities
-      });
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch activities',
-        error: error.message
-      });
-    }
-  };
-
-
-

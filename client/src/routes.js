@@ -51,7 +51,7 @@ const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/ind
 const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
 
 //trial
-
+const Button = React.lazy(()=> import ("./views/pages/scene/button"))
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
 
 const PendingRequest = React.lazy(()=>import ('./views/pages/scene/PendingRequest'))
@@ -106,6 +106,7 @@ const routes = [
   //core
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
   //trial
+  { path: '/button', name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
 ];
 

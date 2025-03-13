@@ -105,7 +105,8 @@ const _nav = () => {
         '/recoverytuts',
         '/monitoring',
         '/Request',
-        './usermanagement'
+        './usermanagement',
+        '/button',
       ],
       HR: [
         '/employeedash',
@@ -125,7 +126,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-
+        '/button',
         '/recovery',
         '/Toasts',
         '/chatbox',
@@ -149,7 +150,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-
+'/button',
         '/recovery',
         '/Toasts',
         '/chatbox'
@@ -172,7 +173,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-
+'/button',
         '/recovery',
         '/Toasts',
         '/chatbox'
@@ -195,7 +196,7 @@ const _nav = () => {
         '/useractivity/index',
         '/announce',
         '/restore',
-
+'/button',
         '/recovery',
         '/Toasts',
         '/chatbox'
@@ -324,7 +325,7 @@ const _nav = () => {
           component: CNavItem, 
           name: 'Button', 
           icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
-          to: '/tack'
+          to: '/button'
         },
         {
           component: CNavItem, 

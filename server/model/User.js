@@ -37,37 +37,7 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
-
-    // Attendance tracking
-    attendance: [
-      {
-        date: { type: Date, required: true },
-        status: { type: String, enum: ["present", "absent", "leave"], required: true },
-      },
-    ],
-
-    // Performance reviews
-    performance: [
-      {
-        reviewDate: { type: Date, required: true },
-        rating: { type: Number, min: 1, max: 5, required: true },
-        comments: { type: String },
-      },
-    ],
-
-    // Offboarding details
-    offboarding: {
-      exitInterviewDate: { type: Date },
-      reasonForLeaving: { type: String },
-      feedback: { type: String },
-    },
-
-    // Self-service updates
-    selfService: {
-      profileUpdated: { type: Boolean, default: false },
-      lastUpdated: { type: Date },
-    },
-
+    
     // OAuth token management
     token: {
       type: String,
@@ -80,11 +50,6 @@ const userSchema = new mongoose.Schema(
 
 
 
-    // Compliance tracking
- 
-
-    // Benefits Information
- 
     refreshToken: { type: String },
     backupDirectory: { type: String},
     permissions: { type: [String], default: [] }, // Store only permission names

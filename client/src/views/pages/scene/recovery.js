@@ -4,7 +4,7 @@ import {
     CListGroup, CListGroupItem, CCard, CCardBody, CCardHeader, 
     CSpinner, CAlert 
 } from '@coreui/react';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const RecoveryPage = () => {
     const [directory, setDirectory] = useState('');
@@ -25,7 +25,7 @@ const RecoveryPage = () => {
         if (savedDirectory) {
             setDirectory(savedDirectory);
             setLoading(true);
-            axios.post('http://localhost:5053/admin/set-directory', { directory: savedDirectory })
+            axiosInstance.post('/admin/set-directory', { directory: savedDirectory })
                 .then(() => {
                     setDirectorySet(true);
                     fetchBackups();
@@ -50,13 +50,13 @@ const RecoveryPage = () => {
     useEffect(() => {
         if (selectedDatabase) fetchCollections(selectedBackup, selectedDatabase);
         else setCollections([]);
-    }, [selectedDatabase]);
+    }, [selectedDatabase, selectedBackup]);
 
     const fetchBackups = async () => {
         setLoading(true);
         setError('');
         try {
-            const response = await axios.get('http://localhost:5053/admin/list-backups');
+            const response = await axiosInstance.get('/admin/list-backups');
             setBackups(response.data.backups || []);
         } catch (error) {
             setError('Error fetching backups');
@@ -72,7 +72,7 @@ const RecoveryPage = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await axios.get(`http://localhost:5053/admin/list-collections/${backup.name}`);
+            const response = await axiosInstance.get(`/admin/list-collections/${backup.name}`);
             
             if (response.data.databases) {
                 setDatabases(response.data.databases);
@@ -88,6 +88,7 @@ const RecoveryPage = () => {
             setLoading(false);
         }
     };
+
     const fetchCollections = async (backup, database) => {
         if (!backup || !database) {
             setCollections([]);
@@ -97,8 +98,7 @@ const RecoveryPage = () => {
         setLoading(true);
         setError('');
         try {
-            // ✅ Correct API request format
-            const response = await axios.get(`http://localhost:5053/admin/list-collections/${backup.name}?databaseName=${database}`);
+            const response = await axiosInstance.get(`/admin/list-collections/${backup.name}?databaseName=${database}`);
     
             setCollections(response.data.collections || []);
         } catch (error) {
@@ -109,7 +109,6 @@ const RecoveryPage = () => {
         }
     };
     
-
     const handleSetDirectory = async () => {
         if (!directory) {
             setError('Please enter a directory.');
@@ -119,7 +118,7 @@ const RecoveryPage = () => {
         setLoading(true);
         setError('');
         try {
-            await axios.post('http://localhost:5053/admin/set-directory', { directory });
+            await axiosInstance.post('/admin/set-directory', { directory });
             localStorage.setItem('backupDirectory', directory);
             setDirectorySet(true);
             fetchBackups();
@@ -135,7 +134,7 @@ const RecoveryPage = () => {
         setBackupInProgress(true);
         setError('');
         try {
-            await axios.post('http://localhost:5053/admin/backup');
+            await axiosInstance.post('/admin/backup');
             fetchBackups();
         } catch (error) {
             setError('Error during backup');
@@ -153,7 +152,7 @@ const RecoveryPage = () => {
         setLoading(true);
         setError('');
         try {
-            await axios.post('http://localhost:5053/admin/restore', {
+            await axiosInstance.post('/admin/restore', {
                 timestamp: selectedBackup.name,
                 filename: selectedCollection,
                 databaseName: selectedDatabase,
@@ -229,20 +228,50 @@ const RecoveryPage = () => {
 
                 <CCol md="4">
                     <CCard>
-                        <CCardHeader>Select Collection</CCardHeader>
-                        <CCardBody>
-                            {loading ? <CSpinner /> : (
-                                <CListGroup>
-                                    {collections.map((collection) => (
-                                        <CListGroupItem key={collection} active={selectedCollection === collection} onClick={() => setSelectedCollection(collection)} style={{ cursor: 'pointer' }}>
-                                            {collection}
-                                        </CListGroupItem>
-                                    ))}
-                                </CListGroup>
-                            )}
-                        </CCardBody>
+                 <CCardHeader>Select Collection</CCardHeader>
+<CCardBody>
+    {loading ? <CSpinner /> : (
+        <>
+            {!selectedCollection ? (
+                <CListGroup>
+                    {collections.map((collection) => (
+                        <CListGroupItem 
+                            key={collection} 
+                            onClick={() => setSelectedCollection(collection)} 
+                            style={{ cursor: 'pointer' }}
+                        >
+                            {collection}
+                        </CListGroupItem>
+                    ))}
+                </CListGroup>
+            ) : (
+                <div className="mb-3">
+                    <h5>Selected Collection:</h5>
+                    <div className="p-3 bg-light border rounded">
+                        {selectedCollection}
+                    </div>
+                    <div className="d-flex mt-3">
+                        <CButton 
+                            color="warning" 
+                            className="me-2" 
+                            onClick={handleRestore}
+                        >
+                            Restore
+                        </CButton>
+                        <CButton 
+                            color="secondary" 
+                            onClick={() => setSelectedCollection(null)}
+                        >
+                            Change Collection
+                        </CButton>
+                    </div>
+                </div>
+            )}
+        </>
+    )}
+</CCardBody>
                     </CCard>
-                    <CButton color="warning" className="mt-3" onClick={handleRestore} disabled={!selectedCollection}>Restore</CButton>
+                   
                 </CCol>
             </CRow>
         </CContainer>
