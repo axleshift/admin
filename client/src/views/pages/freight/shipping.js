@@ -20,7 +20,7 @@ import {
   faMapMarkedAlt,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useCreateShippingMutation } from './../../../state/api'
+import { useCreateShippingMutation } from '../../../state/adminApi'
 
 const Shipping = () => {
   const landCargoOptions = [

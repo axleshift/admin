@@ -13,7 +13,7 @@ module.exports = {
   },
   settings: {
     react: {
-      version: 'detect',
+      version: "18.2.0", // Automatically detect React version
     },
   },
   extends: [
@@ -22,6 +22,6 @@ module.exports = {
   ],
   plugins: ['react', 'react-hooks'],
   rules: {
-    'react/prop-types': 'error', // Ensure prop types are validated
+    'react/prop-types': 'error',
   },
 };
