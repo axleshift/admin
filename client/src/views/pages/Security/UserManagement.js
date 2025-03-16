@@ -1,4 +1,3 @@
-// filepath: c:\Users\ryans\OneDrive\Desktop\withsecurity\admin - Copy\client\src\views\pages\Security\UserManagement.js
 import React from 'react';
 import { useGetAnomaliesQuery } from '../../../state/adminApi';
 

@@ -101,7 +101,6 @@ const AccessRequestPage = () => {
   const { colorMode } = useColorModes();
   const isDarkMode = colorMode === 'dark';
 
-  // Get the stored theme from Redux
   const storedTheme = useSelector((state) => state.changeState?.theme);
 
   useEffect(() => {
@@ -117,7 +116,6 @@ const AccessRequestPage = () => {
     if (storedUserName) setUserName(storedUserName);
     if (storedUserDepartment) setUserDepartment(storedUserDepartment);
 
-    // Log activity when component mounts
     logActivity({
       name: storedUserName,
       role: userRole,
@@ -135,7 +133,6 @@ const AccessRequestPage = () => {
     
     setSelectedPermissions(newSelectedPermissions);
     
-    // Log activity when permissions are toggled
     logActivity({
       name: userName,
       role: sessionStorage.getItem('role'),
@@ -150,7 +147,6 @@ const AccessRequestPage = () => {
     const newExpandedState = { ...expandedCategories, [category]: !expandedCategories[category] };
     setExpandedCategories(newExpandedState);
     
-    // Log activity when a category is expanded/collapsed
     logActivity({
       name: userName,
       role: sessionStorage.getItem('role'),
@@ -179,7 +175,6 @@ const AccessRequestPage = () => {
         requestDetails: { permissions: selectedPermissions }
       }).unwrap();
 
-      // Log successful request submission
       logActivity({
         name: userName,
         role: sessionStorage.getItem('role'),
@@ -192,7 +187,6 @@ const AccessRequestPage = () => {
       setSubmitStatus({ success: true, message: 'Access request sent successfully!' });
       setSelectedPermissions([]);
     } catch (error) {
-      // Log failed request submission
       logActivity({
         name: userName,
         role: sessionStorage.getItem('role'),
@@ -206,7 +200,6 @@ const AccessRequestPage = () => {
     }
   };
 
-  // Apply theme-based styling
   const cardStyle = isDarkMode ? {
     backgroundColor: '#2c2c34',
     color: '#fff'

@@ -8,7 +8,7 @@ const ExampleButtonPage = () => {
   const userUsername = sessionStorage.getItem('username'); 
   const userId = sessionStorage.getItem('userId');
   const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
-  const userName = sessionStorage.getItem('name'); // Make sure you're storing 'name' in the session storage
+  const userName = sessionStorage.getItem('name'); 
 
   const handleButtonClick = () => {
     if (!userId || !userName || !userRole || !userDepartment) {
