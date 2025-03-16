@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 
-const logActivity = async ({ name, role, department, route, action, description }) => {
+export const logActivity = async ({ name, role, department, route, action, description }) => {
     console.log('Activity logged:', activityData);
     try {
         await axiosInstance.post('/general/log', {
@@ -16,5 +16,4 @@ const logActivity = async ({ name, role, department, route, action, description 
     }
 };
 
-export default logActivity;
     
