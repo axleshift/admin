@@ -32,7 +32,7 @@ import GrantAccessModal from '../../scene/modal.js';
 import axios from 'axios';
 
 // Import the activity logger
-import logActivity from '../../../../utils/ActivityLogger';
+import logActivity from './../../../../utils/ActivityLogger';
 
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
