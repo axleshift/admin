@@ -8,6 +8,8 @@ import { getUser,
     receiveREQ,
     sendREQ, 
     getRequests,
+    activity,
+    getact
  } from "../controllers/general.js";
 
 const router = express.Router();
@@ -23,6 +25,9 @@ router.get("/dashboard", getDashboardStats);
 router.post('/receive-request', receiveREQ)
 router.post('/send-request', sendREQ)
 router.get('/requests', getRequests);
+
+router.post('/log', activity)
+router.get('/log',getact);
 
 
 

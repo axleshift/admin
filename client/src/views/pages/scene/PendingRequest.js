@@ -48,6 +48,7 @@ import {
   useReceiveRequestMutation, 
   useSendRequestMutation 
 } from "../../../state/adminApi";
+import logActivity from "../../../utils/ActivityLogger";
 
 export default function RequestListPage() {
   // RTK Query hooks for API calls
@@ -74,11 +75,26 @@ export default function RequestListPage() {
   const [historyFilter, setHistoryFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [historyVisible, setHistoryVisible] = useState(false);
+  
+  // User info for activity logging - in a real application, you'd get this from auth context
+  const userInfo = {
+    name: "Admin User", // Replace with actual user name from auth context
+    role: "Administrator",
+    department: "Operations"
+  };
 
   // Set requests when data is fetched
   useEffect(() => {
     if (fetchedRequests && fetchedRequests.length > 0) {
       setRequests(fetchedRequests);
+      
+      // Log page view activity
+      logActivity({
+        ...userInfo,
+        route: "/admin/requests",
+        action: "VIEW",
+        description: `Viewed ${fetchedRequests.length} requests in the request management system`
+      });
     }
   }, [fetchedRequests]);
 
@@ -94,12 +110,28 @@ export default function RequestListPage() {
       if (action === "approved") {
         // Use the RTK Mutation hook directly
         await sendRequest(request).unwrap();
+        
+        // Log approval activity
+        logActivity({
+          ...userInfo,
+          route: "/admin/requests",
+          action: "APPROVE",
+          description: `Approved request ID: ${id} - ${request.type} from ${request.user}`
+        });
       } else {
         await receiveRequest({
           ...request,
           status: "rejected",
           rejectedAt: new Date().toISOString()
         }).unwrap();
+        
+        // Log rejection activity
+        logActivity({
+          ...userInfo,
+          route: "/admin/requests",
+          action: "REJECT",
+          description: `Rejected request ID: ${id} - ${request.type} from ${request.user}`
+        });
       }
   
       setRequests(prev =>
@@ -120,6 +152,14 @@ export default function RequestListPage() {
         message: `Error: ${error.message || 'Failed to process request'}`,
         color: "danger"
       });
+      
+      // Log error activity
+      logActivity({
+        ...userInfo,
+        route: "/admin/requests",
+        action: "ERROR",
+        description: `Error processing request ID: ${id} - ${error.message || 'Failed to process request'}`
+      });
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
       setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
@@ -130,6 +170,70 @@ export default function RequestListPage() {
   const viewRequestDetails = (request) => {
     setSelectedRequest(request);
     setDetailsVisible(true);
+    
+    // Log view details activity
+    logActivity({
+      ...userInfo,
+      route: "/admin/requests/details",
+      action: "VIEW_DETAILS",
+      description: `Viewed details for request ID: ${request.id} - ${request.type} from ${request.user}`
+    });
+  };
+  
+  // Toggle between pending and history views
+  const toggleView = () => {
+    const newView = activeView === "pending" ? "history" : "pending";
+    setActiveView(newView);
+    
+    // Log view toggle activity
+    logActivity({
+      ...userInfo,
+      route: "/admin/requests",
+      action: "CHANGE_VIEW",
+      description: `Changed view to ${newView === "pending" ? "pending requests" : "request history"}`
+    });
+  };
+  
+  // Handle search and filter changes
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    
+    if (term.trim().length > 2) {
+      // Log search activity (only when term is significant)
+      logActivity({
+        ...userInfo,
+        route: "/admin/requests",
+        action: "SEARCH",
+        description: `Searched for "${term}" in ${activeView} requests`
+      });
+    }
+  };
+  
+  const handleFilterChange = (e) => {
+    const filter = e.target.value;
+    setHistoryFilter(filter);
+    
+    // Log filter activity
+    logActivity({
+      ...userInfo,
+      route: "/admin/requests",
+      action: "FILTER",
+      description: `Applied filter: ${filter} to request history`
+    });
+  };
+  
+  // Handle refresh action
+  const handleRefresh = () => {
+    refetch();
+    
+    // Log refresh activity
+    logActivity({
+      ...userInfo,
+      route: "/admin/requests",
+      action: "REFRESH",
+      description: `Refreshed ${activeView} requests data`
+    });
   };
 
   // Get status badge color
@@ -216,7 +320,16 @@ export default function RequestListPage() {
       {/* Request Details Modal */}
       <CModal 
         visible={detailsVisible} 
-        onClose={() => setDetailsVisible(false)}
+        onClose={() => {
+          setDetailsVisible(false);
+          // Log modal close activity
+          logActivity({
+            ...userInfo,
+            route: "/admin/requests/details",
+            action: "CLOSE_DETAILS",
+            description: `Closed details view for request ID: ${selectedRequest?.id || 'unknown'}`
+          });
+        }}
         size="lg"
       >
         {selectedRequest && (
@@ -268,7 +381,20 @@ export default function RequestListPage() {
                   <label className="text-muted d-block">Source URL</label>
                   <div>
                     <FontAwesomeIcon icon={faGlobe} className="me-2 text-primary" />
-                    <a href={selectedRequest.senderUrl} target="_blank" rel="noopener noreferrer">
+                    <a 
+                      href={selectedRequest.senderUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        // Log URL click activity
+                        logActivity({
+                          ...userInfo,
+                          route: "/admin/requests/details",
+                          action: "CLICK_URL",
+                          description: `Clicked source URL for request ID: ${selectedRequest.id}`
+                        });
+                      }}
+                    >
                       {selectedRequest.senderUrl}
                     </a>
                   </div>
@@ -314,8 +440,7 @@ export default function RequestListPage() {
                     }}
                     disabled={loading[selectedRequest.id]}
                   >
-                    {loading[selectedRequest.id] ? (
-                      <CSpinner size="sm" color="light" />
+                    {loading[selectedRequest.id] ? (<CSpinner size="sm" color="light" />
                     ) : (
                       <>
                         <FontAwesomeIcon icon={faCheck} className="me-1" /> Approve
@@ -335,7 +460,16 @@ export default function RequestListPage() {
                   </CButton>
                 </>
               )}
-              <CButton color="secondary" onClick={() => setDetailsVisible(false)}>
+              <CButton color="secondary" onClick={() => {
+                setDetailsVisible(false);
+                // Log close modal activity
+                logActivity({
+                  ...userInfo,
+                  route: "/admin/requests/details",
+                  action: "CLOSE_DETAILS",
+                  description: `Closed details view for request ID: ${selectedRequest.id}`
+                });
+              }}>
                 Close
               </CButton>
             </CModalFooter>
@@ -368,7 +502,7 @@ export default function RequestListPage() {
                       color="light" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => refetch()}
+                      onClick={handleRefresh}
                       disabled={isFetching}
                       className="me-2"
                     >
@@ -385,9 +519,7 @@ export default function RequestListPage() {
                       color="light" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => {
-                        setActiveView(activeView === "pending" ? "history" : "pending");
-                      }}
+                      onClick={toggleView}
                     >
                       <FontAwesomeIcon 
                         icon={activeView === "pending" ? faHistory : faClipboardList} 
@@ -406,7 +538,7 @@ export default function RequestListPage() {
                         <CInputGroup>
                           <CFormSelect 
                             value={historyFilter}
-                            onChange={(e) => setHistoryFilter(e.target.value)}
+                            onChange={handleFilterChange}
                             aria-label="Filter status"
                             size="sm"
                           >
@@ -424,7 +556,7 @@ export default function RequestListPage() {
                           <CFormInput
                             placeholder="Search requests..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={handleSearchChange}
                             size="sm"
                           />
                           <CButton color="light" variant="outline" size="sm">
@@ -497,7 +629,16 @@ export default function RequestListPage() {
                                           href={request.senderUrl} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Log URL click activity
+                                            logActivity({
+                                              ...userInfo,
+                                              route: "/admin/requests",
+                                              action: "CLICK_URL",
+                                              description: `Clicked source URL for request ID: ${request.id}`
+                                            });
+                                          }}
                                         >
                                           {request.senderUrl}
                                         </a>

@@ -1,6 +1,6 @@
 {
-  "short_name": "Main",
-  "name": "Freight Main",
+  "short_name": "Admin",
+  "name": "Freight Admin",
   "icons": [
     {
       "src": "./assets/images/favicon.png",

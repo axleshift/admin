@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { useSendMessageMutation } from '../../../state/adminApi'; // Assuming the RTK API slice is in services/api
+import { useDispatch, useSelector } from 'react-redux';
+import { useSendMessageMutation } from '../../../state/adminApi';
 import { 
   CCard, 
   CCardBody, 
@@ -11,7 +11,8 @@ import {
   CButton, 
   CContainer, 
   CRow, 
-  CCol 
+  CCol,
+  useColorModes
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -24,6 +25,7 @@ import {
   faMoneyBillWave,
   faBell
 } from '@fortawesome/free-solid-svg-icons';
+import logActivity from '../../../utils/ActivityLogger'; // Import the logActivity function
 
 const maskUserId = (userId) => {
   if (!userId) return '';
@@ -96,11 +98,17 @@ const AccessRequestPage = () => {
   const [expandedCategories, setExpandedCategories] = useState({});
 
   const [sendMessage, { isLoading }] = useSendMessageMutation();
+  const { colorMode } = useColorModes();
+  const isDarkMode = colorMode === 'dark';
+
+  // Get the stored theme from Redux
+  const storedTheme = useSelector((state) => state.changeState?.theme);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('userId');
     const storedUserName = sessionStorage.getItem('name');
     const storedUserDepartment = sessionStorage.getItem('department');
+    const userRole = sessionStorage.getItem('role');
     
     if (storedUserId) {
       setUserId(storedUserId);
@@ -108,16 +116,49 @@ const AccessRequestPage = () => {
     }
     if (storedUserName) setUserName(storedUserName);
     if (storedUserDepartment) setUserDepartment(storedUserDepartment);
+
+    // Log activity when component mounts
+    logActivity({
+      name: storedUserName,
+      role: userRole,
+      department: storedUserDepartment,
+      route: '/access-request',
+      action: 'Page Visit',
+      description: 'User visited the access request page'
+    });
   }, []);
 
   const handlePermissionToggle = (permission) => {
-    setSelectedPermissions(prev =>
-      prev.includes(permission) ? prev.filter(p => p !== permission) : [...prev, permission]
-    );
+    const newSelectedPermissions = selectedPermissions.includes(permission) 
+      ? selectedPermissions.filter(p => p !== permission) 
+      : [...selectedPermissions, permission];
+    
+    setSelectedPermissions(newSelectedPermissions);
+    
+    // Log activity when permissions are toggled
+    logActivity({
+      name: userName,
+      role: sessionStorage.getItem('role'),
+      department: userDepartment,
+      route: '/access-request',
+      action: 'Toggle Permission',
+      description: `User ${selectedPermissions.includes(permission) ? 'removed' : 'added'} permission: ${permission}`
+    });
   };
 
   const toggleCategory = (category) => {
-    setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));
+    const newExpandedState = { ...expandedCategories, [category]: !expandedCategories[category] };
+    setExpandedCategories(newExpandedState);
+    
+    // Log activity when a category is expanded/collapsed
+    logActivity({
+      name: userName,
+      role: sessionStorage.getItem('role'),
+      department: userDepartment,
+      route: '/access-request',
+      action: 'Toggle Category',
+      description: `User ${expandedCategories[category] ? 'collapsed' : 'expanded'} category: ${category}`
+    });
   };
 
   const handleSubmitRequest = async () => {
@@ -138,29 +179,90 @@ const AccessRequestPage = () => {
         requestDetails: { permissions: selectedPermissions }
       }).unwrap();
 
+      // Log successful request submission
+      logActivity({
+        name: userName,
+        role: sessionStorage.getItem('role'),
+        department: userDepartment,
+        route: '/access-request',
+        action: 'Submit Request',
+        description: `User submitted access request for permissions: ${selectedPermissions.join(', ')}`
+      });
+
       setSubmitStatus({ success: true, message: 'Access request sent successfully!' });
       setSelectedPermissions([]);
     } catch (error) {
+      // Log failed request submission
+      logActivity({
+        name: userName,
+        role: sessionStorage.getItem('role'),
+        department: userDepartment,
+        route: '/access-request',
+        action: 'Submit Request Failed',
+        description: `User failed to submit access request: ${error.data?.error || 'Unknown error'}`
+      });
+
       setSubmitStatus({ success: false, message: error.data?.error || 'Failed to send request' });
     }
   };
 
+  // Apply theme-based styling
+  const cardStyle = isDarkMode ? {
+    backgroundColor: '#2c2c34',
+    color: '#fff'
+  } : {};
+
+  const headerStyle = isDarkMode ? {
+    backgroundColor: '#3c4b64',
+    color: '#fff'
+  } : {
+    backgroundColor: '#321fdb',
+    color: '#fff'
+  };
+
+  const categoryStyle = isDarkMode ? {
+    backgroundColor: '#3a3a3a',
+    color: '#fff'
+  } : {
+    backgroundColor: '#f8f9fa',
+    color: '#000'
+  };
+
+  const inputStyle = isDarkMode ? {
+    backgroundColor: '#3a3a3a',
+    color: '#fff',
+    borderColor: '#666'
+  } : {
+    backgroundColor: '#f8f9fa',
+    color: '#000'
+  };
+
   return (
-    <CContainer className="vh-100 d-flex align-items-center justify-content-center bg-light">
+    <CContainer className={`vh-100 d-flex align-items-center justify-content-center ${isDarkMode ? 'bg-dark' : 'bg-light'}`}>
       <CRow className="w-100 justify-content-center">
         <CCol md={10} lg={12}>
-          <CCard className="shadow-lg">
-            <CCardHeader className="bg-primary text-white d-flex align-items-center">
+          <CCard className="shadow-lg" style={cardStyle}>
+            <CCardHeader className="d-flex align-items-center" style={headerStyle}>
               <FontAwesomeIcon icon={faUserShield} className="me-2" />
               <strong>Access Request</strong>
             </CCardHeader>
             <CCardBody>
               <CForm>
-                <CFormInput type="text" label="User ID" value={maskedUserId} readOnly className="bg-light" />
-                <label className="form-label mt-3">Select Permissions</label>
+                <CFormInput 
+                  type="text" 
+                  label="User ID" 
+                  value={maskedUserId} 
+                  readOnly 
+                  style={inputStyle} 
+                />
+                <label className={`form-label mt-3 ${isDarkMode ? 'text-light' : ''}`}>Select Permissions</label>
                 {AVAILABLE_PERMISSIONS.map((category) => (
                   <div key={category.category} className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center bg-light p-2 rounded cursor-pointer" onClick={() => toggleCategory(category.category)}>
+                    <div 
+                      className="d-flex justify-content-between align-items-center p-2 rounded cursor-pointer" 
+                      style={categoryStyle}
+                      onClick={() => toggleCategory(category.category)}
+                    >
                       <div>
                         <FontAwesomeIcon icon={category.icon} className="me-2 text-primary" />
                         <strong>{category.category}</strong>
@@ -171,7 +273,13 @@ const AccessRequestPage = () => {
                       <CRow className="mt-2">
                         {category.permissions.map((permission) => (
                           <CCol xs={6} md={4} key={permission.key} className="mb-2">
-                            <CFormCheck id={permission.key} label={permission.label} checked={selectedPermissions.includes(permission.key)} onChange={() => handlePermissionToggle(permission.key)} />
+                            <CFormCheck 
+                              id={permission.key} 
+                              label={permission.label} 
+                              checked={selectedPermissions.includes(permission.key)} 
+                              onChange={() => handlePermissionToggle(permission.key)} 
+                              className={isDarkMode ? 'text-light' : ''}
+                            />
                           </CCol>
                         ))}
                       </CRow>

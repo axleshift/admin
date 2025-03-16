@@ -38,6 +38,7 @@
         "joi-password-complexity": "^5.2.0",
         "jsonwebtoken": "^9.0.2",
         "jwt-decode": "^4.0.0",
+        "lint": "^1.1.2",
         "mongodb": "^6.12.0",
         "mongoose": "^8.12.1",
         "morgan": "^1.10.0",

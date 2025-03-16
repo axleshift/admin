@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGetNewUserQuery } from '../../../state/hrApi';
-import {useSaveUserMutation} from '../../../state/adminApi'
+import { useSaveUserMutation } from '../../../state/adminApi';
 import {
   CCard,
   CCardBody,
@@ -20,14 +20,39 @@ import {
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserPlus, faSave, faSync, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import logActivity from '../../../utils/ActivityLogger'; // Import the logActivity function
 
 const HRUsersPage = () => {
   const { data: users, isLoading, isError, refetch } = useGetNewUserQuery();
   const [saveUser] = useSaveUserMutation();  
+  const [currentUser, setCurrentUser] = useState(null);
 
   const departments = ['Administrative', 'Finance', 'HR', 'Core', 'Logistics'];
   const [selectedUsers, setSelectedUsers] = useState({});
   const [showPassword, setShowPassword] = useState({});
+
+  // Get current user information from local storage or context
+  useEffect(() => {
+    try {
+      const userString = localStorage.getItem('currentUser');
+      if (userString) {
+        const user = JSON.parse(userString);
+        setCurrentUser(user);
+        
+        // Log page view when component mounts
+        logActivity({
+          name: user.name || 'Unknown User',
+          role: user.role || 'Unknown Role',
+          department: user.department || 'Unknown Department',
+          route: 'hr/users',
+          action: 'VIEW',
+          description: 'Accessed new users registration page'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+    }
+  }, []);
 
   const getRolesForDepartment = (department) => {
     if (department === 'Finance') {
@@ -90,16 +115,45 @@ const HRUsersPage = () => {
     };
 
     try {
-        const response = await saveUser(payload).unwrap();
-        console.log('User saved successfully:', response);
-        refetch();
-      } catch (error) {
-        console.error('Error saving user:', error);
-        // Log the detailed error message if available
-        if (error.data && error.data.error) {
-          console.error('Validation error:', error.data.error);
-        }
+      const response = await saveUser(payload).unwrap();
+      console.log('User saved successfully:', response);
+      
+      // Log user registration activity with detailed information
+      if (currentUser) {
+        // Create a detailed description including all user info
+        const detailedDescription = `Registered new user: ${user.firstName} ${user.lastName} (${user.email}) with role: ${userData.role} in department: ${userData.department}`;
+        
+        logActivity({
+          name: currentUser.name || 'Unknown User',
+          role: currentUser.role || 'Unknown Role',
+          department: currentUser.department || 'Unknown Department',
+          route: 'hr/users',
+          action: 'CREATE',
+          description: detailedDescription
+        });
       }
+      
+      refetch();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      
+      // Log error in user registration
+      if (currentUser) {
+        logActivity({
+          name: currentUser.name || 'Unknown User',
+          role: currentUser.role || 'Unknown Role',
+          department: currentUser.department || 'Unknown Department',
+          route: 'hr/users',
+          action: 'ERROR',
+          description: `Failed to register user: ${user.firstName} ${user.lastName} (${user.email}). Error: ${error.message || 'Unknown error'}`
+        });
+      }
+      
+      // Log the detailed error message if available
+      if (error.data && error.data.error) {
+        console.error('Validation error:', error.data.error);
+      }
+    }
   };
 
   return (

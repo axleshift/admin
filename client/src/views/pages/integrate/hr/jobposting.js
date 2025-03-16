@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CCard,
   CCardBody,
@@ -17,12 +17,29 @@ import {
   CModalBody,
   CModalFooter,
 } from '@coreui/react';
-import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi'; // Path to the RTK query API slice
+import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi';
+import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
 
 const RecruitmentModule = () => {
   const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    role: '',
+    department: '',
+    userId: ''
+  });
+
+  // Get user information from sessionStorage on component mount
+  useEffect(() => {
+    setUserInfo({
+      name: sessionStorage.getItem('name'),
+      role: sessionStorage.getItem('role'),
+      department: sessionStorage.getItem('department'),
+      userId: sessionStorage.getItem('userId')
+    });
+  }, []);
 
   const { data: jobDetails, isLoading: isJobLoading } = useGetJobPostingByIdQuery(selectedJobId, {
     skip: !selectedJobId, // Only fetch details when a job is selected
@@ -31,17 +48,44 @@ const RecruitmentModule = () => {
   const viewApplications = (jobId) => {
     setSelectedJobId(jobId);
     setModalVisible(true);
-    // Track activity logic removed
+    
+    // Track activity
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: '/recruitment/job-postings',
+      action: 'View Applications',
+      description: `User viewed applications for job ID: ${jobId}`
+    });
   };
 
   const editJob = (jobId) => {
-    // Track activity logic removed
+    // Track activity
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: '/recruitment/job-postings',
+      action: 'Edit Job',
+      description: `User initiated editing for job ID: ${jobId}`
+    });
+    
     // Add your edit logic here
     console.log(`Editing job: ${jobId}`);
   };
 
   const deleteJob = (jobId) => {
-    // Track activity logic removed
+    // Track activity
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: '/recruitment/job-postings',
+      action: 'Delete Job',
+      description: `User deleted job ID: ${jobId}`
+    });
+    
     // Add your delete logic here
     console.log(`Deleting job: ${jobId}`);
   };
@@ -49,6 +93,16 @@ const RecruitmentModule = () => {
   const closeModal = () => {
     setModalVisible(false);
     setSelectedJobId(null);
+    
+    // Track activity
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: '/recruitment/job-postings',
+      action: 'Close Modal',
+      description: 'User closed the applications modal'
+    });
   };
 
   return (
@@ -71,6 +125,7 @@ const RecruitmentModule = () => {
                   <CTableHeaderCell>Location</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
                   <CTableHeaderCell>Applications</CTableHeaderCell>
+                  <CTableHeaderCell>Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -86,6 +141,14 @@ const RecruitmentModule = () => {
                         View
                       </CButton>
                     </CTableDataCell>
+                    <CTableDataCell>
+                      <CButton color="warning" size="sm" className="me-2" onClick={() => editJob(job._id)}>
+                        Edit
+                      </CButton>
+                      <CButton color="danger" size="sm" onClick={() => deleteJob(job._id)}>
+                        Delete
+                      </CButton>
+                    </CTableDataCell>
                   </CTableRow>
                 ))}
               </CTableBody>
@@ -93,8 +156,6 @@ const RecruitmentModule = () => {
           )}
         </CCardBody>
       </CCard>
-
-      {/* Activity tracker section removed */}
 
       {/* Modal to view applications */}
       <CModal visible={modalVisible} onClose={closeModal}>

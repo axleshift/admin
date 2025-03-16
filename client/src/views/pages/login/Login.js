@@ -79,15 +79,70 @@ const Login = () => {
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       
-      // Store user data in SessionStorage
-      const { id, name, username, role, email, department, permissions } = response.user;
+      // Extract user data from response
+      const { id, name, username, role, email, department } = response.user;
+      
+      // Handle permissions with better error checking
+      let permissions = [];
+      if (response.user.permissions) {
+        // Ensure permissions is properly formatted as an array
+        if (Array.isArray(response.user.permissions)) {
+          permissions = response.user.permissions;
+          console.log("✅ User permissions array:", permissions);
+        } else {
+          console.warn("⚠️ Server returned permissions in unexpected format:", response.user.permissions);
+          // Try to convert permissions if it's an object or string
+          try {
+            const parsedPermissions = typeof response.user.permissions === 'string' 
+              ? JSON.parse(response.user.permissions) 
+              : response.user.permissions;
+              
+            if (Array.isArray(parsedPermissions)) {
+              permissions = parsedPermissions;
+              console.log("✅ Converted permissions to array:", permissions);
+            }
+          } catch (parseError) {
+            console.error("❌ Failed to parse permissions:", parseError);
+          }
+        }
+      } else {
+        console.warn("⚠️ No permissions found in user data");
+      }
+      
+      // If still no permissions and role+department are valid, fallback to default role permissions
+      if (permissions.length === 0 && role && department) {
+        try {
+          // Import accessPermissions (adjust path as needed)
+          const permissionsConfig = await import('../../../components/permissionConfig');
+          
+          if (permissionsConfig.accessPermissions[role]?.[department]) {
+            permissions = permissionsConfig.accessPermissions[role][department];
+            console.log("✅ Using default role-based permissions:", permissions);
+          }
+        } catch (importError) {
+          console.error("❌ Failed to import permissions config:", importError);
+        }
+      }
+      
+      // Store all user data in SessionStorage
       sessionStorage.setItem("userId", id);
       sessionStorage.setItem("username", username || "");
       sessionStorage.setItem("name", name || "");
       sessionStorage.setItem("email", email || "");
       sessionStorage.setItem("role", role || "");
       sessionStorage.setItem("department", department || "");
-      sessionStorage.setItem("permissions", JSON.stringify(permissions || []));
+      sessionStorage.setItem("permissions", JSON.stringify(permissions));
+      
+      // Debug all session storage values
+      console.log("📦 Session Storage after login:", {
+        userId: id,
+        username: username || "",
+        name: name || "",
+        email: email || "",
+        role: role || "",
+        department: department || "",
+        permissions: permissions
+      });
       
       // Check for security notice in the response
       if (response.securityAlert) {

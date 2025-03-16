@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CContainer,
   CTable,
@@ -28,12 +28,39 @@ import {
   cilChevronRight,
   cilFilter
 } from '@coreui/icons';
+import logActivity from "../../../utils/ActivityLogger"; // Import the logActivity function
 
 const AccessReview = () => {
   const { data, error, isLoading } = useGetPermissionsQuery(); // RTK Query hook
   const [currentPage, setCurrentPage] = useState(1);
   const [showOnlyWithPermissions, setShowOnlyWithPermissions] = useState(true); // Default to showing only users with permissions
+  const [currentUser, setCurrentUser] = useState(null);
   const itemsPerPage = 10; // Number of users to display per page
+
+  // Get current user information from local storage or context
+  useEffect(() => {
+    // This would typically come from your auth context or user state
+    // For this example, we'll assume it's stored in localStorage
+    try {
+      const userString = localStorage.getItem('currentUser');
+      if (userString) {
+        const user = JSON.parse(userString);
+        setCurrentUser(user);
+        
+        // Log page view when component mounts
+        logActivity({
+          name: user.name || 'Unknown User',
+          role: user.role || 'Unknown Role',
+          department: user.department || 'Unknown Department',
+          route: 'admin/access-review',
+          action: 'VIEW',
+          description: 'Accessed permission review page'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+    }
+  }, []);
 
   // Get role-specific badge color
   const getRoleBadgeColor = (role) => {
@@ -92,6 +119,18 @@ const AccessReview = () => {
   }
 
   if (error) {
+    // Log error occurrence
+    if (currentUser) {
+      logActivity({
+        name: currentUser.name || 'Unknown User',
+        role: currentUser.role || 'Unknown Role',
+        department: currentUser.department || 'Unknown Department',
+        route: 'admin/access-review',
+        action: 'ERROR',
+        description: `Error loading permissions: ${error.message}`
+      });
+    }
+
     return (
       <CContainer className="mt-4">
         <CAlert color="danger">Error: {error.message}</CAlert>
@@ -111,15 +150,44 @@ const AccessReview = () => {
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers?.slice(indexOfFirstUser, indexOfLastUser) || [];
 
-  // Handle page change
+  // Handle page change with activity logging
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page !== currentPage) {
+      setCurrentPage(page);
+      
+      // Log page change activity
+      if (currentUser) {
+        logActivity({
+          name: currentUser.name || 'Unknown User',
+          role: currentUser.role || 'Unknown Role',
+          department: currentUser.department || 'Unknown Department',
+          route: 'admin/access-review',
+          action: 'NAVIGATE',
+          description: `Changed to page ${page} of users list`
+        });
+      }
+    }
   };
 
-  // Toggle filter for users with permissions
+  // Toggle filter for users with permissions with activity logging
   const togglePermissionFilter = () => {
-    setShowOnlyWithPermissions(!showOnlyWithPermissions);
+    const newFilterValue = !showOnlyWithPermissions;
+    setShowOnlyWithPermissions(newFilterValue);
     setCurrentPage(1); // Reset to first page when toggling filter
+    
+    // Log filter change activity
+    if (currentUser) {
+      logActivity({
+        name: currentUser.name || 'Unknown User',
+        role: currentUser.role || 'Unknown Role',
+        department: currentUser.department || 'Unknown Department',
+        route: 'admin/access-review',
+        action: 'FILTER',
+        description: newFilterValue 
+          ? 'Filtered to show only users with permissions' 
+          : 'Removed filter to show all users'
+      });
+    }
   };
 
   // Generate pagination items

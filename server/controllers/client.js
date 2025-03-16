@@ -26,6 +26,7 @@ const passwordComplexityOptions = {
     symbol: 1,
     requirementCount: 4,
 };
+import Activitytracker from "../model/Activitytracker.js";
 //integrate model
 import coreuser from '../model/coreuser.js'
 import financeuser from '../model/financeuser.js'
@@ -548,6 +549,18 @@ export const loginUser = async (req, res) => {
           userAgent,
           status: 'success'
       });
+      const logData = {
+        name: user.name,
+        role: user.role,
+        department: user.department,
+        route: req.originalUrl,
+        action: 'Login Successful',
+        description: `Login successful from IP: ${ipAddress}, User-Agent: ${userAgent}`
+    };
+
+    const newActivity = new Activitytracker(logData);
+    await newActivity.save();
+    console.log('Login activity logged successfully:', logData);
 
       // Step 7: Check for unusual login patterns
       let securityAlert = null;

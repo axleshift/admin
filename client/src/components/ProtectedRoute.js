@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Navigate, useLocation } from 'react-router-dom';
 import Page500 from '../views/pages/page500/Page500'; 
-import { accessPermissions, alwaysPermitted } from '../components/permissionConfig'; // ✅ Import permissions config
+import { accessPermissions, alwaysPermitted } from '../components/permissionConfig';
 
 const ProtectedRoute = ({ children }) => {
   const accessToken = localStorage.getItem('accessToken');
@@ -39,7 +39,14 @@ const ProtectedRoute = ({ children }) => {
     }
 
     // Check role-based access from config
-    return accessPermissions[userRole]?.[userDepartment]?.includes(currentPath) || false;
+    const hasRoleAccess = accessPermissions[userRole]?.[userDepartment]?.includes(currentPath) || false;
+    
+    // Log access attempt for debugging
+    console.log(`🔍 Access check for ${currentPath}: ${hasRoleAccess ? '✅ Granted' : '⛔ Denied'}`);
+    console.log(`👤 User: ${userRole}/${userDepartment}`);
+    console.log(`🚪 Allowed routes:`, accessPermissions[userRole]?.[userDepartment] || []);
+    
+    return hasRoleAccess;
   };
 
   // If user doesn't have permission, show 500 error page

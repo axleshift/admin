@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
+import Activitytracker from '../model/Activitytracker.js';
 dotenv.config();
 export const accessReview = async (req, res) => {
     try {
@@ -260,3 +261,42 @@ export const getDashboardStats = async (req, res) => {
       });
     }
   };
+
+  export const activity = async (req, res) => {
+    try {
+        const { name, role, department, route, action, description } = req.body;
+  
+        if (!name || !role || !department || !route || !action || !description) {
+            return res.status(400).json({ error: 'All fields are required.' });
+        }
+
+        console.log('Activitytracker model:', Activitytracker); // This will now correctly log the model
+
+        console.log('Data to be saved:', { name, role, department, route, action, description });
+
+        const newActivity = new Activitytracker({
+            name,
+            role,
+            department,
+            route,
+            action,
+            description
+        });
+  
+        await newActivity.save();
+        console.log('Activity saved successfully.');  // Confirm the save operation
+        res.status(201).json({ message: 'Activity logged successfully.' });
+    } catch (error) {
+        console.error('Error saving activity:', error.message);  // Log the error
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getact =async (req, res) => {
+  try {
+      const activities = await Activitytracker.find();
+      res.status(200).json(activities);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};

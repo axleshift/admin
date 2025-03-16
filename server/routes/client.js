@@ -10,6 +10,7 @@ import {
     saveUser
 } from "../controllers/client.js";
 import detectAnomaly from "../middleware/detectAnomaly.js";
+import loginActivityLogger from "../middleware/loginActivitytracker.js";
 const router = express.Router();
 router.post('/save-user', saveUser)
 
@@ -17,7 +18,7 @@ router.get('/customers', getCustomers);
 
 
 // Login
-router.post("/login",detectAnomaly,loginUser);
+router.post("/login",detectAnomaly,loginUser,loginActivityLogger);
 
 // Register a customer
 router.post("/registercustomer", registerCustomer);

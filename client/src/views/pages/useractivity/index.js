@@ -1,237 +1,291 @@
-import React, { useState, useEffect } from 'react';
-import {
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CCol,
-  CRow,
-  CTable,
-  CTableHead,
-  CTableRow,
-  CTableHeaderCell,
-  CTableBody,
+import React, { useEffect, useState } from 'react';
+import axiosInstance from '../../../utils/axiosInstance';
+import { useSelector } from 'react-redux';
+import { useColorModes } from '@coreui/react';
+import { 
+  CCard, 
+  CCardBody, 
+  CCardHeader, 
+  CTable, 
+  CTableHead, 
+  CTableRow, 
+  CTableHeaderCell, 
+  CTableBody, 
   CTableDataCell,
-  CFormSelect,
-  CFormInput,
-  CButton,
-  CPagination,
-  CPaginationItem
+  CSpinner,
+  CBadge,
+  CTooltip,
+  CCardTitle,
+  CCardFooter,
+  CContainer,
+  CRow,
+  CCol,
+  CButton
 } from '@coreui/react';
-import axiosInstance from '../../../utils/axiosInstance'; 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faExclamationCircle, 
+  faHistory, 
+  faSync, 
+  faUser, 
+  faUserTag, 
+  faBuilding, 
+  faRoute, 
+  faRunning, 
+  faInfoCircle, 
+  faClock,
+  faFileDownload
+} from '@fortawesome/free-solid-svg-icons';
 
-const ActivityDashboard = () => {
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    userId: '',
-    actionType: '',
-    startDate: '',
-    endDate: '',
-    page: 1,
-    limit: 10
-  });
-  const [pagination, setPagination] = useState({
-    total: 0,
-    pages: 1
-  });
-  
-  const actionTypes = [
-    'PAGE_VIEW',
-    'BUTTON_CLICK',
-    'FORM_SUBMIT',
-    'SEARCH',
-    'LOGIN',
-    'LOGOUT'
-  ];
-  
-  const fetchActivities = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value);
-      });
-      
-      const response = await axiosInstance.get(`/general/getact?${queryParams.toString()}`);
-      
-      if (response.data.success) {
-        setActivities(response.data.data);
-        setPagination({
-          total: response.data.total,
-          pages: response.data.pages
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      setLoading(false);
+const ActivityTracker = () => {
+    const [activities, setActivities] = useState([]);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    
+    // Get current theme from Redux store
+    const currentTheme = useSelector((state) => state.changeState.theme);
+    
+    // Use the useColorModes hook 
+    const { colorMode } = useColorModes("coreui-free-react-admin-template-theme");
+    
+    // Determine dark mode from both sources
+    const isDarkMode = currentTheme === 'dark' || colorMode === 'dark';
+
+    const fetchActivities = () => {
+        setLoading(true);
+        setError(null);
+        axiosInstance.get('/general/log')
+            .then(response => {
+                setActivities(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                setError(error.message);
+                setLoading(false);
+            });
+    };
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        axiosInstance.get('/general/log')
+            .then(response => {
+                setActivities(response.data);
+                setRefreshing(false);
+            })
+            .catch(error => {
+                setError(error.message);
+                setRefreshing(false);
+            });
+    };
+
+    useEffect(() => {
+        fetchActivities();
+    }, []);
+
+    // Style for the title in dark mode
+    const titleStyle = isDarkMode ? { color: '#FFFFFF' } : {}; // Bright purple in dark mode
+
+    // Helper function to get badge color based on action type
+    const getBadgeColor = (action) => {
+        const actionMap = {
+            'CREATE': 'success',
+            'UPDATE': 'primary',
+            'DELETE': 'danger',
+            'RESTORE': 'warning',
+            'SELECT': 'info',
+            'FETCH': isDarkMode ? 'light' : 'secondary', // Improved for dark mode
+            'NAVIGATE': isDarkMode ? 'light' : 'secondary', // Improved for dark mode
+            'AUTO': isDarkMode ? 'light' : 'dark',
+            'SET': 'info'
+        };
+
+        // Look for partial matches in the action string
+        for (const [key, value] of Object.entries(actionMap)) {
+            if (action && action.includes(key)) {
+                return value;
+            }
+        }
+        return isDarkMode ? 'light' : 'secondary'; // Better default for dark mode
+    };
+
+    // Format relative time
+    const getRelativeTime = (timestamp) => {
+        const now = new Date();
+        const past = new Date(timestamp);
+        const diffInSeconds = Math.floor((now - past) / 1000);
+        
+        if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    };
+
+    if (error) {
+        return (
+            <CContainer className="mt-4">
+                <CCard className={`text-center border-danger ${isDarkMode ? 'bg-dark text-white' : ''}`}>
+                    <CCardHeader className="bg-danger text-white">
+                        <FontAwesomeIcon icon={faExclamationCircle} className="me-2" /> Error
+                    </CCardHeader>
+                    <CCardBody>
+                        <p className="mb-0">{error}</p>
+                        <CButton 
+                            color="primary" 
+                            className="mt-3"
+                            onClick={fetchActivities}
+                        >
+                            <FontAwesomeIcon icon={faSync} className="me-2" /> Try Again
+                        </CButton>
+                    </CCardBody>
+                </CCard>
+            </CContainer>
+        );
     }
-  };
-  
-  useEffect(() => {
-    fetchActivities();
-  }, [filters.page, filters.limit]);
-  
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value,
-      page: 1 // Reset to first page when changing filters
-    }));
-  };
-  
-  const applyFilters = () => {
-    fetchActivities();
-  };
-  
-  const resetFilters = () => {
-    setFilters({
-      userId: '',
-      actionType: '',
-      startDate: '',
-      endDate: '',
-      page: 1,
-      limit: 10
-    });
-  };
-  
-  const formatDateTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
-  };
-  
-  return (
-    <CRow>
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>User Activity Tracker</strong>
-          </CCardHeader>
-          <CCardBody>
-            <CRow className="mb-3">
-              <CCol sm={12} md={3}>
-                <CFormInput
-                  type="text"
-                  name="userId"
-                  value={filters.userId}
-                  onChange={handleFilterChange}
-                  placeholder="Filter by User ID"
-                  className="mb-2"
-                />
-              </CCol>
-              <CCol sm={12} md={3}>
-                <CFormSelect
-                  name="actionType"
-                  value={filters.actionType}
-                  onChange={handleFilterChange}
-                  className="mb-2"
-                >
-                  <option value="">All Action Types</option>
-                  {actionTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </CFormSelect>
-              </CCol>
-              <CCol sm={12} md={2}>
-                <CFormInput
-                  type="date"
-                  name="startDate"
-                  value={filters.startDate}
-                  onChange={handleFilterChange}
-                  placeholder="Start Date"
-                  className="mb-2"
-                />
-              </CCol>
-              <CCol sm={12} md={2}>
-                <CFormInput
-                  type="date"
-                  name="endDate"
-                  value={filters.endDate}
-                  onChange={handleFilterChange}
-                  placeholder="End Date"
-                  className="mb-2"
-                />
-              </CCol>
-              <CCol sm={12} md={2} className="d-flex">
-                <CButton color="primary" onClick={applyFilters} className="me-2">
-                  Apply
-                </CButton>
-                <CButton color="secondary" onClick={resetFilters}>
-                  Reset
-                </CButton>
-              </CCol>
-            </CRow>
-            
-            <CTable hover responsive>
-              <CTableHead>
-                <CTableRow>
-                  <CTableHeaderCell scope="col">User</CTableHeaderCell>
-                  <CTableHeaderCell scope="col">Role</CTableHeaderCell>
-                  <CTableHeaderCell scope="col">Department</CTableHeaderCell>
-                  <CTableHeaderCell scope="col">Action Type</CTableHeaderCell>
-                  <CTableHeaderCell scope="col">Description</CTableHeaderCell>
-                  <CTableHeaderCell scope="col">Timestamp</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody>
-                {loading ? (
-                  <CTableRow>
-                    <CTableDataCell colSpan="6" className="text-center">
-                      Loading...
-                    </CTableDataCell>
-                  </CTableRow>
-                ) : activities.length === 0 ? (
-                  <CTableRow>
-                    <CTableDataCell colSpan="6" className="text-center">
-                      No activities found
-                    </CTableDataCell>
-                  </CTableRow>
-                ) : (
-                  activities.map((activity) => (
-                    <CTableRow key={activity._id}>
-                      <CTableDataCell>{activity.name}</CTableDataCell>
-                      <CTableDataCell>{activity.role}</CTableDataCell>
-                      <CTableDataCell>{activity.department}</CTableDataCell>
-                      <CTableDataCell>{activity.actionType}</CTableDataCell>
-                      <CTableDataCell>{activity.actionDescription}</CTableDataCell>
-                      <CTableDataCell>{formatDateTime(activity.timestamp)}</CTableDataCell>
-                    </CTableRow>
-                  ))
-                )}
-              </CTableBody>
-            </CTable>
-            
-            <CPagination align="center" className="mt-3">
-              <CPaginationItem 
-                disabled={filters.page <= 1}
-                onClick={() => setFilters(prev => ({ ...prev, page: prev.page - 1 }))}
-              >
-                Previous
-              </CPaginationItem>
-              
-              {[...Array(pagination.pages).keys()].map(page => (
-                <CPaginationItem 
-                  key={page + 1}
-                  active={page + 1 === filters.page}
-                  onClick={() => setFilters(prev => ({ ...prev, page: page + 1 }))}
-                >
-                  {page + 1}
-                </CPaginationItem>
-              ))}
-              
-              <CPaginationItem 
-                disabled={filters.page >= pagination.pages}
-                onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
-              >
-                Next
-              </CPaginationItem>
-            </CPagination>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
-  );
+
+    return (
+        <CContainer fluid className="p-4">
+            <CCard className={`shadow-sm ${isDarkMode ? 'bg-dark text-white' : ''}`}>
+                <CCardHeader className={`d-flex justify-content-between align-items-center ${isDarkMode ? 'bg-dark text-white border-secondary' : 'bg-light'}`}>
+                    <div>
+                        <FontAwesomeIcon icon={faHistory} className="me-2 text-primary" />
+                        <CCardTitle 
+                            className="d-inline mb-0"
+                            style={titleStyle} // Apply purple color in dark mode
+                        >
+                            Activity Tracker
+                        </CCardTitle>
+                    </div>
+                    <div>
+                        <CButton 
+                            color={isDarkMode ? "light" : "light"} 
+                            size="sm" 
+                            className={`me-2 ${isDarkMode ? 'text-dark' : ''}`}
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                        >
+                            <FontAwesomeIcon icon={faSync} spin={refreshing} className="me-1" />
+                            {refreshing ? 'Refreshing...' : 'Refresh'}
+                        </CButton>
+                        <CButton 
+                            color={isDarkMode ? "light" : "secondary"} 
+                            size="sm"
+                            className={isDarkMode ? 'text-dark' : ''}
+                        >
+                            <FontAwesomeIcon icon={faFileDownload} className="me-1" />
+                            Export
+                        </CButton>
+                    </div>
+                </CCardHeader>
+                <CCardBody>
+                    {loading ? (
+                        <div className="text-center p-5">
+                            <CSpinner color="primary" />
+                            <p className={`mt-2 ${isDarkMode ? 'text-light' : 'text-muted'}`}>Loading activity data...</p>
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <CTable hover striped responsive className={`border ${isDarkMode ? 'table-dark' : ''}`}>
+                                <CTableHead className={isDarkMode ? "bg-dark text-white border-secondary" : "bg-light"}>
+                                    <CTableRow>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faUser} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            User
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faUserTag} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Role
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faBuilding} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Department
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faRoute} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Route
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faRunning} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Action
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faInfoCircle} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Description
+                                        </CTableHeaderCell>
+                                        <CTableHeaderCell className="text-nowrap">
+                                            <FontAwesomeIcon icon={faClock} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                            Time
+                                        </CTableHeaderCell>
+                                    </CTableRow>
+                                </CTableHead>
+                                <CTableBody>
+                                    {activities.length === 0 ? (
+                                        <CTableRow>
+                                            <CTableDataCell colSpan={7} className={`text-center p-5 ${isDarkMode ? 'text-white' : 'text-muted'}`}>
+                                                No activity records found
+                                            </CTableDataCell>
+                                        </CTableRow>
+                                    ) : (
+                                        activities.map(activity => (
+                                            <CTableRow key={activity._id} className="align-middle">
+                                                <CTableDataCell className="font-weight-bold">
+                                                    {activity.name || 'Unknown'}
+                                                </CTableDataCell>
+                                                <CTableDataCell>
+                                                    <CBadge color={isDarkMode ? "light" : "dark"} shape="rounded-pill" className={`px-2 py-1 ${isDarkMode ? 'text-dark' : ''}`}>
+                                                        {activity.role || 'Unknown'}
+                                                    </CBadge>
+                                                </CTableDataCell>
+                                                <CTableDataCell>
+                                                    {activity.department || 'Unknown'}
+                                                </CTableDataCell>
+                                                <CTableDataCell className={isDarkMode ? "text-info" : "text-primary"}>
+                                                    {activity.route}
+                                                </CTableDataCell>
+                                                <CTableDataCell>
+                                                    <CBadge 
+                                                        color={getBadgeColor(activity.action)} 
+                                                        shape="rounded-pill"
+                                                        className={getBadgeColor(activity.action) === 'light' ? 'text-dark' : ''}
+                                                    >
+                                                        {activity.action}
+                                                    </CBadge>
+                                                </CTableDataCell>
+                                                <CTableDataCell>
+                                                    <CTooltip content={activity.description} placement="bottom">
+                                                        <div className="text-truncate" style={{ maxWidth: '200px' }}>
+                                                            {activity.description}
+                                                        </div>
+                                                    </CTooltip>
+                                                </CTableDataCell>
+                                                <CTableDataCell className="text-nowrap">
+                                                    <CTooltip content={new Date(activity.timestamp).toLocaleString()}>
+                                                        <span>
+                                                            {getRelativeTime(activity.timestamp)}
+                                                        </span>
+                                                    </CTooltip>
+                                                </CTableDataCell>
+                                            </CTableRow>
+                                        ))
+                                    )}
+                                </CTableBody>
+                            </CTable>
+                        </div>
+                    )}
+                </CCardBody>
+                <CCardFooter className={`${isDarkMode ? 'bg-dark text-white border-secondary' : 'bg-light text-muted'}`}>
+                    <CRow>
+                        <CCol>
+                            <small>Showing {activities.length} activities</small>
+                        </CCol>
+                        <CCol className="text-end">
+                            <small>Last updated: {new Date().toLocaleString()}</small>
+                        </CCol>
+                    </CRow>
+                </CCardFooter>
+            </CCard>
+        </CContainer>
+    );
 };
 
-export default ActivityDashboard;
+export default ActivityTracker;

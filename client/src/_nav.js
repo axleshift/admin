@@ -24,6 +24,7 @@ import {
 const _nav = () => {
   // Get user information from session storage
   const userRole = sessionStorage.getItem('role');
+  const userName = sessionStorage.getItem('name')
   const userDepartment = sessionStorage.getItem('department');
   const userUsername = sessionStorage.getItem('username'); 
   const userId = sessionStorage.getItem('userId');
@@ -35,6 +36,7 @@ const _nav = () => {
     Role: userRole,
     Department: userDepartment,
     Username: userUsername,
+    name: userName,
     "User ID": userId,
     Permissions: userPermissions,
     Email: userEmail
@@ -345,18 +347,7 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
           to: '/registernew'
         },
-        {
-          component: CNavItem, 
-          name: 'Security Monitoring', 
-          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />, 
-          to: '/monitoring'
-        },
-        {
-          component:CNavItem,
-          name:'UserManagement',
-          icon:<FontAwesomeIcon icon={faUserGroup} style = {{ marginRight: '8px'}}/>,
-          to:'/usermanagement'
-        }
+      
         
        
       );

@@ -4,14 +4,76 @@ import CustomHeader from "../../../components/header/customhead";
 import OverviewChart from "./overviewChart";
 import { useGetSalesQuery } from "../../../state/financeApi"; 
 import PropTypes from 'prop-types';
+import logActivity from '../../../utils/ActivityLogger'; // Import the logActivity function
+
 const Overview = ({isDashboard = false}) => {
   const [view, setView] = useState("units");
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    role: '',
+    department: '',
+    userId: ''
+  });
 
   // Fetch data using the Redux Toolkit query hook
   const { data: salesData, isLoading, error } = useGetSalesQuery();
 
+  // Get user information from sessionStorage on component mount
+  useEffect(() => {
+    const userName = sessionStorage.getItem('name');
+    const userRole = sessionStorage.getItem('role');
+    const userDepartment = sessionStorage.getItem('department');
+    const userId = sessionStorage.getItem('userId');
+    
+    setUserInfo({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      userId: userId
+    });
+
+    // Log activity when component mounts - user viewed overview page
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: isDashboard ? '/dashboard' : '/overview',
+      action: 'View Finance Overview',
+      description: `User accessed the finance overview ${isDashboard ? 'on dashboard' : 'page'}`
+    });
+  }, [isDashboard]);
+
+  // Handle view change with activity logging
+  const handleViewChange = (e) => {
+    const newView = e.target.value;
+    setView(newView);
+    
+    // Log activity when view changes
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: isDashboard ? '/dashboard' : '/overview',
+      action: 'Change View',
+      description: `User changed finance overview view to: ${newView}`
+    });
+  };
+
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading data</div>;
+  
+  if (error) {
+    // Log error activity
+    logActivity({
+      name: userInfo.name,
+      role: userInfo.role,
+      department: userInfo.department,
+      route: isDashboard ? '/dashboard' : '/overview',
+      action: 'Error',
+      description: 'Error occurred while loading finance overview data'
+    });
+    
+    return <div>Error loading data</div>;
+  }
 
   return (
     <CRow>
@@ -27,7 +89,7 @@ const Overview = ({isDashboard = false}) => {
                 <select
                   id="viewSelect"
                   value={view}
-                  onChange={(e) => setView(e.target.value)}
+                  onChange={handleViewChange}
                   className="form-select"
                   aria-label="Select view"
                 >
@@ -44,8 +106,8 @@ const Overview = ({isDashboard = false}) => {
   );
 };
 
-
 Overview.propTypes = {
   isDashboard: PropTypes.bool, 
 };
+
 export default Overview;
