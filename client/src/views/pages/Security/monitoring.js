@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CCard, 
   CCardBody, 
@@ -32,14 +32,35 @@ import {
   FaTimes,
   FaQuestion,
   FaBuilding,
-  FaSuitcaseRolling
+  FaSuitcaseRolling,
+  FaHistory,
+  FaUser,
+  FaRoute,
+  FaClipboardList
 } from 'react-icons/fa';
 
-// Import the security API slice
-import { useGetSecurityAlertsQuery, useGetLoginAttemptsQuery } from '../../../state/adminApi';
+// Import the security API slice and activity tracker
+import { useGetSecurityAlertsQuery, useGetLoginAttemptsQuery, useGetUserActivitiesQuery } from '../../../state/adminApi';
+import logActivity from './../../../utils/ActivityLogger';
 
 const SecurityDashboard = () => {
   const [activeTab, setActiveTab] = useState('alerts');
+  const [currentUser, setCurrentUser] = useState({
+    name: '',
+    role: '',
+    department: ''
+  });
+  
+  // Get user info from localStorage or context on component mount
+  useEffect(() => {
+    // This would typically come from your auth context or localStorage
+    const userInfo = {
+      name: localStorage.getItem('userName') || 'Admin User',
+      role: localStorage.getItem('userRole') || 'Administrator',
+      department: localStorage.getItem('userDepartment') || 'IT Security'
+    };
+    setCurrentUser(userInfo);
+  }, []);
   
   // Filter states
   const [alertFilters, setAlertFilters] = useState({
@@ -52,6 +73,12 @@ const SecurityDashboard = () => {
     userId: '',
     status: '',
     ipAddress: ''
+  });
+
+  const [activityFilters, setActivityFilters] = useState({
+    name: '',
+    action: '',
+    route: ''
   });
 
   // Prepare a modified query object for login attempts to handle the "attempt" status specially
@@ -82,6 +109,12 @@ const SecurityDashboard = () => {
     error: loginsError
   } = useGetLoginAttemptsQuery(prepareLoginQuery());
 
+  const {
+    data: userActivities = [],
+    isLoading: activitiesLoading,
+    error: activitiesError
+  } = useGetUserActivitiesQuery(activityFilters);
+
   // Post-process login attempts based on filter
   const loginAttempts = React.useMemo(() => {
     if (loginFilters.status === 'attempt') {
@@ -103,6 +136,21 @@ const SecurityDashboard = () => {
     }
   }, [loginAttemptsRaw, loginFilters.status]);
 
+  // Handle tab change with activity logging
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    
+    // Log the tab change activity
+    logActivity({
+      name: currentUser.name,
+      role: currentUser.role,
+      department: currentUser.department,
+      route: `/security/${tabName}`,
+      action: 'Tab Change',
+      description: `User navigated to ${tabName} tab in Security Dashboard`
+    });
+  };
+
   // Handle alerts filter change
   const handleAlertFilterChange = (e) => {
     const { name, value } = e.target;
@@ -110,6 +158,16 @@ const SecurityDashboard = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Log filter change activity
+    logActivity({
+      name: currentUser.name,
+      role: currentUser.role,
+      department: currentUser.department,
+      route: '/security/alerts',
+      action: 'Filter Change',
+      description: `User filtered alerts by ${name}=${value}`
+    });
   };
 
   // Handle login filter change
@@ -119,6 +177,35 @@ const SecurityDashboard = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Log filter change activity
+    logActivity({
+      name: currentUser.name,
+      role: currentUser.role,
+      department: currentUser.department,
+      route: '/security/logins',
+      action: 'Filter Change',
+      description: `User filtered login attempts by ${name}=${value}`
+    });
+  };
+
+  // Handle activity filter change
+  const handleActivityFilterChange = (e) => {
+    const { name, value } = e.target;
+    setActivityFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Log filter change activity
+    logActivity({
+      name: currentUser.name,
+      role: currentUser.role,
+      department: currentUser.department,
+      route: '/security/activity',
+      action: 'Filter Change',
+      description: `User filtered activity logs by ${name}=${value}`
+    });
   };
   
   // Format timestamp
@@ -149,6 +236,20 @@ const SecurityDashboard = () => {
       case 'MULTIPLE_FAILURES': return 'danger';
       case 'UNUSUAL_LOCATION': return 'info';
       default: return 'secondary';
+    }
+  };
+
+  // Get activity action badge color
+  const getActivityBadgeColor = (action) => {
+    switch (action.toUpperCase()) {
+      case 'LOGIN': return 'success';
+      case 'LOGOUT': return 'info';
+      case 'TAB CHANGE': return 'secondary';
+      case 'FILTER CHANGE': return 'primary';
+      case 'BUTTON CLICK': return 'warning';
+      case 'DATA EXPORT': return 'dark';
+      case 'ALERT ACTION': return 'danger';
+      default: return 'light';
     }
   };
 
@@ -183,7 +284,7 @@ const SecurityDashboard = () => {
             <CNavItem>
               <CNavLink 
                 active={activeTab === 'alerts'}
-                onClick={() => setActiveTab('alerts')}
+                onClick={() => handleTabChange('alerts')}
               >
                 <FaExclamationTriangle className="me-2" /> Security Alerts
               </CNavLink>
@@ -191,9 +292,17 @@ const SecurityDashboard = () => {
             <CNavItem>
               <CNavLink 
                 active={activeTab === 'logins'}
-                onClick={() => setActiveTab('logins')}
+                onClick={() => handleTabChange('logins')}
               >
                 <FaKey className="me-2" /> Login Attempts
+              </CNavLink>
+            </CNavItem>
+            <CNavItem>
+              <CNavLink 
+                active={activeTab === 'activity'}
+                onClick={() => handleTabChange('activity')}
+              >
+                <FaHistory className="me-2" /> User Activity
               </CNavLink>
             </CNavItem>
           </CNav>
@@ -317,8 +426,8 @@ const SecurityDashboard = () => {
             </CCard>
           )}
           
-          {/* Login Attempts Tab */}
-          {activeTab === 'logins' && (
+        {/* Login Attempts Tab */}
+        {activeTab === 'logins' && (
             <CCard className="mb-4">
               <CCardHeader>
                 <strong><FaKey className="me-2" /> Login Attempts</strong>
@@ -435,6 +544,180 @@ const SecurityDashboard = () => {
                     </CTableBody>
                   </CTable>
                 )}
+              </CCardBody>
+            </CCard>
+          )}
+          
+          {/* User Activity Tab */}
+          {activeTab === 'activity' && (
+            <CCard className="mb-4">
+              <CCardHeader>
+                <strong><FaHistory className="me-2" /> User Activity Logs</strong>
+              </CCardHeader>
+              <CCardBody>
+                {/* Filters */}
+                <CRow className="mb-3 filter-section">
+                  <CCol sm={12}>
+                    <h6><FaFilter className="me-2" /> Filters</h6>
+                  </CCol>
+                  <CCol sm={3}>
+                    <CFormInput 
+                      placeholder="User Name"
+                      name="name"
+                      value={activityFilters.name}
+                      onChange={handleActivityFilterChange}
+                      className="mb-2"
+                    />
+                  </CCol>
+                  <CCol sm={3}>
+                    <CFormInput 
+                      placeholder="Route"
+                      name="route"
+                      value={activityFilters.route}
+                      onChange={handleActivityFilterChange}
+                      className="mb-2"
+                    />
+                  </CCol>
+                  <CCol sm={3}>
+                    <CFormSelect 
+                      name="action"
+                      value={activityFilters.action}
+                      onChange={handleActivityFilterChange}
+                      className="mb-2"
+                    >
+                      <option value="">All Actions</option>
+                      <option value="Login">Login</option>
+                      <option value="Logout">Logout</option>
+                      <option value="Tab Change">Tab Change</option>
+                      <option value="Filter Change">Filter Change</option>
+                      <option value="Button Click">Button Click</option>
+                      <option value="Data Export">Data Export</option>
+                      <option value="Alert Action">Alert Action</option>
+                    </CFormSelect>
+                  </CCol>
+                  <CCol sm={3}>
+                    <CButton 
+                      color="secondary"
+                      onClick={() => {
+                        setActivityFilters({
+                          name: '',
+                          action: '',
+                          route: ''
+                        });
+                        
+                        // Log reset filters activity
+                        logActivity({
+                          name: currentUser.name,
+                          role: currentUser.role,
+                          department: currentUser.department,
+                          route: '/security/activity',
+                          action: 'Reset Filters',
+                          description: 'User reset activity filters'
+                        });
+                      }}
+                      className="mb-2"
+                    >
+                      Reset Filters
+                    </CButton>
+                  </CCol>
+                </CRow>
+                
+                {/* Error Handling */}
+                {activitiesError && <div className="alert alert-danger">
+                  Failed to load user activities: {activitiesError.toString()}
+                </div>}
+                
+                {/* User Activity Table */}
+                {activitiesLoading ? (
+                  <div className="text-center py-5">
+                    <CSpinner color="primary" />
+                    <p className="mt-3">Loading user activities...</p>
+                  </div>
+                ) : (
+                  <CTable hover responsive>
+                    <CTableHead>
+                      <CTableRow>
+                        <CTableHeaderCell>Timestamp</CTableHeaderCell>
+                        <CTableHeaderCell>User</CTableHeaderCell>
+                        <CTableHeaderCell>Role</CTableHeaderCell>
+                        <CTableHeaderCell>Department</CTableHeaderCell>
+                        <CTableHeaderCell>Action</CTableHeaderCell>
+                        <CTableHeaderCell>Route</CTableHeaderCell>
+                        <CTableHeaderCell>Description</CTableHeaderCell>
+                      </CTableRow>
+                    </CTableHead>
+                    <CTableBody>
+                      {userActivities.length === 0 ? (
+                        <CTableRow>
+                          <CTableDataCell colSpan="7" className="text-center">
+                            No user activities found
+                          </CTableDataCell>
+                        </CTableRow>
+                      ) : (
+                        userActivities.map(activity => (
+                          <CTableRow key={activity._id}>
+                            <CTableDataCell>
+                              <FaClock className="me-1" />
+                              {activity.timestamp ? formatDate(activity.timestamp) : '-'}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <FaUser className="me-1" />
+                              {renderSafely(activity.name)}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <FaSuitcaseRolling className="me-1" />
+                              {renderSafely(activity.role)}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <FaBuilding className="me-1" />
+                              {renderSafely(activity.department)}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <CBadge color={getActivityBadgeColor(activity.action)}>
+                                {renderSafely(activity.action)}
+                              </CBadge>
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <FaRoute className="me-1" />
+                              {renderSafely(activity.route)}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <FaClipboardList className="me-1" />
+                              {renderSafely(activity.description)}
+                            </CTableDataCell>
+                          </CTableRow>
+                        ))
+                      )}
+                    </CTableBody>
+                  </CTable>
+                )}
+                
+                {/* Export Button */}
+                <CRow className="mt-3">
+                  <CCol sm={12}>
+                    <CButton 
+                      color="primary"
+                      onClick={() => {
+                        // Implement your export functionality here
+                        
+                        // Log export activity
+                        logActivity({
+                          name: currentUser.name,
+                          role: currentUser.role,
+                          department: currentUser.department,
+                          route: '/security/activity',
+                          action: 'Data Export',
+                          description: 'User exported activity logs'
+                        });
+                        
+                        // Alert for demo purposes
+                        alert('Activity logs exported successfully');
+                      }}
+                    >
+                      Export Activity Logs
+                    </CButton>
+                  </CCol>
+                </CRow>
               </CCardBody>
             </CCard>
           )}

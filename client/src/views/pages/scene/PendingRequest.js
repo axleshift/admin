@@ -48,7 +48,7 @@ import {
   useReceiveRequestMutation, 
   useSendRequestMutation 
 } from "../../../state/adminApi";
-import logActivity from "../../../utils/ActivityLogger";
+import logActivity from "./../../../utils/ActivityLogger";
 
 export default function RequestListPage() {
   // RTK Query hooks for API calls

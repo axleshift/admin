@@ -28,7 +28,7 @@ import {
   cilChevronRight,
   cilFilter
 } from '@coreui/icons';
-import logActivity from "../../../utils/ActivityLogger"; // Import the logActivity function
+import logActivity from "./../../../utils/ActivityLogger"; // Import the logActivity function
 
 const AccessReview = () => {
   const { data, error, isLoading } = useGetPermissionsQuery(); // RTK Query hook

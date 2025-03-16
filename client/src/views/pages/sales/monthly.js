@@ -3,7 +3,7 @@ import { CRow, CCol, CCard, CCardHeader, CCardBody } from '@coreui/react';
 import CustomHeader from '../../../components/header/customhead';
 import { useGetSalesQuery } from '../../../state/financeApi';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import logActivity from '../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from './../../../utils/ActivityLogger'; // Import the logActivity function
 
 const Monthly = () => {
   const { data, isLoading, error } = useGetSalesQuery();

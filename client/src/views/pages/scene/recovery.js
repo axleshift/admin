@@ -7,7 +7,7 @@ import {
     CSpinner, CAlert 
 } from '@coreui/react';
 import axiosInstance from '../../../utils/axiosInstance';
-import logActivity from '../../../utils/ActivityLogger';
+import logActivity from './../../../utils/logActivity';
 
 const RecoveryPage = () => {
     const [directory, setDirectory] = useState('');

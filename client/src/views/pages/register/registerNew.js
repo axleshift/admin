@@ -20,7 +20,7 @@ import {
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserPlus, faSave, faSync, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import logActivity from '../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from './../../../utils/ActivityLogger'; // Import the logActivity function
 
 const HRUsersPage = () => {
   const { data: users, isLoading, isError, refetch } = useGetNewUserQuery();
