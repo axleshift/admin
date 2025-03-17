@@ -32,9 +32,17 @@ const app = express();
 
 // ✅ 3. Create HTTP server and Socket.io instance
 const server = http.createServer(app);
+//uncommet niyo nlang pag may problema
+// const io = new Server(server, {
+//     cors: {
+//         origin: "http://localhost:3000",
+//         methods: ["GET", "POST"]
+//     }
+// });
+
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: [process.env.CLIENT_URL,"http://localhost:3000",],
         methods: ["GET", "POST"]
     }
 });
