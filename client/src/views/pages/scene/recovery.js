@@ -7,7 +7,7 @@ import {
     CSpinner, CAlert 
 } from '@coreui/react';
 import axiosInstance from '../../../utils/axiosInstance';
-import logActivity from './../../../utils/logActivity';
+import logActivity from './../../../utils/activityLogger';
 
 const RecoveryPage = () => {
     const [directory, setDirectory] = useState('');
@@ -27,7 +27,7 @@ const RecoveryPage = () => {
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('name'); 
     
-    // Get user info from sessionStorage
+    
     const getUserInfo = () => {
         return {
             name: userName || 'Unknown User',
@@ -36,7 +36,7 @@ const RecoveryPage = () => {
         };
     };
 
-    // Restore saved directory on component mount
+    
     useEffect(() => {
         const savedDirectory = localStorage.getItem('backupDirectory');
         if (savedDirectory) {
@@ -47,7 +47,7 @@ const RecoveryPage = () => {
                     setDirectorySet(true);
                     fetchBackups();
                     
-                    // Log activity for auto-loading directory
+                    
                     const userInfo = getUserInfo();
                     logActivity({
                         ...userInfo,
@@ -61,17 +61,17 @@ const RecoveryPage = () => {
         }
     }, []);
 
-    // Fetch backups when directory is set
+    
     useEffect(() => {
         if (directorySet) fetchBackups();
     }, [directorySet]);
 
-    // Fetch databases when a backup is selected
+    
     useEffect(() => {
         if (selectedBackup) {
             fetchDatabases(selectedBackup);
             
-            // Log backup selection
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -83,12 +83,12 @@ const RecoveryPage = () => {
         else setDatabases([]);
     }, [selectedBackup]);
 
-    // Fetch collections when a database is selected
+    
     useEffect(() => {
         if (selectedDatabase && selectedBackup) {
             fetchCollections(selectedBackup, selectedDatabase);
             
-            // Log database selection
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -107,7 +107,7 @@ const RecoveryPage = () => {
             const response = await axiosInstance.get('/admin/list-backups');
             setBackups(response.data.backups || []);
             
-            // Log fetching backups
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -134,7 +134,7 @@ const RecoveryPage = () => {
             if (response.data.databases) {
                 setDatabases(response.data.databases);
                 
-                // Log fetching databases
+                
                 const userInfo = getUserInfo();
                 logActivity({
                     ...userInfo,
@@ -168,7 +168,7 @@ const RecoveryPage = () => {
     
             setCollections(response.data.collections || []);
             
-            // Log fetching collections
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -198,7 +198,7 @@ const RecoveryPage = () => {
             setDirectorySet(true);
             fetchBackups();
             
-            // Log setting directory
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -221,7 +221,7 @@ const RecoveryPage = () => {
             await axiosInstance.post('/admin/backup');
             fetchBackups();
             
-            // Log backup creation
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -251,7 +251,7 @@ const RecoveryPage = () => {
                 databaseName: selectedDatabase,
             });
             
-            // Log restoration
+            
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -269,7 +269,7 @@ const RecoveryPage = () => {
     };
     
     const handlesched = async () => {
-        // Log navigation to scheduler
+        
         const userInfo = getUserInfo();
         logActivity({
             ...userInfo,
@@ -284,7 +284,7 @@ const RecoveryPage = () => {
     const handleSelectCollection = (collection) => {
         setSelectedCollection(collection);
         
-        // Log collection selection
+        
         const userInfo = getUserInfo();
         logActivity({
             ...userInfo,
@@ -295,7 +295,7 @@ const RecoveryPage = () => {
     };
     
     const handleChangeCollection = () => {
-        // Log collection change action
+        
         const userInfo = getUserInfo();
         logActivity({
             ...userInfo,

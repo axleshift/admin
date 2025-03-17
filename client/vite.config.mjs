@@ -2,13 +2,22 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import autoprefixer from 'autoprefixer'
+import { visualizer } from 'rollup-plugin-visualizer' // Add this import
 
 export default defineConfig(() => {
   return {
     base: './',
     build: {
       outDir: 'build',
-
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-coreui': ['@coreui/react', '@coreui/icons-react'],
+            'vendor-redux': ['redux', 'react-redux', '@reduxjs/toolkit']
+          }
+        }
+      }
     },
     css: {
       postcss: {
@@ -30,7 +39,15 @@ export default defineConfig(() => {
         },
       },
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      visualizer({
+        filename: 'stats.html',
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+      })
+    ],
     resolve: {
       alias: [
         {

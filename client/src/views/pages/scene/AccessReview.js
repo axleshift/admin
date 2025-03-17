@@ -28,26 +28,26 @@ import {
   cilChevronRight,
   cilFilter
 } from '@coreui/icons';
-import logActivity from "./../../../utils/ActivityLogger"; // Import the logActivity function
+import logActivity from "./../../../utils/activityLogger"; 
 
 const AccessReview = () => {
-  const { data, error, isLoading } = useGetPermissionsQuery(); // RTK Query hook
+  const { data, error, isLoading } = useGetPermissionsQuery(); 
   const [currentPage, setCurrentPage] = useState(1);
-  const [showOnlyWithPermissions, setShowOnlyWithPermissions] = useState(true); // Default to showing only users with permissions
+  const [showOnlyWithPermissions, setShowOnlyWithPermissions] = useState(true); 
   const [currentUser, setCurrentUser] = useState(null);
-  const itemsPerPage = 10; // Number of users to display per page
+  const itemsPerPage = 10; 
 
-  // Get current user information from local storage or context
+  
   useEffect(() => {
-    // This would typically come from your auth context or user state
-    // For this example, we'll assume it's stored in localStorage
+    
+    
     try {
       const userString = localStorage.getItem('currentUser');
       if (userString) {
         const user = JSON.parse(userString);
         setCurrentUser(user);
         
-        // Log page view when component mounts
+        
         logActivity({
           name: user.name || 'Unknown User',
           role: user.role || 'Unknown Role',
@@ -62,7 +62,7 @@ const AccessReview = () => {
     }
   }, []);
 
-  // Get role-specific badge color
+  
   const getRoleBadgeColor = (role) => {
     switch(role?.toLowerCase()) {
       case 'admin':
@@ -76,7 +76,7 @@ const AccessReview = () => {
     }
   };
 
-  // Get department-specific icon
+  
   const getDepartmentIcon = (department) => {
     switch(department?.toLowerCase()) {
       case 'it':
@@ -92,7 +92,7 @@ const AccessReview = () => {
     }
   };
 
-  // Render permissions with colored badges based on sensitivity
+  
   const renderPermission = (permission) => {
     let color = 'info';
     if (permission.includes('delete') || permission.includes('admin')) {
@@ -119,7 +119,7 @@ const AccessReview = () => {
   }
 
   if (error) {
-    // Log error occurrence
+    
     if (currentUser) {
       logActivity({
         name: currentUser.name || 'Unknown User',
@@ -138,24 +138,24 @@ const AccessReview = () => {
     );
   }
 
-  // Filter users based on permission status
+  
   const filteredUsers = showOnlyWithPermissions
     ? data?.users?.filter(user => user.permissions && user.permissions.length > 0)
     : data?.users;
 
-  // Calculate pagination values
+  
   const totalUsers = filteredUsers?.length || 0;
   const totalPages = Math.ceil(totalUsers / itemsPerPage);
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers?.slice(indexOfFirstUser, indexOfLastUser) || [];
 
-  // Handle page change with activity logging
+  
   const handlePageChange = (page) => {
     if (page !== currentPage) {
       setCurrentPage(page);
       
-      // Log page change activity
+      
       if (currentUser) {
         logActivity({
           name: currentUser.name || 'Unknown User',
@@ -169,13 +169,13 @@ const AccessReview = () => {
     }
   };
 
-  // Toggle filter for users with permissions with activity logging
+  
   const togglePermissionFilter = () => {
     const newFilterValue = !showOnlyWithPermissions;
     setShowOnlyWithPermissions(newFilterValue);
-    setCurrentPage(1); // Reset to first page when toggling filter
+    setCurrentPage(1); 
     
-    // Log filter change activity
+    
     if (currentUser) {
       logActivity({
         name: currentUser.name || 'Unknown User',
@@ -190,11 +190,11 @@ const AccessReview = () => {
     }
   };
 
-  // Generate pagination items
+  
   const renderPaginationItems = () => {
     const items = [];
     
-    // Previous button
+    
     items.push(
       <CPaginationItem 
         key="prev" 
@@ -205,7 +205,7 @@ const AccessReview = () => {
       </CPaginationItem>
     );
     
-    // Page numbers
+    
     for (let i = 1; i <= totalPages; i++) {
       items.push(
         <CPaginationItem 
@@ -218,7 +218,7 @@ const AccessReview = () => {
       );
     }
     
-    // Next button
+    
     items.push(
       <CPaginationItem 
         key="next" 

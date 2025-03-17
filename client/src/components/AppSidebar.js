@@ -70,7 +70,6 @@ const AppSidebar = () => {
         />
       </CSidebarHeader>
 
-      {/* Pass userRole and userDepartment to navigation */}
       <AppSidebarNav items={navigation(userRole, userDepartment)} />
 
       <CSidebarFooter className="border-top d-none d-lg-flex">
@@ -82,5 +81,4 @@ const AppSidebar = () => {
   )
 }
 
-// Default export
 export default AppSidebar

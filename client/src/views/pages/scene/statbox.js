@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 const StatBox = ({ title, value, increase, icon, description }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Check if dark mode is enabled in localStorage or by inspecting body class
+  
   useEffect(() => {
     const darkModeStatus = localStorage.getItem('darkMode') === 'true' || document.body.classList.contains('dark-mode');
     setIsDarkMode(darkModeStatus);
@@ -19,8 +19,8 @@ const StatBox = ({ title, value, increase, icon, description }) => {
         padding: '1.5rem',
         borderRadius: '0.55rem',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        backgroundColor: isDarkMode ? '#000' : '#d3d3d3', // Grey background for light mode
-        color: isDarkMode ? '#808080' : 'black', // Gray text for dark mode and black text for light mode
+        backgroundColor: isDarkMode ? '#000' : '#d3d3d3', 
+        color: isDarkMode ? '#808080' : 'black', 
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',

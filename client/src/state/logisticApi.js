@@ -1,26 +1,26 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-export const logisticApi = createApi({ // ✅ Changed to lowercase to match imports in store.js
+export const logisticApi = createApi({ 
   baseQuery: fetchBaseQuery({ 
     baseUrl: import.meta.env.VITE_APP_BASE_URL,
     credentials: 'include',
   }),
-  reducerPath: "logisticApi", // ✅ Updated to lowercase for consistency
+  reducerPath: "logisticApi", 
   tagTypes: [
     
-], // ✅ Fixed spelling
+], 
   endpoints: (build) => ({
     getLogistics: build.query({
-        query: () => 'logix/logistic',  // Fetch all logistics
+        query: () => 'logix/logistic',  
         providesTags: ['Logistics'],
       }),
       getLogisticsById: build.query({
-        query: (id) => `logix/logistic/${id}`, // Fetch logistics by ID
+        query: (id) => `logix/logistic/${id}`, 
         providesTags: ['Logistics'],
       }),
       getLogisticsByTrackingNum: build.query({
         query: (trackingNumber) => ({
-          url: `logix/logistic/track`, // Fetch logistics by tracking number
+          url: `logix/logistic/track`, 
           method: 'POST',
           body: { trackingNumber },
         }),
@@ -28,7 +28,7 @@ export const logisticApi = createApi({ // ✅ Changed to lowercase to match impo
       }),
       updateLogistics: build.mutation({
         query: ({ id, currentLocation }) => ({
-          url: `logix/logistic/${id}`, // Update logistics
+          url: `logix/logistic/${id}`, 
           method: "PUT",
           body: { currentLocation },
         }),
@@ -36,7 +36,7 @@ export const logisticApi = createApi({ // ✅ Changed to lowercase to match impo
       }),
       deleteLogistics: build.mutation({
         query: (id) => ({
-          url: `logix/logistic/${id}`, // Delete logistics
+          url: `logix/logistic/${id}`, 
           method: "DELETE",
         }),
         invalidatesTags: ["Logistics"],
@@ -51,4 +51,4 @@ export const {
     useGetLogisticsByTrackingNumQuery,
     useUpdateLogisticsMutation,
     useDeleteLogisticsMutation,
- } = logisticApi; // ✅ Export hook correctly
+ } = logisticApi; 

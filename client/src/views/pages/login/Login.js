@@ -20,11 +20,11 @@ import CIcon from "@coreui/icons-react";
 import { cilLockLocked, cilUser } from "@coreui/icons";
 
 const Login = () => {
-  // Form state
+  
   const [data, setData] = useState({ identifier: "", password: "" });
   const [errorMessage, setErrorMessage] = useState(null);
   
-  // Security states
+  
   const [accountLocked, setAccountLocked] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [lockExpiration, setLockExpiration] = useState(null);
@@ -32,10 +32,10 @@ const Login = () => {
   
   const navigate = useNavigate();
 
-  // RTK Query hook
+  
   const [loginUser, { isLoading }] = useLoginUserMutation();
 
-  // Countdown timer for locked accounts
+  
   React.useEffect(() => {
     let interval = null;
     
@@ -61,11 +61,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Clear previous error messages
+    
     setErrorMessage(null);
     setSecurityNotice(null);
     
-    // Basic validation
+    
     if (!data.identifier || !data.password) {
       setErrorMessage("Both username/email and password are required.");
       return;
@@ -75,23 +75,23 @@ const Login = () => {
       const response = await loginUser(data).unwrap(); 
       console.log("Login Success:", response);
       
-      // Store tokens in LocalStorage
+      
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       
-      // Extract user data from response
+      
       const { id, name, username, role, email, department } = response.user;
       
-      // Handle permissions with better error checking
+      
       let permissions = [];
       if (response.user.permissions) {
-        // Ensure permissions is properly formatted as an array
+        
         if (Array.isArray(response.user.permissions)) {
           permissions = response.user.permissions;
           console.log("✅ User permissions array:", permissions);
         } else {
           console.warn("⚠️ Server returned permissions in unexpected format:", response.user.permissions);
-          // Try to convert permissions if it's an object or string
+          
           try {
             const parsedPermissions = typeof response.user.permissions === 'string' 
               ? JSON.parse(response.user.permissions) 
@@ -109,10 +109,10 @@ const Login = () => {
         console.warn("⚠️ No permissions found in user data");
       }
       
-      // If still no permissions and role+department are valid, fallback to default role permissions
+      
       if (permissions.length === 0 && role && department) {
         try {
-          // Import accessPermissions (adjust path as needed)
+          
           const permissionsConfig = await import('../../../components/permissionConfig');
           
           if (permissionsConfig.accessPermissions[role]?.[department]) {
@@ -124,7 +124,7 @@ const Login = () => {
         }
       }
       
-      // Store all user data in SessionStorage
+      
       sessionStorage.setItem("userId", id);
       sessionStorage.setItem("username", username || "");
       sessionStorage.setItem("name", name || "");
@@ -133,7 +133,7 @@ const Login = () => {
       sessionStorage.setItem("department", department || "");
       sessionStorage.setItem("permissions", JSON.stringify(permissions));
       
-      // Debug all session storage values
+      
       console.log("📦 Session Storage after login:", {
         userId: id,
         username: username || "",
@@ -144,12 +144,12 @@ const Login = () => {
         permissions: permissions
       });
       
-      // Check for security notice in the response
+      
       if (response.securityAlert) {
         setSecurityNotice(response.securityAlert.message || "Unusual activity detected on your account.");
       }
       
-      // Route to appropriate dashboard based on department
+      
       switch (department?.toLowerCase()) {
         case "administrative":
           navigate("/employeedash");
@@ -167,13 +167,13 @@ const Login = () => {
           navigate("/logisticdash");
           break;
         default:
-          navigate("/dashboard"); // Default dashboard if department is not recognized
+          navigate("/dashboard"); 
       }
       
     } catch (err) {
       console.error("Login Failed:", err);
     
-      // Handle account locking (429 Too Many Requests)
+      
       if (err.status === 429) {
         setAccountLocked(true);
     
@@ -182,21 +182,21 @@ const Login = () => {
           const currentTime = new Date();
           const timeRemaining = Math.ceil((lockoutTime - currentTime) / 1000);
     
-          setRemainingTime(timeRemaining > 0 ? timeRemaining : 900);  // Default to 15 minutes if calculation is off
+          setRemainingTime(timeRemaining > 0 ? timeRemaining : 900);  
           setLockExpiration(lockoutTime);
         } else {
-          setRemainingTime(900);  // Default to 15 minutes if no time is provided
+          setRemainingTime(900);  
           const defaultExpiration = new Date();
-          defaultExpiration.setMinutes(defaultExpiration.getMinutes() + 15); // 15 minutes
+          defaultExpiration.setMinutes(defaultExpiration.getMinutes() + 15); 
           setLockExpiration(defaultExpiration);
         }
     
         setErrorMessage(err.data?.message || "Too many failed login attempts. This account is temporarily locked.");
         
-        // If the user can use OTP to bypass the lock, show this option
+        
         setShowOtpOption(true);
       } else {
-        // Show remaining attempts if provided
+        
         const remainingAttempts = err.data?.remainingAttempts;
         if (remainingAttempts !== undefined) {
           setErrorMessage(`Invalid credentials. You have ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining.`);
@@ -207,14 +207,14 @@ const Login = () => {
     }
 };
 
-  // Format remaining time as MM:SS
+  
   const formatRemainingTime = () => {
     const minutes = Math.floor(remainingTime / 60);
     const seconds = remainingTime % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Determine if the current user input should be disabled
+  
   const isCurrentAccountLocked = accountLocked && data.identifier !== "";
 
   return (
@@ -264,7 +264,7 @@ const Login = () => {
                         autoComplete="email"
                         value={data.identifier}
                         onChange={(e) => {
-                          // Reset account locked state when changing identifier
+                          
                           if (e.target.value !== data.identifier) {
                             setAccountLocked(false);
                             setErrorMessage(null);

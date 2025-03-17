@@ -108,7 +108,7 @@ const Shipping = () => {
       setShippingType('land')
       setSelectedCargo(landCargoOptions[0])
       setDestinationCountry('china')
-      setDropOffLocation('Shanghai Port') // Reset to default based on country
+      setDropOffLocation('Shanghai Port') 
       setStatus('pending')
     } catch (error) {
       console.error('Failed to submit shipping details:', error)
@@ -179,7 +179,7 @@ const Shipping = () => {
                       value={shippingType}
                       onChange={(e) => {
                         setShippingType(e.target.value)
-                        setSelectedCargo(getCargoOptions()[0]) // Reset to first cargo option on type change
+                        setSelectedCargo(getCargoOptions()[0]) 
                       }}
                     >
                       <option value="land">Land Freight</option>
@@ -206,7 +206,7 @@ const Shipping = () => {
                         const selectedCountry = countryOptions.find(
                           (country) => country.value === e.target.value,
                         )
-                        setDropOffLocation(selectedCountry?.dropOffLocation || '') // Set initial drop-off location based on country selection
+                        setDropOffLocation(selectedCountry?.dropOffLocation || '') 
                       }}
                     >
                       {countryOptions.map((country) => (

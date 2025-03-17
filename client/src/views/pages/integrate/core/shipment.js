@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { useGetShipmentsQuery } from '../../../../state/coreApi';
-import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from '../../../../utils/activityLogger'; 
 
 const ShipmentsList = () => {
   const { data: shipments, error, isLoading } = useGetShipmentsQuery();
   
-  // Get user information from sessionStorage
+  
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
   const userName = sessionStorage.getItem('name');
   
-  // Log page visit when component mounts
+  
   useEffect(() => {
     logActivity({
       name: userName,
@@ -22,7 +22,7 @@ const ShipmentsList = () => {
     });
   }, [userName, userRole, userDepartment]);
 
-  // Handle clicking on a shipment item
+  
   const handleShipmentClick = (shipmentId) => {
     logActivity({
       name: userName,
@@ -33,8 +33,8 @@ const ShipmentsList = () => {
       description: `User viewed details for shipment ID: ${shipmentId}`
     });
     
-    // You could add navigation logic here if needed
-    // navigate(`/shipment-details/${shipmentId}`);
+    
+    
   };
 
   if (isLoading) return <p>Loading shipments...</p>;

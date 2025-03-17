@@ -48,10 +48,10 @@ import {
   useReceiveRequestMutation, 
   useSendRequestMutation 
 } from "../../../state/adminApi";
-import logActivity from "./../../../utils/ActivityLogger";
+import logActivity from "./../../../utils/activityLogger";
 
 export default function RequestListPage() {
-  // RTK Query hooks for API calls
+  
   const { 
     data: fetchedRequests = [], 
     isLoading: isFetching,
@@ -61,34 +61,34 @@ export default function RequestListPage() {
   const [receiveRequest, { isLoading: isReceiving }] = useReceiveRequestMutation();
   const [sendRequest, { isLoading: isSending }] = useSendRequestMutation();
   
-  // State for requests data
+  
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState({});
   const [toast, setToast] = useState({ visible: false, message: "", color: "" });
   
-  // State for the request detail modal
+  
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
   
-  // State for the history view
+  
   const [activeView, setActiveView] = useState("pending");
   const [historyFilter, setHistoryFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [historyVisible, setHistoryVisible] = useState(false);
   
-  // User info for activity logging - in a real application, you'd get this from auth context
+  
   const userInfo = {
-    name: "Admin User", // Replace with actual user name from auth context
+    name: "Admin User", 
     role: "Administrator",
     department: "Operations"
   };
 
-  // Set requests when data is fetched
+  
   useEffect(() => {
     if (fetchedRequests && fetchedRequests.length > 0) {
       setRequests(fetchedRequests);
       
-      // Log page view activity
+      
       logActivity({
         ...userInfo,
         route: "/admin/requests",
@@ -108,10 +108,10 @@ export default function RequestListPage() {
       }
   
       if (action === "approved") {
-        // Use the RTK Mutation hook directly
+        
         await sendRequest(request).unwrap();
         
-        // Log approval activity
+        
         logActivity({
           ...userInfo,
           route: "/admin/requests",
@@ -125,7 +125,7 @@ export default function RequestListPage() {
           rejectedAt: new Date().toISOString()
         }).unwrap();
         
-        // Log rejection activity
+        
         logActivity({
           ...userInfo,
           route: "/admin/requests",
@@ -153,7 +153,7 @@ export default function RequestListPage() {
         color: "danger"
       });
       
-      // Log error activity
+      
       logActivity({
         ...userInfo,
         route: "/admin/requests",
@@ -166,12 +166,12 @@ export default function RequestListPage() {
     }
   };
   
-  // Function to view request details
+  
   const viewRequestDetails = (request) => {
     setSelectedRequest(request);
     setDetailsVisible(true);
     
-    // Log view details activity
+    
     logActivity({
       ...userInfo,
       route: "/admin/requests/details",
@@ -180,12 +180,12 @@ export default function RequestListPage() {
     });
   };
   
-  // Toggle between pending and history views
+  
   const toggleView = () => {
     const newView = activeView === "pending" ? "history" : "pending";
     setActiveView(newView);
     
-    // Log view toggle activity
+    
     logActivity({
       ...userInfo,
       route: "/admin/requests",
@@ -194,13 +194,13 @@ export default function RequestListPage() {
     });
   };
   
-  // Handle search and filter changes
+  
   const handleSearchChange = (e) => {
     const term = e.target.value;
     setSearchTerm(term);
     
     if (term.trim().length > 2) {
-      // Log search activity (only when term is significant)
+      
       logActivity({
         ...userInfo,
         route: "/admin/requests",
@@ -214,7 +214,7 @@ export default function RequestListPage() {
     const filter = e.target.value;
     setHistoryFilter(filter);
     
-    // Log filter activity
+    
     logActivity({
       ...userInfo,
       route: "/admin/requests",
@@ -223,11 +223,11 @@ export default function RequestListPage() {
     });
   };
   
-  // Handle refresh action
+  
   const handleRefresh = () => {
     refetch();
     
-    // Log refresh activity
+    
     logActivity({
       ...userInfo,
       route: "/admin/requests",
@@ -236,7 +236,7 @@ export default function RequestListPage() {
     });
   };
 
-  // Get status badge color
+  
   const getStatusBadge = (status) => {
     switch(status) {
       case "approved": return { color: "success", text: "Approved" };
@@ -245,24 +245,24 @@ export default function RequestListPage() {
     }
   };
 
-  // Format date for display
+  
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleString();
   };
 
-  // Filter requests based on active view and history filter
+  
   const getFilteredRequests = () => {
     let filtered = [...requests];
     
-    // Filter by view type (pending or history)
+    
     if (activeView === "pending") {
       filtered = filtered.filter(req => req.status === "pending");
     } else {
       filtered = filtered.filter(req => req.status !== "pending");
       
-      // Apply history filter
+      
       if (historyFilter === "approved") {
         filtered = filtered.filter(req => req.status === "approved");
       } else if (historyFilter === "rejected") {
@@ -270,7 +270,7 @@ export default function RequestListPage() {
       }
     }
     
-    // Apply search term
+    
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(req => 
@@ -283,10 +283,10 @@ export default function RequestListPage() {
     return filtered;
   };
 
-  // Sort history items by date (most recent first)
+  
   const sortRequestsByDate = (requests) => {
     return [...requests].sort((a, b) => {
-      // Use the appropriate date field based on status
+      
       const dateA = a.status === "approved" ? a.approvedAt : 
                    a.status === "rejected" ? a.rejectedAt : a.createdAt;
       const dateB = b.status === "approved" ? b.approvedAt : 
@@ -322,7 +322,7 @@ export default function RequestListPage() {
         visible={detailsVisible} 
         onClose={() => {
           setDetailsVisible(false);
-          // Log modal close activity
+          
           logActivity({
             ...userInfo,
             route: "/admin/requests/details",
@@ -386,7 +386,7 @@ export default function RequestListPage() {
                       target="_blank" 
                       rel="noopener noreferrer"
                       onClick={() => {
-                        // Log URL click activity
+                        
                         logActivity({
                           ...userInfo,
                           route: "/admin/requests/details",
@@ -462,7 +462,7 @@ export default function RequestListPage() {
               )}
               <CButton color="secondary" onClick={() => {
                 setDetailsVisible(false);
-                // Log close modal activity
+                
                 logActivity({
                   ...userInfo,
                   route: "/admin/requests/details",
@@ -631,7 +631,7 @@ export default function RequestListPage() {
                                           rel="noopener noreferrer"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            // Log URL click activity
+                                            
                                             logActivity({
                                               ...userInfo,
                                               route: "/admin/requests",

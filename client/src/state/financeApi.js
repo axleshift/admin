@@ -1,14 +1,14 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-export const financeApi = createApi({ // ✅ Changed to lowercase to match imports in store.js
+export const financeApi = createApi({ 
   baseQuery: fetchBaseQuery({ 
     baseUrl: import.meta.env.VITE_APP_BASE_URL,
     credentials: 'include',
   }),
-  reducerPath: "financeApi", // ✅ Updated to lowercase for consistency
+  reducerPath: "financeApi", 
   tagTypes: [
    
-], // ✅ Fixed spelling
+], 
   endpoints: (build) => ({
     getFreightAudits: build.query({
         query: () => 'finance/getfreightaudit',
@@ -34,4 +34,4 @@ export const {
     useGetSalesQuery,
     useGetCustomersQuery,
   
-} = financeApi; // ✅ Export hook correctly
+} = financeApi; 

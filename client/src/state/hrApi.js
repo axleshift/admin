@@ -1,12 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-export const hrApi = createApi({ // ✅ Changed to lowercase to match imports in store.js
+export const hrApi = createApi({ 
   baseQuery: fetchBaseQuery({ 
     baseUrl: import.meta.env.VITE_APP_BASE_URL,
     credentials: 'include',
   }),
-  reducerPath: "hrApi", // ✅ Updated to lowercase for consistency
-  tagTypes: ["Workers"], // ✅ Fixed spelling
+  reducerPath: "hrApi", 
+  tagTypes: ["Workers"], 
   endpoints: (build) => ({
     getNewUser:build.query({
       query: () => "hr/newUser",
@@ -38,12 +38,12 @@ export const hrApi = createApi({ // ✅ Changed to lowercase to match imports in
     }),
     postgenerate: build.mutation({
         query: (userId) => ({
-          url: `hr/generate/${userId}`, // Correctly matches the backend route
+          url: `hr/generate/${userId}`, 
           method: 'POST',
         }),
         invalidatesTags: ['Generate'],
       }),
-    //integration
+    
     postToHr: build.mutation({
         query: ({ department, payload }) => ({
           url: `management/hr`,
@@ -127,4 +127,4 @@ export const {
     useGetUserPermissionsQuery,
     useGrantAccessMutation,
     useRevokeAccessMutation,
-} = hrApi; // ✅ Export hook correctly
+} = hrApi; 

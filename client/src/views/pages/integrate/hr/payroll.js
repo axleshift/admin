@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useGetpayrollQuery } from '../../../../state/hrApi'; // Correct API hook import
+import { useGetpayrollQuery } from '../../../../state/hrApi'; 
 import { CCard, CCardBody, CCardHeader, CCol, CRow, CFormSelect } from '@coreui/react';
-import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from '../../../../utils/activityLogger'; 
 
 const Payroll = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
@@ -13,7 +13,7 @@ const Payroll = () => {
     userId: ''
   });
 
-  // Get user information from sessionStorage on component mount
+  
   useEffect(() => {
     setUserInfo({
       name: sessionStorage.getItem('name'),
@@ -22,7 +22,7 @@ const Payroll = () => {
       userId: sessionStorage.getItem('userId')
     });
 
-    // Log activity when component mounts - user viewed payroll page
+    
     logActivity({
       name: sessionStorage.getItem('name'),
       role: sessionStorage.getItem('role'),
@@ -38,7 +38,7 @@ const Payroll = () => {
   }
 
   if (error) {
-    // Log error activity
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
@@ -55,7 +55,7 @@ const Payroll = () => {
     const newDepartment = event.target.value;
     setSelectedDepartment(newDepartment);
     
-    // Log activity when department filter changes
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
@@ -66,7 +66,7 @@ const Payroll = () => {
     });
   };
 
-  // Filter data based on the selected department
+  
   const filteredData = selectedDepartment === 'all' 
     ? data 
     : data.filter(user => user.department === selectedDepartment);

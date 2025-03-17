@@ -35,23 +35,18 @@ const AppHeaderDropdown = () => {
   }
 
   const handleLogout = () => {
-    // Remove tokens from localStorage
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.clear()
 
-    // Remove tokens from cookies
     deleteCookie('accessToken')
     deleteCookie('refreshToken')
 
-    // Clear session data
     sessionStorage.clear()
 
-    // Navigate to login page
     navigate('/login')
   }
 
-  // Retrieve the user's name from session storage
   const name = sessionStorage.getItem('name')
 
   return (

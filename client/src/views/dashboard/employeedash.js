@@ -19,12 +19,12 @@ import { faCartShopping, faChartLine, faDownload, faEnvelope } from '@fortawesom
 import { useGetDashboardQuery, useGetShippingQuery } from '../../state/adminApi';
 import StatBox from '../pages/scene/statbox';
 import OverviewChart from '../pages/sales/overviewChart';
-import ExcelJS from 'exceljs';
+import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
 
-import Loader from '../../components/Loader';  // ✅ Import Loader
+import Loader from '../../components/Loader';  
 
 const Employeedash = () => {
   const navigate = useNavigate();
@@ -49,37 +49,38 @@ const Employeedash = () => {
     }
   }, [navigate]);
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!shippingData) return;
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Transactions');
-
-    worksheet.columns = [
-      { header: 'Customer Name', key: 'CustomerName', width: 20 },
-      { header: 'Order Volume (kg)', key: 'OrderVolume', width: 15 },
-      { header: 'Shipping Type', key: 'ShippingType', width: 15 },
-      { header: 'Order Date', key: 'OrderDate', width: 20 },
-      { header: 'Status', key: 'Status', width: 15 },
-      { header: 'Delivery Date', key: 'DeliveryDate', width: 20 },
-    ];
-
-    shippingData.forEach((shipping) => {
-      worksheet.addRow({
-        CustomerName: shipping.customerName,
-        OrderVolume: `${shipping.orderVolume} kg`,
-        ShippingType: shipping.shippingType,
-        OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
-        Status: shipping.status,
-        DeliveryDate: shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : 'N/A',
-      });
-    });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, 'shipping_transactions.xlsx');
+  
+    // Define the columns and data
+    const columns = ['Customer Name', 'Order Volume (kg)', 'Shipping Type', 'Order Date', 'Status', 'Delivery Date'];
+    const data = shippingData.map(shipping => [
+      shipping.customerName,
+      `${shipping.orderVolume} kg`,
+      shipping.shippingType,
+      new Date(shipping.orderDate).toLocaleDateString(),
+      shipping.status,
+      shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : 'N/A'
+    ]);
+  
+    // Combine columns and data
+    const csvContent = Papa.unparse([columns, ...data]);
+  
+    // Create a Blob from the CSV content
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+  
+    // Create a temporary link element for downloading the file
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'shipping_transactions.csv';
+    a.click();
+  
+    // Release the URL object
+    URL.revokeObjectURL(url);
   };
 
-  // ✅ Show the loader while fetching data
+  
   if (isDashboardLoading || isShippingLoading) {
     return <Loader />;
   }

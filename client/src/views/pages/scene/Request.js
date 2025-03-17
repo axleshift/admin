@@ -25,7 +25,7 @@ import {
   faMoneyBillWave,
   faBell
 } from '@fortawesome/free-solid-svg-icons';
-import logActivity from './../../../utils/logActivity' 
+import logActivity from './../../../utils/activityLogger' 
 
 const maskUserId = (userId) => {
   if (!userId) return '';

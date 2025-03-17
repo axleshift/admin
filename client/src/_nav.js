@@ -18,11 +18,9 @@ import {
   faPersonBooth
 } from '@fortawesome/free-solid-svg-icons';
 
-/**
- * Navigation configuration function that returns navigation items based on user role and permissions
- */
+
 const _nav = () => {
-  // Get user information from session storage
+  
   const userRole = sessionStorage.getItem('role');
   const userName = sessionStorage.getItem('name')
   const userDepartment = sessionStorage.getItem('department');
@@ -31,7 +29,7 @@ const _nav = () => {
   const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
   const userEmail = sessionStorage.getItem('email');
 
-  // Log session storage values for debugging
+  
   console.log("✅ Session Storage Values:", {
     Role: userRole,
     Department: userDepartment,
@@ -44,7 +42,7 @@ const _nav = () => {
 
   const [allowedRoutes, setAllowedRoutes] = useState([]);
   
-  // Fetch user permissions when component mounts
+  
   useEffect(() => {
     if (!userId) {
       console.error('❌ No userId found in sessionStorage');
@@ -66,7 +64,7 @@ const _nav = () => {
       }
     };
 
-    // Only fetch if no permissions are in session storage
+    
     if (!userPermissions.length) {
       fetchUserPermissions();
     } else {
@@ -74,15 +72,15 @@ const _nav = () => {
     }
   }, [userId]);
 
-  // Array to store navigation items
+  
   const navItems = [];
 
-  // ===== PERMISSION CONFIGURATION =====
-  // This object defines which routes each role+department combination has access to
+  
+  
   const accessPermissions = {
-    // Superadmin permissions by department
+    
     superadmin: {
-      // IMPORTANT: To add new pages for superadmin administrative role, add them to this array
+      
       Administrative: [
         '/employeedash',
         '/hrdash',
@@ -204,7 +202,7 @@ const _nav = () => {
         '/chatbox'
       ]
     },
-    // Admin permissions by department
+    
     admin: {
       HR: [
         '/hrdash',
@@ -239,7 +237,7 @@ const _nav = () => {
         '/restore',
       ]
     },
-    // Manager permissions by department
+    
     Manager: {
       HR: [
         '/hrdash',
@@ -268,12 +266,12 @@ const _nav = () => {
     }
   };
 
-  // Check if current user role and department has any permissions defined
+  
   if (accessPermissions[userRole]?.[userDepartment]) {
-    // ===== NAVIGATION SECTIONS BUILDING =====
     
-    // ===== DASHBOARD SECTION =====
-    // Add main dashboard if user has access
+    
+    
+    
     if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
       navItems.push(
         { 
@@ -286,7 +284,7 @@ const _nav = () => {
       );
     }
 
-    // Add department-specific dashboards
+    
     const dashboards = [
       { path: '/hrdash', name: 'HR Dashboard' },
       { path: '/financedash', name: 'Finance Dashboard' },
@@ -306,8 +304,8 @@ const _nav = () => {
       }
     });
 
-    // ===== ADMIN SECTION =====
-    // Add admin section if user has access to user activity page
+    
+    
     if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
@@ -353,7 +351,7 @@ const _nav = () => {
       );
     }
 
-    // ===== HR SECTION =====
+    
     if (accessPermissions[userRole][userDepartment].includes('/worker')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
@@ -378,7 +376,7 @@ const _nav = () => {
       );
     }
 
-    // ===== FINANCE SECTION =====
+    
     if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
@@ -415,7 +413,7 @@ const _nav = () => {
       );
     }
 
-    // ===== CORE SECTION =====
+    
     if (accessPermissions[userRole][userDepartment].includes('/customer')) {
       navItems.push(
         { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
@@ -452,7 +450,7 @@ const _nav = () => {
       );
     }
     
-    // ===== LOGISTIC SECTION =====
+    
     if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
       navItems.push(
         { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
@@ -465,15 +463,15 @@ const _nav = () => {
       );
     }
 
-    // ===== ACCESS PERMISSIONS SECTION =====
-    // Only add Access Permissions section if user is not superadmin
+    
+    
     if (userRole !== 'superadmin') {
-      // Add "Access Permissions" section at the end
+      
       navItems.push(
         { component: CNavTitle, name: 'Access Permissions', className: 'custom-nav-title' }
       );
 
-      // Add all allowed routes that aren't already in the standard sections
+      
       const standardRoutes = new Set(navItems.filter(item => item.to).map(item => item.to));
       allowedRoutes.forEach(route => {
         if (!standardRoutes.has(route)) {

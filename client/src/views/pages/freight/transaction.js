@@ -19,7 +19,7 @@ import {
   useUpdateShippingMutation,
   useDeleteShippingMutation,
 } from '../../../state/adminApi'
-import ExcelJS from 'exceljs'
+import Papa from 'papaparse';
 import { saveAs } from 'file-saver'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDownload } from '@fortawesome/free-solid-svg-icons'
@@ -62,41 +62,37 @@ const Transaction = () => {
     }
   }
 
-  const handleDownload = async () => {
-    if (!shippingData) return
+  
+const handleDownload = () => {
+  if (!shippingData) return;
 
-    const workbook = new ExcelJS.Workbook()
-    const worksheet = workbook.addWorksheet('Transactions')
+  // Define the headers
+  const headers = ['Customer Name', 'Order Volume (kg)', 'Shipping Type', 'Order Date', 'Status', 'Delivery Date'];
 
-    // Adding headers
-    worksheet.columns = [
-      { header: 'Customer Name', key: 'CustomerName', width: 20 },
-      { header: 'Order Volume (kg)', key: 'OrderVolume', width: 15 },
-      { header: 'Shipping Type', key: 'ShippingType', width: 15 },
-      { header: 'Order Date', key: 'OrderDate', width: 20 },
-      { header: 'Status', key: 'Status', width: 15 },
-      { header: 'Delivery Date', key: 'DeliveryDate', width: 20 },
-    ]
+  // Prepare the data rows
+  const rows = shippingData.map((shipping) => [
+    shipping.customerName,
+    `${shipping.orderVolume} kg`,
+    shipping.shippingType,
+    new Date(shipping.orderDate).toLocaleDateString(),
+    shipping.status,
+    shipping.deliveryDate ? new Date(shipping.deliveryDate).toLocaleString() : 'N/A',
+  ]);
 
-    // Adding data rows
-    shippingData.forEach((shipping) => {
-      worksheet.addRow({
-        CustomerName: shipping.customerName,
-        OrderVolume: `${shipping.orderVolume} kg`,
-        ShippingType: shipping.shippingType,
-        OrderDate: new Date(shipping.orderDate).toLocaleDateString(),
-        Status: shipping.status,
-        DeliveryDate: shipping.deliveryDate
-          ? new Date(shipping.deliveryDate).toLocaleString()
-          : 'N/A',
-      })
-    })
+  // Combine headers and rows
+  const csvContent = Papa.unparse([headers, ...rows]);
 
-    // Generate buffer and trigger download
-    const buffer = await workbook.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    saveAs(blob, 'shipping_transactions.xlsx')
-  }
+  // Create a Blob and trigger download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'shipping_transactions.csv';
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
 
   if (isLoading) return <p>Loading...</p>
   if (error) return <p>Error loading shipping data: {error.message}</p>

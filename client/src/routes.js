@@ -1,14 +1,13 @@
 import React from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
 
-//dashboard
+
 const Dashboard = React.lazy(() => import('./views/dashboard/employeedash'));
 const HrDash = React.lazy(() => import('./views/dashboard/hrdash'));
 const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
 const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
-const Chatbox = React.lazy(() => import('./views/pages/scene/chatbox'));
 const Register = React.lazy(() => import('./views/pages/register/registerNew'));
 
 const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
@@ -16,26 +15,26 @@ const Cron = React.lazy(()=> import ('./views/pages/scene/cron'))
 
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagement'))
-// hr
+
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
 const Payroll = React.lazy(() => import('./views/pages/integrate/hr/payroll'));
-// core
+
 const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
 
-// finance
+
 const FreightAudit = React.lazy(() => import("./views/pages/integrate/finance/freightaudit"))
 const FinancialAnalytics = React.lazy(() => import("./views/pages/integrate/finance/financialanalytics"))
 const Invoice = React.lazy(() => import("./views/pages/integrate/finance/invoice"))
 const Customers = React.lazy(() => import('./views/pages/integrate/finance/customer'));
-// logistics
+
 
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'));
 const Land = React.lazy(() => import('./views/pages/freight/land'));
 const Transaction = React.lazy(() => import('./views/pages/freight/transaction'));
 const Shipping = React.lazy(() => import('./views/pages/freight/shipping'));
 
-// sales
+
 const Sales = React.lazy(() => import('./views/pages/sales/oversales'));
 const Daily = React.lazy(() => import('./views/pages/sales/daily.js'));
 const Monthly = React.lazy(() => import('./views/pages/sales/monthly'));
@@ -47,11 +46,11 @@ const Restore = React.lazy(()=> import('./views/pages/scene/recovery'));
 const Settings = React.lazy(() => import('./views/pages/profile/Settings'));
 const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
 
-// logistic
+
 const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/index'));
 const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
 
-//trial
+
 const Button = React.lazy(()=> import ("./views/pages/scene/button"))
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
 
@@ -60,7 +59,7 @@ const PendingRequest = React.lazy(()=>import ('./views/pages/scene/PendingReques
 const routes = [
   { path: '/', exact: true, name: 'Home' },
 
-//dashboard
+
   { path: '/employeedash', name: 'Dashboard', element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
   { path: '/hrdash', name: 'Dashboard', element: <ProtectedRoute><HrDash /></ProtectedRoute> },
   { path: '/logisticdash', name: 'Dashboard', element: <ProtectedRoute><LogisticDash /></ProtectedRoute> },
@@ -69,7 +68,6 @@ const routes = [
 
 
   { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
-  { path: '/chatbox' , name:'chatbox', element: <ProtectedRoute><Chatbox/></ProtectedRoute>},
 
   { path: '/registerNew', name: 'Register New Users', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
@@ -100,14 +98,14 @@ const routes = [
   { path: '/usermanagement', name:'User Management', element: <ProtectedRoute><UserManager/></ProtectedRoute>},
   { path: '/PendingRequest', name:'PendingRequest', element: <ProtectedRoute><PendingRequest /></ProtectedRoute>},
 
-  //finance
+  
   { path: '/freightaudit', name:'FreightAudit', element: <ProtectedRoute><FreightAudit /></ProtectedRoute> },
   { path: '/financialanalytics', name:'FreightAudit', element: <ProtectedRoute><FinancialAnalytics /></ProtectedRoute> },
   { path: '/invoice', name:'FreightAudit', element: <ProtectedRoute><Invoice /></ProtectedRoute> },
 
-  //core
+  
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
-  //trial
+  
   { path: '/button', name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
 ];

@@ -1,18 +1,18 @@
 import React, { useEffect } from 'react';
 import { useGetFreightAuditsQuery } from '../../../../state/financeApi';
 import { CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CCard, CCardHeader, CCardBody } from '@coreui/react';
-import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from '../../../../utils/activityLogger'; 
 
 const FreightAuditTable = () => {
   const { data: freightAudits, error, isLoading } = useGetFreightAuditsQuery();
 
-  // Log user activity on component mount and when errors occur
+  
   useEffect(() => {
     const userName = sessionStorage.getItem('name');
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     
-    // Log activity when component mounts - user viewed freight audits
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -22,7 +22,7 @@ const FreightAuditTable = () => {
       description: 'User accessed the freight audit data table'
     });
     
-    // Log errors if they occur
+    
     if (error) {
       logActivity({
         name: userName,
@@ -34,7 +34,7 @@ const FreightAuditTable = () => {
       });
     }
     
-    // Log when data successfully loads
+    
     if (freightAudits && !isLoading) {
       logActivity({
         name: userName,
@@ -47,13 +47,13 @@ const FreightAuditTable = () => {
     }
   }, [freightAudits, error, isLoading]);
 
-  // Function to handle row click with activity logging
+  
   const handleRowClick = (audit) => {
     const userName = sessionStorage.getItem('name');
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     
-    // Log activity when user clicks on a specific audit row
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -63,7 +63,7 @@ const FreightAuditTable = () => {
       description: `User viewed details for shipment ID: ${audit.shipmentId}`
     });
     
-    // You could expand this to show more details, open a modal, etc.
+    
     console.log("Audit details:", audit);
   };
 

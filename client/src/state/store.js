@@ -1,4 +1,4 @@
-// filepath: c:\Users\ryans\OneDrive\Desktop\withsecurity\admin - Copy\client\src\state\store.js
+
 import { configureStore } from '@reduxjs/toolkit'
 import { adminApi } from './adminApi'
 import { hrApi } from './hrApi'

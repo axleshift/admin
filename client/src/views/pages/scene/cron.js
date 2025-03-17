@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from './../../../utils/axiosInstance'; // Using the custom axios instance
+import axiosInstance from './../../../utils/axiosInstance'; 
 import { 
   CButton, 
   CForm, 
@@ -22,7 +22,7 @@ const BackupManagerFrontend = () => {
   const [feedback, setFeedback] = useState({ message: '', type: '' });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Clear feedback message after 5 seconds
+  
   useEffect(() => {
     if (feedback.message) {
       const timer = setTimeout(() => {
@@ -32,7 +32,7 @@ const BackupManagerFrontend = () => {
     }
   }, [feedback]);
 
-  // Fetch saved configuration on component mount
+  
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -40,19 +40,19 @@ const BackupManagerFrontend = () => {
         const response = await axiosInstance.get('/backupauto/config');
         const config = response.data;
         
-        // Set backup directory
+        
         if (config.backupDir) {
           setBackupDir(config.backupDir);
         }
         
-        // Parse cron schedule to get hours and minutes
+        
         if (config.cronSchedule) {
-          // Cron format: minutes hours * * *
+          
           const cronParts = config.cronSchedule.split(' ');
           const minutes = cronParts[0];
           const hours = cronParts[1];
           
-          // Convert 24-hour format to 12-hour format
+          
           let hour = parseInt(hours, 10);
           let period = 'AM';
           
@@ -77,13 +77,13 @@ const BackupManagerFrontend = () => {
     fetchConfig();
   }, []);
 
-  // Generate hours options (1-12)
+  
   const hoursOptions = Array.from({ length: 12 }, (_, i) => {
     const hour = i + 1;
     return { value: hour.toString().padStart(2, '0'), label: hour.toString().padStart(2, '0') };
   });
 
-  // Generate minutes options (00-59)
+  
   const minutesOptions = Array.from({ length: 60 }, (_, i) => {
     const minute = i;
     return { value: minute.toString().padStart(2, '0'), label: minute.toString().padStart(2, '0') };
@@ -93,7 +93,7 @@ const BackupManagerFrontend = () => {
     setFeedback({ message, type });
   };
 
-  // Convert 12-hour format to 24-hour for cron
+  
   const convertTo24HourFormat = () => {
     let hour = parseInt(hours, 10);
     
@@ -129,10 +129,10 @@ const BackupManagerFrontend = () => {
   const handleUpdateSchedule = async () => {
     setIsLoading(true);
     try {
-      // Convert to 24-hour format for cron
+      
       const time24 = convertTo24HourFormat();
       
-      // Create cron schedule - minutes hours * * *
+      
       const cronSchedule = `${time24.minutes} ${time24.hours} * * *`;
       
       const response = await axiosInstance.post('/backupauto/update-schedule', { cronSchedule });

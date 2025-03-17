@@ -39,9 +39,9 @@ import {
   FaClipboardList
 } from 'react-icons/fa';
 
-// Import the security API slice and activity tracker
-import { useGetSecurityAlertsQuery, useGetLoginAttemptsQuery, useGetUserActivitiesQuery } from '../../../state/adminApi';
-import logActivity from './../../../utils/ActivityLogger';
+
+import { useGetSecurityAlertsQuery, useGetLoginAttemptsQuery} from '../../../state/adminApi';
+import logActivity from './../../../utils/activityLogger';
 
 const SecurityDashboard = () => {
   const [activeTab, setActiveTab] = useState('alerts');
@@ -51,9 +51,9 @@ const SecurityDashboard = () => {
     department: ''
   });
   
-  // Get user info from localStorage or context on component mount
+  
   useEffect(() => {
-    // This would typically come from your auth context or localStorage
+    
     const userInfo = {
       name: localStorage.getItem('userName') || 'Admin User',
       role: localStorage.getItem('userRole') || 'Administrator',
@@ -62,7 +62,7 @@ const SecurityDashboard = () => {
     setCurrentUser(userInfo);
   }, []);
   
-  // Filter states
+  
   const [alertFilters, setAlertFilters] = useState({
     userId: '',
     alertType: '',
@@ -81,14 +81,14 @@ const SecurityDashboard = () => {
     route: ''
   });
 
-  // Prepare a modified query object for login attempts to handle the "attempt" status specially
+  
   const prepareLoginQuery = () => {
     const queryParams = { ...loginFilters };
     
-    // Special handling for "attempt" status - we need to find records with missing or empty userId
+    
     if (queryParams.status === 'attempt') {
-      // Set up a special flag that your backend can interpret to look for empty userIds
-      // OR handle it on the frontend by removing the status filter and filtering the results after fetching
+      
+      
       delete queryParams.status;
       queryParams.emptyUserId = true;
     }
@@ -96,7 +96,7 @@ const SecurityDashboard = () => {
     return queryParams;
   };
 
-  // Use RTK Query hooks
+  
   const {
     data: securityAlerts = [], 
     isLoading: alertsLoading, 
@@ -115,32 +115,32 @@ const SecurityDashboard = () => {
     error: activitiesError
   } = useGetUserActivitiesQuery(activityFilters);
 
-  // Post-process login attempts based on filter
+  
   const loginAttempts = React.useMemo(() => {
     if (loginFilters.status === 'attempt') {
-      // If filtering for "attempt", only show records with empty userId
+      
       return loginAttemptsRaw.filter(attempt => 
         !attempt.userId || attempt.userId === '' || 
         attempt.userId === null || attempt.userId === undefined
       );
     } else if (loginFilters.status === 'success' || loginFilters.status === 'failed') {
-      // For success/failed, ensure we only show records with matching status AND non-empty userIds
+      
       return loginAttemptsRaw.filter(attempt => 
         attempt.status === loginFilters.status && 
         attempt.userId && attempt.userId !== '' && 
         attempt.userId !== null && attempt.userId !== undefined
       );
     } else {
-      // If no status filter, show all
+      
       return loginAttemptsRaw;
     }
   }, [loginAttemptsRaw, loginFilters.status]);
 
-  // Handle tab change with activity logging
+  
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
     
-    // Log the tab change activity
+    
     logActivity({
       name: currentUser.name,
       role: currentUser.role,
@@ -151,7 +151,7 @@ const SecurityDashboard = () => {
     });
   };
 
-  // Handle alerts filter change
+  
   const handleAlertFilterChange = (e) => {
     const { name, value } = e.target;
     setAlertFilters(prev => ({
@@ -159,7 +159,7 @@ const SecurityDashboard = () => {
       [name]: value
     }));
     
-    // Log filter change activity
+    
     logActivity({
       name: currentUser.name,
       role: currentUser.role,
@@ -170,7 +170,7 @@ const SecurityDashboard = () => {
     });
   };
 
-  // Handle login filter change
+  
   const handleLoginFilterChange = (e) => {
     const { name, value } = e.target;
     setLoginFilters(prev => ({
@@ -178,7 +178,7 @@ const SecurityDashboard = () => {
       [name]: value
     }));
     
-    // Log filter change activity
+    
     logActivity({
       name: currentUser.name,
       role: currentUser.role,
@@ -189,7 +189,7 @@ const SecurityDashboard = () => {
     });
   };
 
-  // Handle activity filter change
+  
   const handleActivityFilterChange = (e) => {
     const { name, value } = e.target;
     setActivityFilters(prev => ({
@@ -197,7 +197,7 @@ const SecurityDashboard = () => {
       [name]: value
     }));
     
-    // Log filter change activity
+    
     logActivity({
       name: currentUser.name,
       role: currentUser.role,
@@ -208,12 +208,12 @@ const SecurityDashboard = () => {
     });
   };
   
-  // Format timestamp
+  
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
   
-  // Get badge color based on status
+  
   const getStatusBadgeColor = (status, isLoginAttempt = false) => {
     if (isLoginAttempt) {
       if (status === 'attempt') return 'warning';
@@ -228,7 +228,7 @@ const SecurityDashboard = () => {
     }
   };
   
-  // Get alert type badge color
+  
   const getAlertTypeBadgeColor = (type) => {
     switch (type) {
       case 'SUSPICIOUS_LOGIN': return 'warning';
@@ -239,7 +239,7 @@ const SecurityDashboard = () => {
     }
   };
 
-  // Get activity action badge color
+  
   const getActivityBadgeColor = (action) => {
     switch (action.toUpperCase()) {
       case 'LOGIN': return 'success';
@@ -253,11 +253,11 @@ const SecurityDashboard = () => {
     }
   };
 
-  // Helper function to safely render potentially complex data
+  
   const renderSafely = (data) => {
     if (data === null || data === undefined) return '-';
     if (typeof data === 'object') {
-      // If it's an object, convert to string or extract a relevant property
+      
       if (data.name) return data.name;
       if (data.id) return data.id;
       if (data.toString && data.toString() !== '[object Object]') return data.toString();
@@ -266,13 +266,13 @@ const SecurityDashboard = () => {
     return data;
   };
 
-  // Helper to determine login status based on userId and status
+  
   const determineLoginStatus = (attempt) => {
-    // If userId is missing or empty, mark as "attempt"
+    
     if (!attempt.userId || attempt.userId === '' || attempt.userId === null || attempt.userId === undefined) {
       return 'attempt';
     }
-    // Otherwise use the original status
+    
     return attempt.status;
   };
 
@@ -605,7 +605,7 @@ const SecurityDashboard = () => {
                           route: ''
                         });
                         
-                        // Log reset filters activity
+                        
                         logActivity({
                           name: currentUser.name,
                           role: currentUser.role,
@@ -698,9 +698,9 @@ const SecurityDashboard = () => {
                     <CButton 
                       color="primary"
                       onClick={() => {
-                        // Implement your export functionality here
                         
-                        // Log export activity
+                        
+                        
                         logActivity({
                           name: currentUser.name,
                           role: currentUser.role,
@@ -710,7 +710,7 @@ const SecurityDashboard = () => {
                           description: 'User exported activity logs'
                         });
                         
-                        // Alert for demo purposes
+                        
                         alert('Activity logs exported successfully');
                       }}
                     >

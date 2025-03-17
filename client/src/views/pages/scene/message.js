@@ -11,7 +11,7 @@ const Message = () => {
   const [updateMessageStatus] = useUpdateMessageStatusMutation();
   
   useEffect(() => {
-    // Auto-refresh messages every 30 seconds
+    
     const interval = setInterval(() => {
       refetch();
     }, 30000);
@@ -25,7 +25,7 @@ const Message = () => {
 
       await updateMessageStatus({ id: messageId, status, responderUsername }).unwrap();
       alert(`Access ${status}!`);
-      refetch(); // Refresh messages after update
+      refetch(); 
     } catch (err) {
       console.error("Error updating message:", err);
       alert("Failed to update message.");

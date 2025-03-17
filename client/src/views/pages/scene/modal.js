@@ -5,13 +5,13 @@ import {
   useGetUserPermissionsQuery, 
   useGrantAccessMutation, 
   useRevokeAccessMutation 
-} from '../../../state/hrApi'; // Adjust the import path as needed
+} from '../../../state/hrApi'; 
 
 const GrantAccessModal = ({ visible, onClose, userId }) => {
   const [selectedPermissions, setSelectedPermissions] = useState([]);
   const name = sessionStorage.getItem('name');
 
-  // List of all permissions that can be granted
+  
   const allPermissions = [
     { name: 'HR Dashboard', to: '/hrdash' },
     { name: 'Finance Dashboard', to: '/financedash' },
@@ -28,21 +28,21 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     { name: 'Breakdown', to: '/breakdown' },
   ];
 
-  // Fetch current user permissions
+  
   const { data, isLoading, error } = useGetUserPermissionsQuery(userId);
 
-  // Safely extract permissions, defaulting to an empty array
+  
   const currentPermissions = Array.isArray(data?.permissions) 
     ? data.permissions 
     : (Array.isArray(data) 
       ? data 
       : []);
 
-  // Mutations for granting and revoking access
+  
   const [grantAccessMutation] = useGrantAccessMutation();
   const [revokeAccessMutation] = useRevokeAccessMutation();
 
-  // Prevent clicks inside the modal from closing it
+  
   const handleModalClick = (e) => {
     e.stopPropagation();
   };
@@ -53,7 +53,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     );
   };
 
-  // Grant Access 
+  
   const handleGrant = async () => {
     if (!userId) {
       console.error("❌ Error: userId is null before making the API request.");
@@ -76,7 +76,7 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     }
   };
 
-  // Revoke Access
+  
   const handleRevoke = async () => {
     if (!userId) {
       console.error('❌ Error: userId is null before making the API request.');
@@ -98,12 +98,12 @@ const GrantAccessModal = ({ visible, onClose, userId }) => {
     }
   };
 
-  // Render loading state if permissions are being fetched
+  
   if (isLoading) {
     return <div>Loading permissions...</div>;
   }
 
-  // Render error state if there was an issue fetching permissions
+  
   if (error) {
     return <div>Error loading permissions: {error.toString()}</div>;
   }

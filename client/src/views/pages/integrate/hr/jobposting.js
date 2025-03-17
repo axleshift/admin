@@ -18,7 +18,7 @@ import {
   CModalFooter,
 } from '@coreui/react';
 import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi';
-import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from '../../../../utils/activityLogger'; 
 
 const RecruitmentModule = () => {
   const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();
@@ -31,7 +31,7 @@ const RecruitmentModule = () => {
     userId: ''
   });
 
-  // Get user information from sessionStorage on component mount
+  
   useEffect(() => {
     setUserInfo({
       name: sessionStorage.getItem('name'),
@@ -42,14 +42,14 @@ const RecruitmentModule = () => {
   }, []);
 
   const { data: jobDetails, isLoading: isJobLoading } = useGetJobPostingByIdQuery(selectedJobId, {
-    skip: !selectedJobId, // Only fetch details when a job is selected
+    skip: !selectedJobId, 
   });
 
   const viewApplications = (jobId) => {
     setSelectedJobId(jobId);
     setModalVisible(true);
     
-    // Track activity
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
@@ -61,7 +61,7 @@ const RecruitmentModule = () => {
   };
 
   const editJob = (jobId) => {
-    // Track activity
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
@@ -71,12 +71,12 @@ const RecruitmentModule = () => {
       description: `User initiated editing for job ID: ${jobId}`
     });
     
-    // Add your edit logic here
+    
     console.log(`Editing job: ${jobId}`);
   };
 
   const deleteJob = (jobId) => {
-    // Track activity
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
@@ -86,7 +86,7 @@ const RecruitmentModule = () => {
       description: `User deleted job ID: ${jobId}`
     });
     
-    // Add your delete logic here
+    
     console.log(`Deleting job: ${jobId}`);
   };
 
@@ -94,7 +94,7 @@ const RecruitmentModule = () => {
     setModalVisible(false);
     setSelectedJobId(null);
     
-    // Track activity
+    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,

@@ -4,7 +4,7 @@ import { CCard, CCardBody, CCardHeader, CForm, CFormInput, CButton, CAlert, CIma
 const AnnouncementBox = () => {
   const [announcement, setAnnouncement] = useState("🚀 Exciting updates coming soon!");
   const [image, setImage] = useState(null);
-  const [showAlert, setShowAlert] = useState(true); // Default announcement is visible
+  const [showAlert, setShowAlert] = useState(true); 
 
   const handleTextChange = (e) => {
     setAnnouncement(e.target.value);
@@ -13,14 +13,14 @@ const AnnouncementBox = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file)); // Preview image
+      setImage(URL.createObjectURL(file)); 
     }
   };
 
   const handlePostAnnouncement = () => {
     if (announcement || image) {
       setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 5000); // Auto-hide after 5s
+      setTimeout(() => setShowAlert(false), 5000); 
     }
   };
 

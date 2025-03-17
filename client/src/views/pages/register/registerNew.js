@@ -31,7 +31,7 @@ const HRUsersPage = () => {
   const [selectedUsers, setSelectedUsers] = useState({});
   const [showPassword, setShowPassword] = useState({});
 
-  // Get current user information from local storage or context
+  
   useEffect(() => {
     try {
       const userString = localStorage.getItem('currentUser');
@@ -39,7 +39,7 @@ const HRUsersPage = () => {
         const user = JSON.parse(userString);
         setCurrentUser(user);
         
-        // Log page view when component mounts
+        
         logActivity({
           name: user.name || 'Unknown User',
           role: user.role || 'Unknown Role',
@@ -70,7 +70,7 @@ const HRUsersPage = () => {
     else if (department === "HR"){
       return ['Admin', 'Manager', 'Employee', 'Contractor'];
     }
-    // Return an empty array if the department doesn't match any defined category
+    
     return [];
   };
 
@@ -118,9 +118,9 @@ const HRUsersPage = () => {
       const response = await saveUser(payload).unwrap();
       console.log('User saved successfully:', response);
       
-      // Log user registration activity with detailed information
+      
       if (currentUser) {
-        // Create a detailed description including all user info
+        
         const detailedDescription = `Registered new user: ${user.firstName} ${user.lastName} (${user.email}) with role: ${userData.role} in department: ${userData.department}`;
         
         logActivity({
@@ -137,7 +137,7 @@ const HRUsersPage = () => {
     } catch (error) {
       console.error('Error saving user:', error);
       
-      // Log error in user registration
+      
       if (currentUser) {
         logActivity({
           name: currentUser.name || 'Unknown User',
@@ -149,7 +149,7 @@ const HRUsersPage = () => {
         });
       }
       
-      // Log the detailed error message if available
+      
       if (error.data && error.data.error) {
         console.error('Validation error:', error.data.error);
       }

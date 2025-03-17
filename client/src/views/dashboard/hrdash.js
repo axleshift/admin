@@ -12,7 +12,7 @@ const Hrdash = () => {
   const { data: jobPostings, error: jobPostingsError, isLoading: jobPostingsLoading } = useGetJobPostingsQuery();
   const { data: payrollData, error: payrollError, isLoading: payrollLoading } = useGetpayrollQuery();
 
-  console.log("Payroll Data:", payrollData); // Debugging
+  console.log("Payroll Data:", payrollData); 
 
   if (dashboardLoading || jobPostingsLoading || payrollLoading) return <p>Loading...</p>;
   if (dashboardError || jobPostingsError || payrollError) return <p>Error fetching data</p>;
@@ -23,12 +23,12 @@ const Hrdash = () => {
         <CCol xs={12}>
           <CustomHeader title="HR Dashboard" subtitle="Welcome to the HR Dashboard" />
 
-          {/* Place Announcement Box within content flow */}
+        
           <AnnouncementBox message="🚀 New HR Features Released! Check them out!" autoClose={false} />
         </CCol>
       </CRow>
 
-      {/* StatBox and Job Postings Side by Side */}
+ 
       <CRow className="my-3">
         <CCol xs={12} lg={6} className="mb-3">
           <StatBox

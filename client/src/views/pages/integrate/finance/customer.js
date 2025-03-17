@@ -17,19 +17,19 @@ import {
 import { useGetCustomersQuery } from '../../../../state/financeApi';
 import CustomHeader from '../../../../components/header/customhead';
 import { useNavigate } from 'react-router-dom';
-import logActivity from '../../../../utils/ActivityLogger'
+import logActivity from '../../../../utils/activityLogger'
 
 const Index = () => {
   const { data, isLoading, error } = useGetCustomersQuery();
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   
-  // Get user information from sessionStorage
+  
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
   const userName = sessionStorage.getItem('name');
   
-  // Log page visit on component mount
+  
   useEffect(() => {
     logActivity({
       name: userName,
@@ -51,16 +51,16 @@ const Index = () => {
     return <div>Error: {error.message}</div>;
   }
 
-  // Filter data based on search input (name or email)
+  
   const filteredData = data.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Handler for viewing customer details
+  
   const handleViewCustomer = (customerId) => {
-    // Log the view action
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -70,16 +70,16 @@ const Index = () => {
       description: `User viewed details for customer ID: ${customerId}`
     });
     
-    // Navigate to the details page
+    
     navigate(`/details/${customerId}`);
   };
 
-  // Handler for search
+  
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     
-    // Log search activity if the search term is at least 3 characters
+    
     if (value.length >= 3) {
       logActivity({
         name: userName,

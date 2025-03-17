@@ -15,7 +15,7 @@ const Forgotpass = React.lazy(() => import("./views/pages/profile/forgotpass"));
 const Resetpass = React.lazy(() => import("./views/pages/profile/resetpass"));
 const OTP = React.lazy(()=> import ("./views/pages/profile/OTP"));
 
-// Create a separate component for route content that needs location
+
 const AppContent = () => {
   const { isColorModeSet, setColorMode } = useColorModes("coreui-free-react-admin-template-theme");
   const storedTheme = useSelector((state) => state.changeState.theme);
@@ -57,7 +57,7 @@ const AppContent = () => {
   );
 };
 
-// Main App component
+
 const App = () => {
   return (
     <BrowserRouter>

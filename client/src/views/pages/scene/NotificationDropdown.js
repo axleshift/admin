@@ -9,15 +9,15 @@ const NotificationDropdown = () => {
   useEffect(() => {
     const handleNewUserRegistered = (data) => {
       const newNotification = {
-        id: Date.now(), // Unique ID for each notification
+        id: Date.now(), 
          message: `${data.user.name} has registered as ${data.user.role}.`
       };
 
-      setNotifications((prevNotifications) => [newNotification, ...prevNotifications]); // Add to the beginning
-      toast.success(newNotification.message); // Show the toast
+      setNotifications((prevNotifications) => [newNotification, ...prevNotifications]); 
+      toast.success(newNotification.message); 
 
-      // Optionally limit the number of notifications stored:
-      setNotifications(prevNotifications => prevNotifications.slice(0, 10)); // Keep only the 10 most recent
+      
+      setNotifications(prevNotifications => prevNotifications.slice(0, 10)); 
     };
 
     socket.on("newUserRegistered", handleNewUserRegistered);

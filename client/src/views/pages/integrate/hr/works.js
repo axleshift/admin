@@ -25,14 +25,14 @@ import {
   usePostgenerateMutation 
 } from '../../../../state/hrApi';
 import CustomHeader from '../../../../components/header/customhead';
-import ExcelJS from 'exceljs';
+import Papa from 'papaparse';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import GrantAccessModal from '../../scene/modal.js';
 import axios from 'axios';
 
-// Import the activity logger
-import logActivity from './../../../../utils/ActivityLogger';
+
+import logActivity from './../../../../utils/activityLogger';
 
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
@@ -52,12 +52,12 @@ const Works = () => {
   const [accessButtonClicked, setAccessButtonClicked] = useState(false);
   const [forgotPasswordMutation] = usePostForgotPasswordMutation();
 
-  // Get current user details for activity logging
+  
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
   const userName = sessionStorage.getItem('name');
 
-  // Define hooks for the department mutations
+  
   const [postToHr] = usePostToHrMutation();
   const [postToFinance] = usePostToFinanceMutation();
   const [postToCore] = usePostToCoreMutation();
@@ -71,7 +71,7 @@ const Works = () => {
   }, [selectedEmployeeId]); 
 
   useEffect(() => {
-    // Log page visit when component mounts
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -80,7 +80,7 @@ const Works = () => {
       action: 'Page Visit',
       description: 'User visited the Employees page'
     });
-  }, []); // Empty dependency array ensures this runs only once when component mounts
+  }, []); 
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -88,7 +88,7 @@ const Works = () => {
   const handleEmployeeClick = (id) => {
     setSelectedEmployeeId((prevId) => (prevId === id ? null : id));
     
-    // Log employee card expansion
+    
     if (id && !selectedEmployeeId) {
       const employee = data.find(user => user._id === id);
       logActivity({
@@ -102,7 +102,7 @@ const Works = () => {
     }
   };
   
-  // Prevent event propagation when clicking inside the employee details
+  
   const stopPropagation = (e) => {
     e.stopPropagation();
   };
@@ -117,11 +117,11 @@ const Works = () => {
       await changeRole({ userId, newRole });
       alert('Role updated successfully!');
 
-      // Find the user's name from the data array
+      
       const user = data.find((user) => user._id === userId);
       const userName = user ? user.name : 'Unknown User';
       
-      // Log role change activity
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -134,7 +134,7 @@ const Works = () => {
     } catch (err) {
       alert('Error updating role');
       
-      // Log failed role change
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -149,14 +149,14 @@ const Works = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        // Find the user's name from the data array before deletion
+        
         const user = data.find((user) => user._id === userId);
         const targetUserName = user ? user.name : 'Unknown User';
         
         await fireUser({ userId });
         alert('User deleted successfully!');
 
-        // Log user deletion
+        
         logActivity({
           name: userName,
           role: userRole,
@@ -169,7 +169,7 @@ const Works = () => {
       } catch (err) {
         alert('Error deleting user');
         
-        // Log failed deletion
+        
         logActivity({
           name: userName,
           role: userRole,
@@ -182,47 +182,33 @@ const Works = () => {
     }
   };
 
-  const handleDownloadAll = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('All Employees');
 
-    worksheet.columns = [
-      { header: 'Username', key: 'username', width: 30 },
-      { header: 'Name', key: 'name', width: 30 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Phone Number', key: 'phoneNumber', width: 20 },
-      { header: 'Country', key: 'country', width: 20 },
-      { header: 'Occupation', key: 'occupation', width: 20 },
-      { header: 'Role', key: 'role', width: 20 },
-      { header: 'Department', key: 'department', width: 20 },
-    ];
 
-    filteredData.forEach((item) => {
-      worksheet.addRow({
-        username: item.username,
-        name: item.name,
-        email: item.email,
-        phoneNumber: item.phoneNumber,
-        country: item.country,
-        occupation: item.occupation,
-        role: item.role,
-        department: item.department,
-      });
-    });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const handleDownloadAll = () => {
+    const columns = ['Username', 'Name', 'Email', 'Phone Number', 'Country', 'Occupation', 'Role', 'Department'];
+    const data = filteredData.map(item => [
+      item.username,
+      item.name,
+      item.email,
+      item.phoneNumber,
+      item.country,
+      item.occupation,
+      item.role,
+      item.department
+    ]);
+  
+    const csvContent = Papa.unparse([columns, ...data]);
+  
+    // Trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'All_Employees.xlsx';
+    a.download = 'All_Employees.csv';
     a.click();
     URL.revokeObjectURL(url);
-
-    // Track the Download All button click
-    setDownloadAllClicked(true);
-    
-    // Log download activity
+  
+    // Log activity
     logActivity({
       name: userName,
       role: userRole,
@@ -232,10 +218,11 @@ const Works = () => {
       description: `Downloaded employee data (${filteredData.length} records)`
     });
   };
+  
 
   const filteredData = data.filter((item) => {
-    const username = item.username || ""; // Default to empty string if undefined
-    const email = item.email || ""; // Default to empty string if undefined
+    const username = item.username || ""; 
+    const email = item.email || ""; 
   
     const matchesSearch =
       username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -283,7 +270,7 @@ const Works = () => {
       console.log(`Response from ${department}:`, response);
       alert(response.message);
       
-      // Log send to department activity
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -297,7 +284,7 @@ const Works = () => {
       console.error('Error during generation and sending:', error);
       alert('Failed to generate token or send data.');
       
-      // Log failed send
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -315,7 +302,7 @@ const Works = () => {
       return;
     }
     
-    // Loop through the filtered employees and generate token for each one in the selected department
+    
     const departmentEmployees = filteredData.filter(employee => employee.department === selectedDepartment);
     
     if (departmentEmployees.length === 0) {
@@ -327,7 +314,7 @@ const Works = () => {
       handleGenerateAndSend(employee._id, selectedDepartment);
     });
     
-    // Log bulk send activity
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -349,10 +336,10 @@ const Works = () => {
 
       const response = await forgotPasswordMutation(user.email).unwrap();
       
-      // Success handling
+      
       alert(response.message || 'Reset password link sent successfully');
       
-      // Log password reset activity
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -363,11 +350,11 @@ const Works = () => {
       });
       
     } catch (err) {
-      // Error handling
+      
       console.error('Error resetting password:', err);
       alert(err.message || 'Failed to send reset password link');
       
-      // Log failed password reset
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -391,7 +378,7 @@ const Works = () => {
             onChange={(e) => {
               setSearchTerm(e.target.value);
               
-              // Log search activity if search term is not empty and at least 3 characters
+              
               if (e.target.value && e.target.value.length >= 3) {
                 logActivity({
                   name: userName,
@@ -413,7 +400,7 @@ const Works = () => {
               onChange={(e) => {
                 setSelectedDepartment(e.target.value);
                 
-                // Log department filter change
+                
                 if (e.target.value !== 'all') {
                   logActivity({
                     name: userName,
@@ -443,7 +430,7 @@ const Works = () => {
               onChange={(e) => {
                 setSelectedRoleFilter(e.target.value);
                 
-                // Log role filter change
+                
                 if (e.target.value !== 'all') {
                   logActivity({
                     name: userName,
@@ -493,11 +480,11 @@ const Works = () => {
             className="mb-3"
             style={{ cursor: 'pointer' }}
             onClick={(e) => {
-              // Prevent the button click from triggering the card's onClick
+              
               if (!e.target.closest('button')) {
                 console.log("🟢 Card Clicked ID:", item._id);
                 
-                // Log employee card click
+                
                 if (selectedEmployeeId !== item._id) {
                   logActivity({
                     name: userName,
@@ -509,8 +496,8 @@ const Works = () => {
                   });
                 }
                 
-                setSelectedEmployeeId((prevId) => (prevId === item._id ? null : item._id)); // Toggle card content
-                setAccessButtonClicked(false); // Reset the access button click state
+                setSelectedEmployeeId((prevId) => (prevId === item._id ? null : item._id)); 
+                setAccessButtonClicked(false); 
               }
             }}
           >
@@ -521,10 +508,10 @@ const Works = () => {
               <CButton
                 color="primary"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent event propagation to the card's onClick
+                  e.stopPropagation(); 
                   console.log("✅ Button Clicked ID:", item._id);
                   
-                  // Log access button click
+                  
                   logActivity({
                     name: userName,
                     role: userRole,
@@ -534,11 +521,11 @@ const Works = () => {
                     description: `Opened access management for: ${item.name}`
                   });
                   
-                  setSelectedEmployeeId(item._id); // Set the selected employee
-                  setAccessButtonClicked(true); // Mark that the "Access" button was clicked
+                  setSelectedEmployeeId(item._id); 
+                  setAccessButtonClicked(true); 
                   
                   setTimeout(() => {
-                    setShowModal(true); // Open the modal after setting the employee
+                    setShowModal(true); 
                   }, 100);
                 }}
               >
@@ -553,7 +540,7 @@ const Works = () => {
                 onClose={() => {
                   setShowModal(false);
                   
-                  // Log modal close
+                  
                   logActivity({
                     name: userName,
                     role: userRole,
@@ -582,7 +569,7 @@ const Works = () => {
                   <CListGroupItem>
                     <CFormSelect
                       value={selectedRole[item._id] || ''}
-                      onClick={(e) => e.stopPropagation()} // Prevent triggering the card's onClick
+                      onClick={(e) => e.stopPropagation()} 
                       onChange={(e) => {
                         const newRole = e.target.value;
                         setSelectedRole({
@@ -590,7 +577,7 @@ const Works = () => {
                           [item._id]: newRole,
                         });
                         
-                        // Log role selection change
+                        
                         if (newRole) {
                           logActivity({
                             name: userName,

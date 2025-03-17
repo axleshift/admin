@@ -1,6 +1,6 @@
 import React from 'react';
 import { CButton } from '@coreui/react';
-import logActivity from '../../../utils/ActivityLogger';
+import logActivity from '../../../utils/activityLogger';
 
 const ExampleButtonPage = () => {
   const userRole = sessionStorage.getItem('role');

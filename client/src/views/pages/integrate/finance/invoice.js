@@ -18,18 +18,18 @@ import {
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilMoney, cilClock, cilWarning } from '@coreui/icons';
-import logActivity from '../../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from '../../../../utils/activityLogger'; 
 
 const InvoicingDashboard = () => {
   const { data: invoices = [], isLoading, error } = useGetFreightInvoiceQuery();
 
-  // Log user activity on component mount
+  
   useEffect(() => {
     const userName = sessionStorage.getItem('name');
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     
-    // Log activity when component mounts - user viewed invoice dashboard
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -39,7 +39,7 @@ const InvoicingDashboard = () => {
       description: 'User accessed the invoice management dashboard'
     });
     
-    // Log errors if they occur
+    
     if (error) {
       logActivity({
         name: userName,
@@ -51,7 +51,7 @@ const InvoicingDashboard = () => {
       });
     }
     
-    // Log when data successfully loads
+    
     if (invoices.length > 0 && !isLoading) {
       logActivity({
         name: userName,
@@ -64,7 +64,7 @@ const InvoicingDashboard = () => {
     }
   }, [invoices, error, isLoading]);
 
-  // Compute statistics
+  
   const stats = invoices.length > 0 ? {
     totalInvoices: invoices.length,
     pendingAmount: invoices
@@ -75,13 +75,13 @@ const InvoicingDashboard = () => {
     ).length,
   } : { totalInvoices: 0, pendingAmount: 0, overdueinvoices: 0 };
 
-  // Handle update status with activity logging
+  
   const handleUpdateStatus = (invoiceId, newStatus) => {
     const userName = sessionStorage.getItem('name');
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     
-    // Log the status update action
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -91,17 +91,17 @@ const InvoicingDashboard = () => {
       description: `User updated invoice ${invoiceId} status to ${newStatus}`
     });
     
-    // Add your API call or state update logic here
+    
     console.log(`Updating invoice ${invoiceId} to status ${newStatus}`);
   };
 
-  // Handle create invoice with activity logging
+  
   const handleCreateInvoice = () => {
     const userName = sessionStorage.getItem('name');
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     
-    // Log the create invoice action
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -111,7 +111,7 @@ const InvoicingDashboard = () => {
       description: 'User initiated invoice creation process'
     });
     
-    // Add your navigation or modal open logic here
+    
     console.log('Creating new invoice');
   };
 

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import socket from "../../../util/socket"; // Import the socket instance
+import socket from "../../../util/socket"; 
 import { CToast, CToastHeader, CToastBody, CToaster } from "@coreui/react";
 
 const NotificationToast = () => {
-  const [toasts, setToasts] = useState([]); // Initialize state as an array
+  const [toasts, setToasts] = useState([]); 
 
   useEffect(() => {
-    // Handle "newUserRegistered" event
+    
     const handleNewUserRegistered = (data) => {
       setToasts((prevToasts) => [
         ...prevToasts,
@@ -16,7 +16,7 @@ const NotificationToast = () => {
               className="rounded me-2"
               width="20"
               height="20"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http:/awd/www.w3.org/2000/svg"
               preserveAspectRatio="xMidYMid slice"
               focusable="false"
               role="img"
@@ -33,7 +33,7 @@ const NotificationToast = () => {
       ]);
     };
 
-    // Handle "permissionUpdated" event
+    
     const handlePermissionUpdated = (data) => {
       setToasts((prevToasts) => [
         ...prevToasts,
@@ -66,7 +66,7 @@ const NotificationToast = () => {
       ]);
     };
 
-    // Handle "permissionRevoked" event
+    
     const handlePermissionRevoked = (data) => {
       setToasts((prevToasts) => [
         ...prevToasts,
@@ -93,7 +93,7 @@ const NotificationToast = () => {
       ]);
     };
 
-    // Handle "requestStatusUpdate" event
+    
     const handleRequestStatusUpdate = (data) => {
       console.log("Received requestStatusUpdate event:", data);
 
@@ -126,22 +126,22 @@ const NotificationToast = () => {
       ]);
     };
 
-    // Register event listeners
+    
     socket.on("newUserRegistered", handleNewUserRegistered);
     socket.on("permissionUpdated", handlePermissionUpdated);
     socket.on("permissionRevoked", handlePermissionRevoked);
     socket.on("requestStatusUpdate", handleRequestStatusUpdate);
 
-    // Cleanup the listeners when the component unmounts
+    
     return () => {
       socket.off("newUserRegistered", handleNewUserRegistered);
       socket.off("permissionUpdated", handlePermissionUpdated);
       socket.off("permissionRevoked", handlePermissionRevoked);
       socket.off("requestStatusUpdate", handleRequestStatusUpdate);
     };
-  }, []); // Empty dependency array ensures this effect runs only once
+  }, []); 
 
-  return <CToaster placement="top-end">{toasts}</CToaster>; // Display all toasts
+  return <CToaster placement="top-end">{toasts}</CToaster>; 
 };
 
 export default NotificationToast;
