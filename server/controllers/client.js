@@ -14,7 +14,7 @@ import {
 } from '../UTIL/securityUtils.js';
 import { sendOTPEmail } from "../UTIL/emailService.js";
 import OTP from '../model/OTP.js'; // Ensure the correct path
-import {resetFailedAttempts} from '../UTIL/resetFailedAttempts'
+import {resetFailedAttempts} from '../UTIL/resetFailedattempts.js'
 const OTP_EXPIRY = 10 * 60 * 1000; 
 import { generateAccessToken, generateRefreshToken } from '../middleware/generateToken.js';
 const passwordComplexityOptions = {
