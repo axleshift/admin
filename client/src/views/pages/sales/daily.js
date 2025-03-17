@@ -5,7 +5,7 @@ import { useGetSalesQuery } from '../../../state/financeApi';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CCard, CCardHeader, CCardBody, CRow, CCol } from '@coreui/react';
 import CustomHeader from '../../../components/header/customhead';
-import logActivity from './../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from './../../../utils/activityLogger'; // Import the logActivity function
 
 const Daily = () => {
   const [startDate, setStartDate] = useState(new Date("2024-01-01"));

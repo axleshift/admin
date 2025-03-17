@@ -4,7 +4,7 @@ import CustomHeader from "../../../components/header/customhead";
 import OverviewChart from "./overviewChart";
 import { useGetSalesQuery } from "../../../state/financeApi"; 
 import PropTypes from 'prop-types';
-import logActivity from './../../../utils/ActivityLogger'; // Import the logActivity function
+import logActivity from './../../../utils/activityLogger'; // Import the logActivity function
 
 const Overview = ({isDashboard = false}) => {
   const [view, setView] = useState("units");
