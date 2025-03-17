@@ -2,7 +2,7 @@ import User from "../model/User.js";
 import Overall from '../model/overall.js';
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import bcrypt from "bcryptjs";
+import bcryptjs from 'bcryptjs';
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
@@ -89,27 +89,27 @@ export const forgotPassword = async (req, res) => {
     }
 };
 export const resetPassword = async (req, res) => {
-    const { id, token } = req.params;
-    const { password } = req.body;
+  const { id, token } = req.params;
+  const { password } = req.body;
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        const user = await User.findById(id);
-        if (!user) return res.status(404).json({ Status: "User not found" });
+  try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ Status: "User not found" });
 
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
-        await user.save();
+      const salt = await bcryptjs.genSalt(10);
+      user.password = await bcryptjs.hash(password, salt);
+      await user.save();
 
-        res.json({ Status: "Success" });
-    } catch (err) {
-        if (err.name === "JsonWebTokenError") {
-            return res.status(400).json({ Status: "Error with token" });
-        } else if (err.name === "TokenExpiredError") {
-            return res.status(400).json({ Status: "Token has expired" });
-        }
-        res.status(500).json({ Status: "Internal Server Error", error: err.message });
-    }
+      res.json({ Status: "Success" });
+  } catch (err) {
+      if (err.name === "JsonWebTokenError") {
+          return res.status(400).json({ Status: "Error with token" });
+      } else if (err.name === "TokenExpiredError") {
+          return res.status(400).json({ Status: "Token has expired" });
+      }
+      res.status(500).json({ Status: "Internal Server Error", error: err.message });
+  }
 };
 
 
