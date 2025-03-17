@@ -33,19 +33,14 @@ const app = express();
 // ✅ 3. Create HTTP server and Socket.io instance
 const server = http.createServer(app);
 //uncommet niyo nlang pag may problema
-// const io = new Server(server, {
-//     cors: {
-//         origin: "http://localhost:3000",
-//         methods: ["GET", "POST"]
-//     }
-// });
-
 const io = new Server(server, {
     cors: {
-        origin: true,
+        origin: "http://localhost:3000",
         methods: ["GET", "POST"]
     }
 });
+
+
 
 // ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
 app.set("io", io);
@@ -60,16 +55,25 @@ app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// app.use(
+//     cors({
+//         origin: [
+//             'http://localhost:3000',
+//             process.env.CLIENT_URL,
+//         ],
+//         credentials: true,
+//         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     })
+// );
+
 app.use(
     cors({
-        origin: [
-            'http://localhost:3000',
-            process.env.CLIENT_URL,
-        ],
+        origin: true,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     })
 );
+
 
 // ✅ 6. Set up session middleware before routes
 app.use(session({
