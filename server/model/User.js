@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
+
 const userSchema = new mongoose.Schema(
   {
     githubId: String,
@@ -48,8 +49,6 @@ const userSchema = new mongoose.Schema(
       default: null, // Default value is null if no expiration is set
     },
 
-
-
     refreshToken: { type: String },
     backupDirectory: { type: String},
     permissions: { type: [String], default: [] }, // Store only permission names
@@ -57,30 +56,31 @@ const userSchema = new mongoose.Schema(
     accountLocked: {
       type: Boolean,
       default: false
-      },
-      lockExpiration: {
-          type: Date,
-          default: null
-      },
-      passwordResetToken: String,
-      passwordResetExpires: Date,
-      isActive: {
-          type: Boolean,
-          default: true
-      },
-      otp:{type:String},
-      otpExpires:{type:Date}
+    },
+    lockExpiration: {
+      type: Date,
+      default: null
+    },
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    otp:{type:String},
+    otpExpires:{type:Date}
   },
   { timestamps: true }
 );
+
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
   }
 
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    const salt = await bcryptjs.genSalt(10);
+    this.password = await bcryptjs.hash(this.password, salt);
     next();
   } catch (err) {
     next(err);
@@ -89,7 +89,8 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return await bcryptjs.compare(candidatePassword, this.password);
 };
+
 const User = mongoose.model("User", userSchema);
 export default User;

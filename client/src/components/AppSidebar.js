@@ -8,17 +8,22 @@ import {
   CSidebarFooter,
   CSidebarHeader,
   CSidebarToggler,
+  CImage,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { AppSidebarNav } from './AppSidebarNav'
-import { logo } from 'src/assets/brand/logo'
-import { sygnet } from 'src/assets/brand/sygnet'
+// import { logo } from 'src/assets/brand/logo'
+//import { sygnet } from 'src/assets/brand/sygnet'
 import navigation from '../_nav'
+
+import logo from './../../public/images/admin.png'
+import icon from './../../public/favicon.ico'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.changeState.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
+
 
   const reduxUserRole = useSelector((state) => state.changeState.auth?.role)
   const reduxUserDepartment = useSelector((state) => state.changeState.auth?.department)
@@ -60,8 +65,8 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
-          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+        <CImage fluid src={logo} alt="Logo" height={30} className="sidebar-brand-full" />
+        <CImage src={icon} alt="Logo" height={30} className="sidebar-brand-narrow" />
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

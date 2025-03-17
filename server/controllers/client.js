@@ -157,7 +157,6 @@ const userSchema = Joi.object({
       }
       
       // Hash the password using bcryptjs instead of bcrypt
-      const bcryptjs = require('bcryptjs');
       const salt = await bcryptjs.genSalt(10);
       const hashedPassword = await bcryptjs.hash(password, salt);
       
@@ -440,7 +439,7 @@ const userSchema = Joi.object({
         }
   
         // Step 5: Verify password
-        const bcryptjs = require('bcryptjs');
+
         const isPasswordValid = await bcryptjs.compare(password, user.password);
   
         if (!isPasswordValid) {
@@ -625,7 +624,6 @@ export const registerCustomer = async (req, res) => {
 
 export const changePassword = async (req, res) => {
   const { email, currentPassword, newPassword } = req.body;
-  const bcryptjs = require('bcryptjs');
 
   try {
       // Find the user by email
