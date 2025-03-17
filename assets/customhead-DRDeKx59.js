@@ -1,1 +1,0 @@
-import{j as r}from"./index-HAz-9vrD.js";import"./vendor-react-B6URQkMn.js";import{k as t,l as a,W as d,ac as o,P as s}from"./vendor-coreui-BGyit7oL.js";const p=({title:e,subtitle:i})=>r.jsx(t,{className:"border-0",children:r.jsxs(a,{children:[r.jsx(d,{children:e}),r.jsx(o,{children:i})]})});p.propTypes={title:s.string.isRequired,subtitle:s.string.isRequired};export{p as C};
