@@ -32,6 +32,7 @@ import {
   faCopy
 } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosInstance';
+import PropTypes from 'prop-types';
 
 const SecurityAssistant = ({ userData, onSecurityUpdate }) => {
   const [securityAnalysis, setSecurityAnalysis] = useState(null);
