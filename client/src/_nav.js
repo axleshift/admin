@@ -30,15 +30,7 @@ const _nav = () => {
   const userEmail = sessionStorage.getItem('email');
 
   
-  console.log("✅ Session Storage Values:", {
-    Role: userRole,
-    Department: userDepartment,
-    Username: userUsername,
-    name: userName,
-    "User ID": userId,
-    Permissions: userPermissions,
-    Email: userEmail
-  });
+
 
   const [allowedRoutes, setAllowedRoutes] = useState([]);
   
@@ -107,6 +99,7 @@ const _nav = () => {
         '/Request',
         './usermanagement',
         '/button',
+        '/announce'
       ],
       HR: [
         '/employeedash',
@@ -346,7 +339,12 @@ const _nav = () => {
           to: '/registernew'
         },
       
-        
+        {
+          component: CNavItem,
+          name:'Announce',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/announce'
+        }
        
       );
     }

@@ -17,6 +17,8 @@ import logisticsRoutes from "./routes/logistics.js";
 import financeRoutes from "./routes/finance.js";
 import adminRoutes from './routes/admin.js';
 import securityRoutes from './routes/security.js'
+import webhookRoutes from './routes/webhook.js'
+
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { Server } from "socket.io";
@@ -24,8 +26,18 @@ import http from "http";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import backupRoutes from './routes/backupauto.js'
+// Add imports for file uploads
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
+
+// Create __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ✅ 2. Initialize Express app
 const app = express();
@@ -40,8 +52,6 @@ const io = new Server(server, {
     }
 });
 
-
-
 // ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
 app.set("io", io);
 
@@ -54,7 +64,7 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-
+//uncomment pa may problema
 // app.use(
 //     cors({
 //         origin: [
@@ -74,6 +84,14 @@ app.use(
     })
 );
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ 6. Set up session middleware before routes
 app.use(session({
@@ -106,6 +124,7 @@ app.use("/core", coreRoutes);
 app.use("/logistics", logisticsRoutes);
 app.use("/finance", financeRoutes);
 app.use("/notifications", notificationsRoutes);
+app.use('/webhook',webhookRoutes);
 
 // ✅ 9. Load AI service
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

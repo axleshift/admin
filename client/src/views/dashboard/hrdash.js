@@ -5,7 +5,7 @@ import StatBox from "../pages/scene/statbox";
 import CustomHeader from "../../components/header/customhead";
 import { CContainer, CRow, CCol, CCard } from "@coreui/react";
 import { useGethrdashQuery, useGetJobPostingsQuery, useGetpayrollQuery } from "../../state/hrApi";
-import AnnouncementBox from "../pages/scene/announce";
+import AnnouncementList from '../pages/Announcement/AnnouncementList';
 
 const Hrdash = () => {
   const { data: dashboardData, error: dashboardError, isLoading: dashboardLoading } = useGethrdashQuery();
@@ -22,9 +22,7 @@ const Hrdash = () => {
       <CRow>
         <CCol xs={12}>
           <CustomHeader title="HR Dashboard" subtitle="Welcome to the HR Dashboard" />
-
-        
-          <AnnouncementBox message="🚀 New HR Features Released! Check them out!" autoClose={false} />
+          <AnnouncementList />
         </CCol>
       </CRow>
 

@@ -17,6 +17,7 @@ import OTP from '../model/OTP.js'; // Ensure the correct path
 import {resetFailedAttempts} from '../UTIL/resetFailedattempts.js'
 const OTP_EXPIRY = 10 * 60 * 1000; 
 import { generateAccessToken, generateRefreshToken } from '../middleware/generateToken.js';
+import { resetPassword } from "./general.js";
 const passwordComplexityOptions = {
     min: 8,
     max: 30,
@@ -28,10 +29,7 @@ const passwordComplexityOptions = {
 };
 import Activitytracker from "../model/Activitytracker.js";
 //integrate model
-import coreuser from '../model/coreuser.js'
-import financeuser from '../model/financeuser.js'
-import hruser from '../model/hruser.js';
-import logisticuser from '../model/logisticuser.js'
+
 import { generateCode, generateUsername } from "../UTIL/generateCode.js";
 import bcryptjs from 'bcryptjs'
 
@@ -40,332 +38,264 @@ import bcryptjs from 'bcryptjs'
 
 
 // Register User
+
 const userSchema = Joi.object({
-    id: Joi.string().optional(), 
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
-    email: Joi.string().email().required(),
-    password: Joi.string()
-      .min(8)
-      .pattern(/[a-z]/, "lowercase")
-      .pattern(/[A-Z]/, "uppercase")
-      .pattern(/[0-9]/, "numbers")
-      .pattern(/[@$!%*?&#]/, "special characters")
-      .required(),
-    role: Joi.string().required(),
-    department: Joi.string().required(),
-    phone: Joi.string().optional().allow(''),
-    address: Joi.string().optional().allow(''),
-    image: Joi.string().optional().allow('')
-  });
+  id: Joi.string().optional(), 
+  firstName: Joi.string().required(),
+  lastName: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string()
+    .min(8)
+    .pattern(/[a-z]/, "lowercase")
+    .pattern(/[A-Z]/, "uppercase")
+    .pattern(/[0-9]/, "numbers")
+    .pattern(/[@$!%*?&#]/, "special characters")
+    .required(),
+  role: Joi.string().required(),
+  department: Joi.string().required(),
+  phone: Joi.string().optional().allow(''),
+  address: Joi.string().optional().allow(''),
+  image: Joi.string().optional().allow('')
+});
+
+export const saveUser = async (req, res) => {
+  console.log("Received user data:", req.body);
   
-  export const saveUser = async (req, res) => {
-    console.log("Received user data:", req.body);
+  try {
+    const { 
+      id, 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      role, 
+      department,
+      phone = '',
+      address = '',
+      image = '',
+      fullName = '',
+      name = ''
+    } = req.body;
     
-    try {
-      const { 
-        id, 
-        firstName, 
-        lastName, 
-        email, 
-        password, 
-        role, 
-        department,
-        phone = '',
-        address = '',
-        image = '',
-        fullName = '',
-        name = ''
-      } = req.body;
-      
-      // Handle name fields with fallbacks
-      let userFirstName = firstName || '';
-      let userLastName = lastName || '';
-      
-      // Create full name if not provided, using firstName and lastName
-      let userFullName = fullName || '';
-      if (!userFullName && (userFirstName || userLastName)) {
-        userFullName = `${userFirstName} ${userLastName}`.trim();
-      }
-      
-      // Create name if not provided, using fullName or firstName and lastName
-      let userName = name || '';
-      if (!userName) {
-        userName = userFullName || `${userFirstName} ${userLastName}`.trim();
-      }
-      
-      // If we still don't have names, derive them from each other
-      if (!userFullName && userName) {
-        userFullName = userName;
-      }
-      
-      // If we have a fullName but no first/last name, try to split it
-      if (userFullName && !userFirstName && !userLastName) {
-        const nameParts = userFullName.split(' ');
-        if (nameParts.length >= 2) {
-          userFirstName = nameParts[0];
-          userLastName = nameParts.slice(1).join(' ');
-        } else {
-          userFirstName = userFullName;
-          userLastName = '';
-        }
-      }
-      
-      // After all the logic, ensure we have at least some value for the name
-      if (!userName && !userFullName && !userFirstName && !userLastName) {
-        return res.status(400).json({
-          success: false,
-          error: "At least one name field (firstName, lastName, fullName, or name) must be provided"
-        });
-      }
-      
-      // Validate input
-      const { error } = userSchema.validate({ 
-        id, 
-        firstName: userFirstName, 
-        lastName: userLastName, 
-        email, 
-        password, 
-        role, 
-        department, 
-        phone, 
-        address, 
-        image
-      });
-      
-      if (error) {
-        return res.status(400).json({ 
-          success: false,
-          error: error.details[0].message 
-        });
-      }
-      
-      // Check if email already exists in any system
-      const emailExists = await Promise.all([
-        coreuser.findOne({ email }),
-        financeuser.findOne({ email }),
-        hruser.findOne({ email }),
-        logisticuser.findOne({ email }),
-        User.findOne({ email })
-      ]);
-      
-      if (emailExists.some(user => user !== null)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email already exists in the system'
-        });
-      }
-      
-      // Hash the password using bcryptjs instead of bcrypt
-      const salt = await bcryptjs.genSalt(10);
-      const hashedPassword = await bcryptjs.hash(password, salt);
-      
-      // Generate user number
-      const userNumber = generateCode();
-      
-      // Determine which model to use based on department
-      let userModel;
-      let userData = {};
-      
-      // Normalize department and role strings
-      const userDepartment = department?.trim() || 'core';
-      const userRole = role?.trim()?.toLowerCase() || 'employee';
-      
-      // Specific formatting for each department's model
-      switch (userDepartment.toLowerCase()) {
-        case 'finance':
-          userModel = financeuser;
-          userData = {
-            userNumber,
-            fullName: userFullName,
-            email,
-            password: hashedPassword,
-            role: userRole,
-            phoneNumber: phone || '0000000000',
-            address,
-            image
-          };
-          console.log("User will be stored in finance system");
-          break;
-          
-        case 'hr':
-          userModel = hruser;
-          userData = {
-            userNumber,
-            firstname: userFirstName,
-            lastname: userLastName,
-            email,
-            password: hashedPassword,
-            phoneNumber: phone || '0000000000',
-            role: userRole,
-            department: capitalizeFirstLetter(userDepartment),
-            address,
-            image,
-          };
-          console.log("User will be stored in HR system");
-          break;
-          
-        case 'logistics':
-          userModel = logisticuser;
-          userData = {
-            userNumber,
-            firstname: userFirstName,
-            lastname: userLastName,
-            email,
-            password: hashedPassword,
-            phoneNumber: phone || '0000000000',
-            role: userRole,
-            department: capitalizeFirstLetter(userDepartment),
-            address,
-            image,
-          };
-          console.log("User will be stored in logistic system");
-          break;
-          
-        case 'administrative':
-          // For Administrative, store in the centralized User model only
-          userModel = User;
-          userData = {
-            name: userName,
-            email,
-            password: hashedPassword,
-            phoneNumber: phone || '0000000000',
-            role: userRole,
-            department: capitalizeFirstLetter(userDepartment),
-            username: generateUsername(userRole),
-            // Additional required fields from User model
-            attendance: [],
-            performance: [],
-            benefits: {
-              healthInsurance: false,
-              retirementPlan: false,
-              vacationDays: 0,
-              sickLeave: 0
-            },
-            payroll: {
-              salary: 0,
-              payFrequency: 'monthly',
-              lastPaymentDate: new Date()
-            }
-          };
-          console.log("User will be stored in admin system (centralized User model)");
-          break;
-          
-        case 'core':
-        default:
-          userModel = coreuser;
-          userData = {
-            userNumber,
-            firstname: userFirstName,
-            lastname: userLastName,
-            email,
-            password: hashedPassword,
-            phoneNumber: phone || '0000000000',
-            role: userRole,
-            department: capitalizeFirstLetter(userDepartment),
-            address,
-            image,
-          };
-          console.log("User will be stored in core system");
-          break;
-      }
-      
-      // Save user to the appropriate model (department-specific database)
-      let savedUser = null;
-      
-      // Only save to department-specific database if it's not already administrative
-      if (userDepartment.toLowerCase() !== 'administrative') {
-        const newUser = new userModel(userData);
-        savedUser = await newUser.save();
-      }
-      
-      // ALWAYS create a centralized user record in the administrative system (User model)
-      const centralizedUserData = {
-        name: userName,
-        email,
-        password: hashedPassword,
-        username: generateUsername(userRole),
-        phoneNumber: phone || '0000000000',
-        role: userRole,
-        department: capitalizeFirstLetter(userDepartment),
-        // Additional required fields from User model
-        attendance: [],
-        performance: [],
-        benefits: {
-          healthInsurance: false,
-          retirementPlan: false,
-          vacationDays: 0,
-          sickLeave: 0
-        },
-        payroll: {
-          salary: 0,
-          payFrequency: 'monthly',
-          lastPaymentDate: new Date()
-        }
-      };
-      
-      // If the user is already being saved to the administrative system, use that record
-      let centralizedUser;
-      if (userDepartment.toLowerCase() === 'administrative') {
-        centralizedUser = new User(userData);
-        savedUser = await centralizedUser.save();
+    // Handle name fields with fallbacks
+    let userFirstName = firstName || '';
+    let userLastName = lastName || '';
+    
+    // Create full name if not provided, using firstName and lastName
+    let userFullName = fullName || '';
+    if (!userFullName && (userFirstName || userLastName)) {
+      userFullName = `${userFirstName} ${userLastName}`.trim();
+    }
+    
+    // Create name if not provided, using fullName or firstName and lastName
+    let userName = name || '';
+    if (!userName) {
+      userName = userFullName || `${userFirstName} ${userLastName}`.trim();
+    }
+    
+    // If we still don't have names, derive them from each other
+    if (!userFullName && userName) {
+      userFullName = userName;
+    }
+    
+    // If we have a fullName but no first/last name, try to split it
+    if (userFullName && !userFirstName && !userLastName) {
+      const nameParts = userFullName.split(' ');
+      if (nameParts.length >= 2) {
+        userFirstName = nameParts[0];
+        userLastName = nameParts.slice(1).join(' ');
       } else {
-        centralizedUser = new User(centralizedUserData);
-        
-        // Validate before saving
-        const centralizedUserValidation = centralizedUser.validateSync();
-        if (centralizedUserValidation) {
-          console.error("Validation error:", centralizedUserValidation);
-          throw new Error(`Validation failed: ${JSON.stringify(centralizedUserValidation.errors)}`);
-        }
-        
-        await centralizedUser.save();
+        userFirstName = userFullName;
+        userLastName = '';
       }
-      
-      // Remove password from response
-      const userResponse = savedUser && savedUser.toObject ? savedUser.toObject() : (savedUser || {});
-      delete userResponse.password;
-      
-      // Return success response
-      return res.status(201).json({
-        success: true,
-        message: `User successfully saved to ${userDepartment} system and central administrative system`,
-        user: {
-          ...userResponse,
-          department: capitalizeFirstLetter(userDepartment)
-        }
-      });
-      
-    } catch (error) {
-      console.error("User registration error:", error.message);
-      
-      // Handle specific errors
-      if (error.code === 11000) {
-        return res.status(409).json({
-          success: false,
-          message: 'Email already exists in the system',
-          error: error.message
-        });
-      }
-      
-      return res.status(500).json({
+    }
+    
+    // After all the logic, ensure we have at least some value for the name
+    if (!userName && !userFullName && !userFirstName && !userLastName) {
+      return res.status(400).json({
         success: false,
-        message: 'Error saving user',
+        error: "At least one name field (firstName, lastName, fullName, or name) must be provided"
+      });
+    }
+    
+    // Validate input
+    const { error } = userSchema.validate({ 
+      id, 
+      firstName: userFirstName, 
+      lastName: userLastName, 
+      email, 
+      password, 
+      role, 
+      department, 
+      phone, 
+      address, 
+      image
+    });
+    
+    if (error) {
+      return res.status(400).json({ 
+        success: false,
+        error: error.details[0].message 
+      });
+    }
+    
+    // Check if email already exists
+    const emailExists = await User.findOne({ email });
+    
+    if (emailExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists in the system'
+      });
+    }
+    
+    // Hash the password using bcryptjs
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(password, salt);
+    
+    // Normalize department and role strings
+    const userDepartment = department?.trim() || 'general';
+    const userRole = role?.trim()?.toLowerCase() || 'employee';
+    
+    // Create user data for the User model
+    const userData = {
+      name: userName,
+      email,
+      password: hashedPassword,
+      phoneNumber: phone || '0000000000',
+      role: userRole,
+      department: capitalizeFirstLetter(userDepartment),
+      username: generateUsername(userRole),
+      // Additional required fields from User model
+      attendance: [],
+      performance: [],
+      benefits: {
+        healthInsurance: false,
+        retirementPlan: false,
+        vacationDays: 0,
+        sickLeave: 0
+      },
+      payroll: {
+        salary: 0,
+        payFrequency: 'monthly',
+        lastPaymentDate: new Date()
+      }
+    };
+    
+    // Save user to the User model
+    const newUser = new User(userData);
+    
+    // Validate before saving
+    const userValidation = newUser.validateSync();
+    if (userValidation) {
+      console.error("Validation error:", userValidation);
+      throw new Error(`Validation failed: ${JSON.stringify(userValidation.errors)}`);
+    }
+    
+    const savedUser = await newUser.save();
+    
+    // Generate password reset token
+    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: '1h'
+    });
+    
+    // Set up mock request and response objects for resetPassword
+    const mockReq = {
+      params: {
+        id: savedUser._id,
+        token: token
+      },
+      body: {
+        password: password
+      }
+    };
+    
+    const mockRes = {
+      status: (statusCode) => ({
+        json: (data) => {
+          console.log(`Password reset status: ${statusCode}, data:`, data);
+        }
+      }),
+      json: (data) => {
+        console.log("Password reset response:", data);
+      }
+    };
+    
+    // Send reset password email
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+    
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${savedUser._id}/${token}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Set Your Password',
+      html: `
+        <h2>Welcome to Our Platform!</h2>
+        <p>Hello ${userName},</p>
+        <p>Your account has been created successfully. Please click the link below to set your password:</p>
+        <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Set Password</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not request this account, please ignore this email.</p>
+        <p>Thank you,</p>
+        <p>The Team</p>
+      `
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
+    // Remove password from response
+    const userResponse = savedUser.toObject ? savedUser.toObject() : savedUser;
+    delete userResponse.password;
+    
+    // Return success response
+    return res.status(201).json({
+      success: true,
+      message: `User successfully saved to system and password reset email sent`,
+      user: {
+        ...userResponse,
+        department: capitalizeFirstLetter(userDepartment)
+      }
+    });
+    
+  } catch (error) {
+    console.error("User registration error:", error.message);
+    
+    // Handle specific errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already exists in the system',
         error: error.message
       });
     }
-  };
-  
-  // Helper function to capitalize the first letter of a string
-  function capitalizeFirstLetter(string) {
-    if (!string) return '';
-    // First convert to lowercase, then capitalize first letter
-    const lowerCaseString = string.toLowerCase();
-    return lowerCaseString.charAt(0).toUpperCase() + lowerCaseString.slice(1);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Error saving user',
+      error: error.message
+    });
   }
-  // Additional user-related controller methods
- 
+};
 
+function capitalizeFirstLetter(string) {
+  if (!string) return '';
+  // First convert to lowercase, then capitalize first letter
+  const lowerCaseString = string.toLowerCase();
+  return lowerCaseString.charAt(0).toUpperCase() + lowerCaseString.slice(1);
+}
+
+// Reset password endpoint
+
+
+
+  
   export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;

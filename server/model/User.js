@@ -68,9 +68,36 @@ const userSchema = new mongoose.Schema(
       default: true
     },
     otp:{type:String},
-    otpExpires:{type:Date}
+    otpExpires:{type:Date},
+    lastReviewDate: {
+      type: Date,
+      default: null
+    },
+    reviewStatus: {
+      type: String,
+      enum: ['Pending', 'Completed', 'Overdue', null],
+      default: null
+    },
+    reviewInitiatedDate: {
+      type: Date,
+      default: null
+    },
+    reviewHistory: [{
+      date: Date,
+      reviewerId: {
+        type: mongoose.Schema.Types.Mixed,
+        ref: 'User'
+      },
+      reviewerName: String,
+      notes: String,
+      approvedPermissions: [String],
+      rejectedPermissions: [String]
+    }]
+  
   },
+  
   { timestamps: true }
+
 );
 
 userSchema.pre('save', async function(next) {

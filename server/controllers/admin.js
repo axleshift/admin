@@ -13,10 +13,7 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt  from 'jsonwebtoken'
 
 
-import coreuserModel from '../model/coreuser.js'
-import financeuserModel from '../model/financeuser.js'
-import hruserModel from '../model/hruser.js';
-import logisticuserModel from '../model/logisticuser.js'
+
 
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -90,94 +87,6 @@ export const githubCallback = passport.authenticate("github", { session: false }
 export const sendToken = (req, res) => {
   res.json({ token: req.user.token });
 };
-export const getCoreUsers = async (req, res) => {
-  try {
-    const users = await coreuserModel.find();
-    
-    if (users.length === 0) {
-      return res.status(404).json({ message: "No users found in Core department" });
-    }
-    
-    res.json({ 
-      department: "Core",
-      users 
-    });
-  } catch (error) {
-    console.error("Error fetching Core users:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
-
-// Finance department users endpoint
-export const getFinanceUsers = async (req, res) => {
-  try {
-    const users = await financeuserModel.find();
-    
-    if (users.length === 0) {
-      return res.status(404).json({ message: "No users found in Finance department" });
-    }
-    
-    res.json({ 
-      department: "Finance",
-      users 
-    });
-  } catch (error) {
-    console.error("Error fetching Finance users:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
-
-// HR department users endpoint
-export const getHRUsers = async (req, res) => {
-  try {
-    const users = await hruserModel.find();
-    
-    if (users.length === 0) {
-      return res.status(404).json({ message: "No users found in HR department" });
-    }
-    
-    res.json({ 
-      department: "HR",
-      users 
-    });
-  } catch (error) {
-    console.error("Error fetching HR users:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
-
-// Logistics department users endpoint
-export const getLogisticsUsers = async (req, res) => {
-  try {
-    const users = await logisticuserModel.find();
-    
-    if (users.length === 0) {
-      return res.status(404).json({ message: "No users found in Logistics department" });
-    }
-    
-    res.json({ 
-      department: "Logistics",
-      users 
-    });
-  } catch (error) {
-    console.error("Error fetching Logistics users:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
-
-// export const getUsersBy = async (req, res) => {
-//   try {
-//     const department = req.params.department.toLowerCase();
-//     const users = await User.find({ department });
-
-//     if (users.length === 0) {
-//       return res.status(404).json({ message: `No users found in ${department} department` });
-//     }
-//     res.json({ department, users });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server Error", error: error.message });
-//   }
-// };
 
 async function generateImage(prompt, username) {
   try {

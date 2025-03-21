@@ -23,7 +23,7 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
-
+import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import Loader from '../../components/Loader';  
 
 const Employeedash = () => {
@@ -90,6 +90,7 @@ const Employeedash = () => {
       <CRow className="mb-4">
         <CCol xs={12} md={8}>
           <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
+                    <AnnouncementList />
         </CCol>
         <CCol xs={12} md={4} className="d-flex justify-content-md-end align-items-center mb-3 mb-md-0">
         </CCol>

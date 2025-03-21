@@ -16,7 +16,7 @@ import {
   } from "../controllers/hr.js";
 
 const router = express.Router();
-router.get('/newUser',ExternalHR)
+router.get('/newUser', ExternalHR);
 
 router.get("/worker", getWorker);
 

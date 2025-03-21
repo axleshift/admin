@@ -9,12 +9,17 @@ import { getUser,
     sendREQ, 
     getRequests,
     activity,
-    getact
+    getact,
+    recertifyUserAccess,
+    initiateAccessReview
  } from "../controllers/general.js";
 
 const router = express.Router();
 
 router.get("/permissions", accessReview);
+router.post("/recertify", recertifyUserAccess);
+router.post("/initiate-review", initiateAccessReview);
+
 
 router.get("/user/:id", getUser);
 router.post("/forgot-password", forgotPassword);

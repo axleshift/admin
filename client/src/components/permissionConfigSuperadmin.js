@@ -39,7 +39,7 @@ const accessPermissions = {
         '/recoverytuts', '/registernew', '/PendingRequest', '/AccessReview',
         '/monitoring', '/profile', '/Settings', '/changepass', '/freightaudit',
         '/financialanalytics', '/invoice', '/shipment', '/settings', '/request',
-        '/logistic1/index', '/usermanagement', '/cron'
+        '/logistic1/index', '/usermanagement', '/cron','/announce'
       ]
     }
   };

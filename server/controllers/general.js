@@ -8,19 +8,108 @@ import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
 import Activitytracker from '../model/Activitytracker.js';
 dotenv.config();
-export const accessReview = async (req, res) => {
-    try {
-        const users = await User.find({}, "name role department permissions");
-        if (!users || users.length === 0) {
-            return res.status(404).json({ message: "No users found" });
-        }
 
-        res.json({ users }); // Send all users with their permissions
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
-    }
+// Backend: Enhanced accessReview controller
+export const accessReview = async (req, res) => {
+  try {
+      const users = await User.find({}, "name role department permissions lastReviewDate reviewStatus reviewHistory");
+      if (!users || users.length === 0) {
+          return res.status(404).json({ message: "No users found" });
+      }
+
+      res.json({ users }); // Send all users with their permissions and review information
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+  }
 };
+
+// New endpoint to handle recertification actions
+export const recertifyUserAccess = async (req, res) => {
+  try {
+      const { userId, approved, rejected, notes } = req.body;
+      
+      // Handle cases where user auth data isn't available
+      const reviewerId = req.user?.id || 'system'; 
+      const reviewerName = req.user?.name || 'System User';
+      
+      if (!userId) {
+          return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Create review history entry
+      const reviewEntry = {
+          date: new Date(),
+          reviewerId,
+          reviewerName,
+          notes,
+          approvedPermissions: approved || [],
+          rejectedPermissions: rejected || []
+      };
+      
+      // Update permissions based on review
+      if (rejected && rejected.length > 0) {
+          user.permissions = user.permissions.filter(perm => !rejected.includes(perm));
+      }
+      
+      // Update user review information
+      user.lastReviewDate = new Date();
+      user.reviewStatus = "Completed";
+      
+      // Add to review history (create if doesn't exist)
+      if (!user.reviewHistory) {
+          user.reviewHistory = [];
+      }
+      user.reviewHistory.push(reviewEntry);
+      
+      await user.save();
+      
+      res.json({ message: "Access recertification completed successfully", user });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Initiate access review
+export const initiateAccessReview = async (req, res) => {
+  try {
+      const { department, role } = req.query;
+      let filter = {};
+      
+      if (department) filter.department = department;
+      if (role) filter.role = role;
+      
+      // Mark users for review
+      const result = await User.updateMany(
+          filter,
+          { 
+              $set: { 
+                  reviewStatus: "Pending",
+                  reviewInitiatedDate: new Date()
+              } 
+          }
+      );
+      
+      // Log the initiation
+   
+      
+      res.json({ 
+          message: `Access review initiated for ${result.nModified} users`,
+          usersAffected: result.nModified
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 export const getUser = async (req, res) => {
     try {
         const { id } = req.params;
