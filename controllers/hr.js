@@ -16,8 +16,8 @@ export const ExternalHR = async (req, res) => {
   const mockUsers = [
       { id: 1, firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', department: 'IT', role: 'Developer', createdAt: '2025-03-20T10:00:00.000Z' },
       { id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', department: 'Finance', role: 'Analyst', createdAt: '2025-03-21T12:00:00.000Z' },
-      { id: 3, firstName: 'Michael', lastName: 'Johnson', email: 'michael.j@example.com', department: 'HR', role: 'Manager', createdAt: '2025-03-21T14:00:00.000Z' },
-  ];
+      { id: 3, firstName: 'ryan', lastName: 'sangasina', email: 'ryansangasina1@gmail.com', department: 'HR', role: 'Manager', createdAt: '2025-03-21T14:00:00.000Z' },
+   ];
 
   try {
       let users = [];
