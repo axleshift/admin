@@ -24,7 +24,7 @@ const Pin = () => {
         // Replace this with actual email sending logic
         if (logistics && email) {
             // Send email via API
-            axios.post('http://localhost:5053/logix/send-logistics-email', { email, currentLocation: logistics.currentLocation })
+            axios.post('https://backend-admin.axleshift.com/logix/send-logistics-email', { email, currentLocation: logistics.currentLocation })
                 .then((res) => {
                     if (res.data.message === 'Email sent successfully') {
                         setMessage('Email sent successfully! Check your inbox.');

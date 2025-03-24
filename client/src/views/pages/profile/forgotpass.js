@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { CButton, CForm, CFormInput, CCard, CCardBody, CCardTitle, CAlert } from '@coreui/react'
-
+import axiosInstance from '../../../utils/axiosInstance'
 const ForgotPass = () => {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -14,8 +14,8 @@ const ForgotPass = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    axios
-      .post('http://localhost:5053/general/forgot-password', { email })
+    axiosInstance
+      .post('/general/forgot-password', { email })
       .then((res) => {
         if (res.data.message === 'Reset link sent to your email') {
           setMessage('Reset link sent successfully! Check your email.')

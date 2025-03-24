@@ -3,6 +3,7 @@ import User from "../model/User.js";
 import Joi from "joi";
 import LoginAttempt from '../model/LoginAttempt.js';
 import Anomaly from '../model/Anomaly.js';
+import jwt from 'jsonwebtoken'
 import {
     logLoginAttempt,
     checkForUnusualLogin,
@@ -39,8 +40,8 @@ import bcryptjs from 'bcryptjs'
 
 // Register User
 
-const userSchema = Joi.object({
-  id: Joi.string().optional(), 
+export const userSchema = Joi.object({
+  id: Joi.string().optional(),
   firstName: Joi.string().required(),
   lastName: Joi.string().required(),
   email: Joi.string().email().required(),
@@ -58,6 +59,7 @@ const userSchema = Joi.object({
   image: Joi.string().optional().allow('')
 });
 
+
 export const saveUser = async (req, res) => {
   console.log("Received user data:", req.body);
   
@@ -72,101 +74,55 @@ export const saveUser = async (req, res) => {
       department,
       phone = '',
       address = '',
-      image = '',
-      fullName = '',
-      name = ''
+      image = ''
     } = req.body;
     
-    // Handle name fields with fallbacks
-    let userFirstName = firstName || '';
-    let userLastName = lastName || '';
-    
-    // Create full name if not provided, using firstName and lastName
-    let userFullName = fullName || '';
-    if (!userFullName && (userFirstName || userLastName)) {
-      userFullName = `${userFirstName} ${userLastName}`.trim();
-    }
-    
-    // Create name if not provided, using fullName or firstName and lastName
-    let userName = name || '';
-    if (!userName) {
-      userName = userFullName || `${userFirstName} ${userLastName}`.trim();
-    }
-    
-    // If we still don't have names, derive them from each other
-    if (!userFullName && userName) {
-      userFullName = userName;
-    }
-    
-    // If we have a fullName but no first/last name, try to split it
-    if (userFullName && !userFirstName && !userLastName) {
-      const nameParts = userFullName.split(' ');
-      if (nameParts.length >= 2) {
-        userFirstName = nameParts[0];
-        userLastName = nameParts.slice(1).join(' ');
-      } else {
-        userFirstName = userFullName;
-        userLastName = '';
-      }
-    }
-    
-    // After all the logic, ensure we have at least some value for the name
-    if (!userName && !userFullName && !userFirstName && !userLastName) {
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password || !role || !department) {
       return res.status(400).json({
         success: false,
-        error: "At least one name field (firstName, lastName, fullName, or name) must be provided"
-      });
-    }
-    
-    // Validate input
-    const { error } = userSchema.validate({ 
-      id, 
-      firstName: userFirstName, 
-      lastName: userLastName, 
-      email, 
-      password, 
-      role, 
-      department, 
-      phone, 
-      address, 
-      image
-    });
-    
-    if (error) {
-      return res.status(400).json({ 
-        success: false,
-        error: error.details[0].message 
+        message: 'Missing required fields',
+        missingFields: [
+          !firstName && 'First Name',
+          !lastName && 'Last Name',
+          !email && 'Email',
+          !password && 'Password',
+          !role && 'Role',
+          !department && 'Department'
+        ].filter(Boolean)
       });
     }
     
     // Check if email already exists
-    const emailExists = await User.findOne({ email });
-    
-    if (emailExists) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
         message: 'Email already exists in the system'
       });
     }
     
-    // Hash the password using bcryptjs
+    // Hash the password
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
     
-    // Normalize department and role strings
-    const userDepartment = department?.trim() || 'general';
-    const userRole = role?.trim()?.toLowerCase() || 'employee';
+    // Normalize and validate department and role
+    const normalizedDepartment = capitalizeFirstLetter(department.trim());
+    const normalizedRole = role.toLowerCase().trim();
     
-    // Create user data for the User model
+    // Prepare user data
     const userData = {
-      name: userName,
+      name: `${firstName} ${lastName}`.trim(),
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
+      role: normalizedRole,
+      department: normalizedDepartment,
       phoneNumber: phone || '0000000000',
-      role: userRole,
-      department: capitalizeFirstLetter(userDepartment),
-      username: generateUsername(userRole),
-      // Additional required fields from User model
+      username: generateUsername(normalizedRole),
+      
+      // Default additional fields
       attendance: [],
       performance: [],
       benefits: {
@@ -182,116 +138,72 @@ export const saveUser = async (req, res) => {
       }
     };
     
-    // Save user to the User model
+    // Create and save new user
     const newUser = new User(userData);
     
-    // Validate before saving
-    const userValidation = newUser.validateSync();
-    if (userValidation) {
-      console.error("Validation error:", userValidation);
-      throw new Error(`Validation failed: ${JSON.stringify(userValidation.errors)}`);
+    // Additional validation
+    try {
+      const validationError = newUser.validateSync();
+      if (validationError) {
+        console.error("Mongoose validation error:", validationError);
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: Object.values(validationError.errors).map(err => err.message)
+        });
+      }
+    } catch (validationError) {
+      console.error("Validation sync error:", validationError);
+      return res.status(400).json({
+        success: false,
+        message: 'User validation failed',
+        error: validationError.message
+      });
     }
     
+    // Save user
     const savedUser = await newUser.save();
     
-    // Generate password reset token
-    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: '1h'
-    });
-    
-    // Set up mock request and response objects for resetPassword
-    const mockReq = {
-      params: {
-        id: savedUser._id,
-        token: token
-      },
-      body: {
-        password: password
-      }
-    };
-    
-    const mockRes = {
-      status: (statusCode) => ({
-        json: (data) => {
-          console.log(`Password reset status: ${statusCode}, data:`, data);
-        }
-      }),
-      json: (data) => {
-        console.log("Password reset response:", data);
-      }
-    };
-    
-    // Send reset password email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
-    });
-    
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${savedUser._id}/${token}`;
-    
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Set Your Password',
-      html: `
-        <h2>Welcome to Our Platform!</h2>
-        <p>Hello ${userName},</p>
-        <p>Your account has been created successfully. Please click the link below to set your password:</p>
-        <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Set Password</a>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you did not request this account, please ignore this email.</p>
-        <p>Thank you,</p>
-        <p>The Team</p>
-      `
-    };
-    
-    await transporter.sendMail(mailOptions);
-    
-    // Remove password from response
-    const userResponse = savedUser.toObject ? savedUser.toObject() : savedUser;
+    // Remove sensitive information before sending response
+    const userResponse = savedUser.toObject();
     delete userResponse.password;
     
-    // Return success response
     return res.status(201).json({
       success: true,
-      message: `User successfully saved to system and password reset email sent`,
-      user: {
-        ...userResponse,
-        department: capitalizeFirstLetter(userDepartment)
-      }
+      message: 'User created successfully',
+      user: userResponse
     });
     
   } catch (error) {
-    console.error("User registration error:", error.message);
+    console.error("Comprehensive error in user creation:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      code: error.code
+    });
     
-    // Handle specific errors
-    if (error.code === 11000) {
+    // Handle specific error types
+    if (error.name === 'MongoError' && error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: 'Email already exists in the system',
-        error: error.message
+        message: 'Duplicate key error',
+        error: 'Email already exists'
       });
     }
     
     return res.status(500).json({
       success: false,
-      message: 'Error saving user',
+      message: 'Unexpected error occurred during user creation',
       error: error.message
     });
   }
 };
 
+// Utility function to capitalize first letter
 function capitalizeFirstLetter(string) {
   if (!string) return '';
-  // First convert to lowercase, then capitalize first letter
-  const lowerCaseString = string.toLowerCase();
-  return lowerCaseString.charAt(0).toUpperCase() + lowerCaseString.slice(1);
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
-
-// Reset password endpoint
 
 
 

@@ -16,7 +16,7 @@ import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilPhone, cilUser } from '@coreui/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import axiosInstance from '../../../utils/axiosInstance'
 const Register = () => {
   const [data, setData] = useState({
     name: '',
@@ -56,7 +56,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5053/client/register', data);
+      const response = await axiosInstance.post('/client/register', data);
       console.log(response.data);
       navigate('/login');
     } catch (err) {

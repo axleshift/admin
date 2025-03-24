@@ -3,43 +3,80 @@ import { generateUsername } from "../UTIL/generateCode.js";
 import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
 import {io}  from '../index.js'
-
 import axios from 'axios';
+import newuser from '../model/newuserhr.js';
+import jwt from 'jsonwebtoken'
+
+const EXTERNAL_HR_API = process.env.EXTERNAL_HR;
+
+const formatUserName = (userData) => {
+  if (!userData.name) {
+    if (userData.firstName && userData.lastName) {
+      return `${userData.firstName} ${userData.lastName}`;
+    }
+    return userData.firstName || userData.lastName || 'Unknown';
+  }
+  return userData.name;
+};
+
+export const fetchAndStoreUsers = async () => {
+  try {
+    const response = await axios.get(EXTERNAL_HR_API);
+    const users = response.data;
+
+    for (const userData of users) {
+      await newuser.findOneAndUpdate(
+        { externalId: userData.id },
+        { 
+          name: formatUserName(userData), 
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email 
+        },
+        { upsert: true, new: true }
+      );
+    }
+    console.log('Users synchronized successfully');
+  } catch (error) {
+    console.error('Error fetching users', error);
+  }
+};
+
+export const handleWebhook = async (req, res) => {
+  try {
+    console.log('Webhook received:', req.body);
+    const { event, user } = req.body;
+    
+    if (event === 'user_created' || event === 'user_updated') {
+      await newuser.findOneAndUpdate(
+        { externalId: user.id },
+        { 
+          name: formatUserName(user),
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email 
+        },
+        { upsert: true, new: true }
+      );
+    } else if (event === 'user_deleted') {
+      await newuser.findOneAndDelete({ externalId: user.id });
+    }
+
+    res.json({ message: 'Webhook processed successfully' });
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    res.status(500).json({ message: 'Error processing webhook', error });
+  }
+};
 
 export const ExternalHR = async (req, res) => {
-  const EXTERNALHr = process.env.EXTERNALHr;
-  const lastFetchedAt = req.query.lastFetchedAt || new Date(0).toISOString();
-
-  console.log("Last Fetched At:", lastFetchedAt);
-  console.log("External HR URL:", EXTERNALHr || 'No External URL configured');
-
-  const mockUsers = [
-      { id: 1, firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', department: 'IT', role: 'Developer', createdAt: '2025-03-20T10:00:00.000Z' },
-      { id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', department: 'Finance', role: 'Analyst', createdAt: '2025-03-21T12:00:00.000Z' },
-      { id: 3, firstName: 'ryan', lastName: 'sangasina', email: 'ryansangasina1@gmail.com', department: 'HR', role: 'Manager', createdAt: '2025-03-21T14:00:00.000Z' },
-   ];
-
   try {
-      let users = [];
-
-      if (EXTERNALHr) {
-          const response = await axios.get(`${EXTERNALHr}/users`, { params: { lastFetchedAt } });
-          users = response.data;
-      } else {
-          console.log('Using mock data as ExternalHR URL is not set.');
-          users = mockUsers;
-      }
-
-      const newUsers = users.filter(user => new Date(user.createdAt) > new Date(lastFetchedAt));
-
-      res.status(200).json(newUsers);
+    const users = await newuser.find();
+    res.json(users);
   } catch (error) {
-      console.error("Error fetching users:", error.message);
-      res.status(500).json({ error: "Error fetching users from external system or using mock data." });
+    res.status(500).json({ message: 'Error fetching users', error });
   }
-}
-
-
+};
 
 
 export const getWorker = async (req, res) => {

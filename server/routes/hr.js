@@ -13,10 +13,13 @@ import {
     getUserPermissions,
     revokeAccess,
     ExternalHR,
+    handleWebhook
   } from "../controllers/hr.js";
 
 const router = express.Router();
+router.post('/webhook', handleWebhook);
 router.get('/newUser', ExternalHR);
+
 
 router.get("/worker", getWorker);
 

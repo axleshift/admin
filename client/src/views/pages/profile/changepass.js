@@ -15,7 +15,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked } from '@coreui/icons'
-
+import axiosInstance from '../../../utils/axiosInstance'
 const ChangePass = () => {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -36,7 +36,7 @@ const ChangePass = () => {
 
     try {
       // Send a request to verify the current password and change to the new password
-      const response = await axios.put('http://localhost:5053/client/change-password', {
+      const response = await axiosInstance.put('/client/change-password', {
         email,
         currentPassword,
         newPassword,

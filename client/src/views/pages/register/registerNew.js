@@ -159,15 +159,50 @@ const getRolesForDepartment = (department) => {
       return;
     }
     
+    // Enhanced validation before submission
     const payload = {
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       email: user.email,
       password: userData.password || '',
       role: userData.role || '',
       department: userData.department || ''
     };
-
+  
+    // Frontend pre-validation
+    const errors = [];
+    
+    if (!payload.firstName) errors.push('First Name is required');
+    if (!payload.lastName) errors.push('Last Name is required');
+    if (!payload.email) errors.push('Email is required');
+    if (!payload.password) errors.push('Password is required');
+    if (!payload.role) errors.push('Role is required');
+    if (!payload.department) errors.push('Department is required');
+  
+    // Password complexity check
+    if (payload.password) {
+      if (payload.password.length < 8) 
+        errors.push('Password must be at least 8 characters long');
+      if (!/[a-z]/.test(payload.password)) 
+        errors.push('Password must contain at least one lowercase letter');
+      if (!/[A-Z]/.test(payload.password)) 
+        errors.push('Password must contain at least one uppercase letter');
+      if (!/[0-9]/.test(payload.password)) 
+        errors.push('Password must contain at least one number');
+      if (!/[@$!%*?&#]/.test(payload.password)) 
+        errors.push('Password must contain at least one special character');
+    }
+  
+    // If there are validation errors, show them and stop
+    if (errors.length > 0) {
+      // You might want to use a toast or alert system here
+      errors.forEach(error => {
+        console.error(error);
+        // Example: toast.error(error)
+      });
+      return;
+    }
+  
     try {
       const response = await saveUser(payload).unwrap();
       console.log('User saved successfully:', response);
@@ -189,6 +224,23 @@ const getRolesForDepartment = (department) => {
     } catch (error) {
       console.error('Error saving user:', error);
       
+      // More comprehensive error handling
+      if (error.data && error.data.errors) {
+        // Handle multiple validation errors from backend
+        error.data.errors.forEach(errorMsg => {
+          console.error(errorMsg);
+          // Example: toast.error(errorMsg)
+        });
+      } else if (error.data && error.data.message) {
+        // Handle single error message
+        console.error(error.data.message);
+        // Example: toast.error(error.data.message)
+      } else {
+        // Fallback error handling
+        console.error('An unexpected error occurred while saving the user');
+        // Example: toast.error('Failed to save user. Please try again.')
+      }
+  
       if (currentUser) {
         logActivity({
           name: currentUser.name || 'Unknown User',
@@ -198,10 +250,6 @@ const getRolesForDepartment = (department) => {
           action: 'ERROR',
           description: `Failed to register user: ${user.firstName} ${user.lastName} (${user.email}). Error: ${error.message || 'Unknown error'}`
         });
-      }
-      
-      if (error.data && error.data.error) {
-        console.error('Validation error:', error.data.error);
       }
     }
   };

@@ -12,7 +12,7 @@ import {
   cilChevronRight 
 } from '@coreui/icons';
 import { useSelector } from 'react-redux';
-
+import axiosInstance from '../../../utils/axiosInstance';
 const AnnouncementList = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,7 +21,7 @@ const AnnouncementList = () => {
 
     const fetchAnnouncements = async () => {
         try {
-            const response = await axios.get(`http://localhost:5053/management/getannounce?page=1&limit=10`);
+            const response = await axiosInstance.get(`/management/getannounce?page=1&limit=10`);
             setAnnouncements(response.data.announcements || []);
         } catch (error) {
             console.error('Failed to fetch announcements:', error.message);
@@ -47,7 +47,7 @@ const AnnouncementList = () => {
                         }
                     }));
                 };
-                img.src = `http://localhost:5053/uploads/${announcement.banner}`;
+                img.src = `https://backend-admin.axleshift.com/uploads/${announcement.banner}`;
             }
         });
     }, [announcements]);
@@ -85,7 +85,7 @@ const AnnouncementList = () => {
                                         maxWidth: '100%'
                                     }}>
                                         <img 
-                                            src={`http://localhost:5053/uploads/${announcements[currentIndex].banner}`} 
+                                            src={`https://backend-admin.axleshift.com/uploads/${announcements[currentIndex].banner}`} 
                                             alt="Banner" 
                                             style={{
                                                 width: '100%',
