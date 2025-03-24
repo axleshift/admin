@@ -1,0 +1,1 @@
+import{a as i}from"./axiosInstance-BPOGMmNr.js";const n=async({name:o,role:a,department:t,route:r,action:e,description:s})=>{try{await i.post("/general/log",{name:o,role:a,department:t,route:r,action:e,description:s})}catch(c){console.error("Failed to log activity:",c.message)}};export{n as l};
