@@ -1,5 +1,5 @@
 import React from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import routes from '../routes'
 
@@ -7,6 +7,8 @@ import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
+  const userDepartment = sessionStorage.getItem('department');
+  const navigate = useNavigate()
 
   const getRouteName = (pathname, routes) => {
     const currentRoute = routes.find((route) => route.path === pathname)
@@ -29,11 +31,47 @@ const AppBreadcrumb = () => {
     return breadcrumbs
   }
 
+  // Department-sensitive navigation handler
+  const handleDepartmentNavigation = () => {
+    if (!userDepartment) {
+      navigate("/dashboard")
+      return
+    }
+
+    switch (userDepartment?.toLowerCase()) {
+      case "administrative":
+        navigate("/employeedash");
+        break;
+      case "hr":
+        navigate("/hrdash");
+        break;
+      case "core":
+        navigate("/coredash");
+        break;
+      case "finance":
+        navigate("/financedash");
+        break;
+      case "logistics":
+        navigate("/logisticdash");
+        break;
+      default:
+        navigate("/dashboard"); 
+    }
+  }
+
   const breadcrumbs = getBreadcrumbs(currentLocation)
 
   return (
     <CBreadcrumb className="my-0">
-      <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
+      <CBreadcrumbItem 
+        href="#" 
+        onClick={(e) => {
+          e.preventDefault()
+          handleDepartmentNavigation()
+        }}
+      >
+        Home
+      </CBreadcrumbItem>
       {breadcrumbs.map((breadcrumb, index) => {
         return (
           <CBreadcrumbItem
