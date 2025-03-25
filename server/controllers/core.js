@@ -36,3 +36,29 @@ export const syncFreightData = async(req,res)=>{
 }
 
 }
+export const getFreights = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; // items per page
+    const skip = (page - 1) * limit;
+
+    const totalFreights = await Freight.countDocuments();
+    const totalPages = Math.ceil(totalFreights / limit);
+
+    const freights = await Freight.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ created_at: -1 });
+
+    res.status(200).json({
+      freights,
+      totalPages,
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Failed to fetch freight data',
+      error: error.message
+    });
+  }
+};

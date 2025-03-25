@@ -51,11 +51,25 @@ const FreightList = () => {
       const response = await axiosInstance.get('/core/freight', {
         params: { page }
       });
+      
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.freights)) {
+        throw new Error('Invalid response format');
+      }
+      
       setFreights(response.data.freights);
-      setTotalPages(response.data.totalPages);
+      setTotalPages(response.data.totalPages || 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while fetching freights');
-      console.error('Error fetching freights:', err);
+      const errorMessage = err.response?.data?.message 
+        || err.message 
+        || 'An unexpected error occurred';
+      
+      setError(errorMessage);
+      console.error('Detailed Fetch Error:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: errorMessage
+      });
     } finally {
       setIsLoading(false);
     }
