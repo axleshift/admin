@@ -28,11 +28,9 @@ const FreightTable = () => {
   const [error, setError] = useState(null);
 
   // Retrieve user information from sessionStorage
-  const userName = sessionStorage.getItem('userName');
+  const userName = sessionStorage.getItem('name'); 
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
-  const userId = sessionStorage.getItem('userId');
-  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
 
   useEffect(() => {
     const fetchFreightData = async () => {
