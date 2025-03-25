@@ -96,22 +96,22 @@ const FreightList = () => {
       action: 'View Freight',
       description: `User viewed details for freight ID: ${freightId}`
     });
-    // You could add navigation logic here if needed
   };
 
   // Handle pagination
   const handlePreviousPage = () => setPage(prev => Math.max(prev - 1, 1));
   const handleNextPage = () => setPage(prev => prev + 1);
 
-  // Render loading state
-  if (isLoading) return <p>Loading freights...</p>;
-
-  // Render error state
-  if (error) return <p>Error: {error}</p>;
+  // Derived state to check if data is being fetched
+  const isFetching = isLoading && freights.length === 0;
 
   return (
     <div className="freight-list-container">
       <h2>Freight List</h2>
+      
+      {isFetching && <p>Fetching freights...</p>}
+      {!isFetching && error && <p>Error: {error}</p>}
+      {!isFetching && !error && freights.length === 0 && <p>No freights available.</p>}
       
       <div className="sync-section">
         <button 
@@ -157,7 +157,7 @@ const FreightList = () => {
               </tr>
             ))
           ) : (
-            <tr>
+            !isFetching && <tr>
               <td colSpan="6">No freights available</td>
             </tr>
           )}
