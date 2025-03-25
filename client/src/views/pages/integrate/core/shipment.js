@@ -1,186 +1,201 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  CTable, 
+  CTableBody, 
+  CTableDataCell, 
+  CTableHead, 
+  CTableHeaderCell, 
+  CTableRow,
+  CCard,
+  CCardHeader,
+  CCardBody,
+  CBadge,
+  CSpinner
+} from '@coreui/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faShippingFast, 
+  faExclamationTriangle, 
+  faBoxOpen,
+  faMoneyBillWave
+} from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../../utils/axiosInstance';
-import logActivity from '../../../../utils/activityLogger';
+import  logActivity  from '../../../../utils/activityLogger';
 
-const FreightList = () => {
-  const [freights, setFreights] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+const FreightTable = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get user context from session storage
+  // Retrieve user information from sessionStorage
+  const userName = sessionStorage.getItem('userName');
   const userRole = sessionStorage.getItem('role');
   const userDepartment = sessionStorage.getItem('department');
-  const userName = sessionStorage.getItem('name');
+  const userId = sessionStorage.getItem('userId');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
 
-  // Log page visit on component mount
   useEffect(() => {
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/freights',
-      action: 'Page Visit',
-      description: 'User viewed the freights list page'
-    });
-  }, [userName, userRole, userDepartment]);
+    const fetchFreightData = async () => {
+      try {
+        setLoading(true);
+        
+        // Log activity for data fetch attempt
+        logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/freight-table',
+          action: 'Fetch Shipments',
+          description: 'User accessed freight shipment data'
+        });
 
-  // Sync Freight Data
-  const syncFreightData = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await axiosInstance.post('/core/syncFreightData');
-      console.log('Sync response:', response.data);
-      // Fetch freights after sync
-      await fetchFreights();
-    } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while syncing freights');
-      console.error('Error syncing freights:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        const response = await axiosInstance.get('/core/fetch-core');
+        
+        // Ensure we're getting the data array from the response
+        const fetchedData = response.data?.data || [];
+        
+        setData(fetchedData);
+        setLoading(false);
 
-  // Fetch freights
-  const fetchFreights = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await axiosInstance.get('/core/freight', {
-        params: { page }
-      });
-      
-      // Validate response structure
-      if (!response.data || !Array.isArray(response.data.freights)) {
-        throw new Error('Invalid response format');
+        // Log successful data fetch
+        logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/freight-table',
+          action: 'Shipments Loaded',
+          description: `Successfully loaded ${fetchedData.length} shipments`
+        });
+      } catch (err) {
+        setError(err.message || 'Failed to fetch shipment data');
+        setLoading(false);
+
+        // Log error in data fetch
+        logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/freight-table',
+          action: 'Shipments Load Failed',
+          description: `Error fetching shipments: ${err.message}`
+        });
       }
-      
-      setFreights(response.data.freights);
-      setTotalPages(response.data.totalPages || 1);
-    } catch (err) {
-      const errorMessage = err.response?.data?.message 
-        || err.message 
-        || 'An unexpected error occurred';
-      
-      setError(errorMessage);
-      console.error('Detailed Fetch Error:', {
-        status: err.response?.status,
-        data: err.response?.data,
-        message: errorMessage
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  // Initial data fetch and sync
-  useEffect(() => {
-    // First, sync data
-    syncFreightData();
+    fetchFreightData();
   }, []);
 
-  // Fetch freights when page changes
-  useEffect(() => {
-    fetchFreights();
-  }, [page]);
+  // Render loading state
+  if (loading) {
+    return (
+      <CCard>
+        <CCardBody className="text-center">
+          <CSpinner color="primary" />
+          <p className="mt-2">Loading Shipments...</p>
+        </CCardBody>
+      </CCard>
+    );
+  }
 
-  // Handle individual freight item click for logging
-  const handleFreightClick = (freightId) => {
+  // Render error state
+  if (error) {
+    return (
+      <CCard className="text-danger">
+        <CCardBody className="text-center">
+          <FontAwesomeIcon icon={faExclamationTriangle} size="3x" className="mb-3" />
+          <p>{error}</p>
+        </CCardBody>
+      </CCard>
+    );
+  }
+
+  // Render empty state
+  if (data.length === 0) {
+    return (
+      <CCard>
+        <CCardBody className="text-center">
+          <FontAwesomeIcon icon={faShippingFast} size="3x" className="mb-3" />
+          <p>No Shipments Found</p>
+        </CCardBody>
+      </CCard>
+    );
+  }
+
+  // Status badge color mapper
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case 'to_pay': return 'warning';
+      case 'cancelled': return 'danger';
+      default: return 'secondary';
+    }
+  };
+
+  // Handler for row click to log interaction
+  const handleRowClick = (shipment) => {
     logActivity({
       name: userName,
       role: userRole,
       department: userDepartment,
-      route: `/freights/${freightId}`,
-      action: 'View Freight',
-      description: `User viewed details for freight ID: ${freightId}`
+      route: '/freight-table',
+      action: 'View Shipment Details',
+      description: `Viewed details for shipment ${shipment.tracking_number}`
     });
   };
 
-  // Handle pagination
-  const handlePreviousPage = () => setPage(prev => Math.max(prev - 1, 1));
-  const handleNextPage = () => setPage(prev => prev + 1);
-
-  // Derived state to check if data is being fetched
-  const isFetching = isLoading && freights.length === 0;
-
   return (
-    <div className="freight-list-container">
-      <h2>Freight List</h2>
-      
-      {isFetching && <p>Fetching freights...</p>}
-      {!isFetching && error && <p>Error: {error}</p>}
-      {!isFetching && !error && freights.length === 0 && <p>No freights available.</p>}
-      
-      <div className="sync-section">
-        <button 
-          onClick={syncFreightData} 
-          disabled={isLoading}
-        >
-          {isLoading ? 'Syncing...' : 'Sync Freight Data'}
-        </button>
-      </div>
-      
-      <table className="freight-table">
-        <thead>
-          <tr>
-            <th>Tracking Number</th>
-            <th>Country</th>
-            <th>Status</th>
-            <th>Total Weight</th>
-            <th>Amount</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {freights.length > 0 ? (
-            freights.map(freight => (
-              <tr 
-                key={freight._id} 
-                onClick={() => handleFreightClick(freight._id)}
-                className="freight-row"
+    <CCard>
+      <CCardHeader>
+        <FontAwesomeIcon icon={faShippingFast} className="me-2" />
+        Shipment List
+      </CCardHeader>
+      <CCardBody>
+        <CTable hover responsive>
+          <CTableHead>
+            <CTableRow>
+              <CTableHeaderCell>Tracking Number</CTableHeaderCell>
+              <CTableHeaderCell>Country</CTableHeaderCell>
+              <CTableHeaderCell>Type</CTableHeaderCell>
+              <CTableHeaderCell>Status</CTableHeaderCell>
+              <CTableHeaderCell>Weight</CTableHeaderCell>
+              <CTableHeaderCell>Items</CTableHeaderCell>
+              <CTableHeaderCell>Amount</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody>
+            {data.map((shipment) => (
+              <CTableRow 
+                key={shipment._id} 
+                onClick={() => handleRowClick(shipment)}
+                style={{ cursor: 'pointer' }}
               >
-                <td>{freight.tracking_number}</td>
-                <td>{freight.country}</td>
-                <td>{freight.status}</td>
-                <td>{freight.total_weight} kg</td>
-                <td>{freight.amount.currency} {freight.amount.value}</td>
-                <td>
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    handleFreightClick(freight._id);
-                  }}>
-                    View Details
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            !isFetching && <tr>
-              <td colSpan="6">No freights available</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <div className="pagination">
-        <button 
-          onClick={handlePreviousPage}
-          disabled={page === 1 || isLoading}
-        >
-          Previous
-        </button>
-        <span>Page {page} of {totalPages}</span>
-        <button 
-          onClick={handleNextPage}
-          disabled={page === totalPages || isLoading}
-        >
-          Next
-        </button>
-      </div>
-    </div>
+                <CTableDataCell>{shipment.tracking_number}</CTableDataCell>
+                <CTableDataCell>{shipment.country}</CTableDataCell>
+                <CTableDataCell>
+                  <CBadge color={shipment.type === 'business' ? 'info' : 'primary'}>
+                    {shipment.type}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CBadge color={getStatusBadge(shipment.status)}>
+                    {shipment.status}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <FontAwesomeIcon icon={faBoxOpen} className="me-1" />
+                  {shipment.total_weight} kg
+                </CTableDataCell>
+                <CTableDataCell>{shipment.number_of_items}</CTableDataCell>
+                <CTableDataCell>
+                  <FontAwesomeIcon icon={faMoneyBillWave} className="me-1" />
+                  {shipment.amount.value} {shipment.amount.currency}
+                </CTableDataCell>
+              </CTableRow>
+            ))}
+          </CTableBody>
+        </CTable>
+      </CCardBody>
+    </CCard>
   );
 };
 
-export default FreightList;
+export default FreightTable;

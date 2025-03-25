@@ -1,64 +1,41 @@
-import Shipment from './../model/core.js';
-import {fetchFreightData} from '../services/webhookServiceCore.js';
-export const ship = async (req, res) => {
-  try {
-    const shipments = await Shipment.find();
-    res.json(shipments);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+import axios from 'axios';
 
-export const shipId = async (req, res) => {
+const core1 = process.env.EXTERNAL_CORE?.replace(/\/$/, '');
+const core1Token = process.env.CORE_API_TOKEN;
+
+export const fetchCore1Data = async (req, res) => {
   try {
-    const shipment = await Shipment.findById({ shipmentId: req.params.id });
-    if (!shipment) {
-      return res.status(404).json({ message: 'Shipment not found' });
+    console.log('Fetching data from External Core API...');
+
+    const page = req.query.page || 1;
+
+    const response = await axios.post(
+      `${core1}/api/v1/freight/`,
+      { page },
+      {
+        headers: {
+          Authorization: `Bearer ${core1Token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Full Response:', JSON.stringify(response.data, null, 2));
+
+    // Return the entire response data
+    return res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching freight data:', error);
+
+    if (error.response) {
+      return res.status(error.response.status).json({
+        error: 'Failed to fetch data',
+        details: error.response.data,
+      });
+    } else if (error.request) {
+      return res.status(500).json({ error: 'No response from API' });
+    } else {
+      return res.status(500).json({ error: error.message });
     }
-    res.json(shipment);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const syncFreightData = async(req,res)=>{
-  try {
-    const freights = await fetchFreightData();
-    res.status(200).json({
-        message: 'Freight data synced successfully',
-        count: freights.length
-    });
-} catch (error) {
-    res.status(500).json({
-        message: 'Failed to sync freight data',
-        error: error.message
-    });
-}
-
-}
-export const getFreights = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 10; // items per page
-    const skip = (page - 1) * limit;
-
-    const totalFreights = await Freight.countDocuments();
-    const totalPages = Math.ceil(totalFreights / limit);
-
-    const freights = await Freight.find()
-      .skip(skip)
-      .limit(limit)
-      .sort({ created_at: -1 });
-
-    res.status(200).json({
-      freights,
-      totalPages,
-      currentPage: page
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Failed to fetch freight data',
-      error: error.message
-    });
   }
 };
