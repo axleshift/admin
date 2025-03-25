@@ -1,1 +1,0 @@
-import{j as i}from"./index-DLLaIII6.js";import"./vendor-react-B6URQkMn.js";import"./vendor-redux-DipIbRRz.js";import"./vendor-coreui-vXCAeGSv.js";const o=()=>i.jsx("div",{children:"financialanalytics\\"});export{o as default};
