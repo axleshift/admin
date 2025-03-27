@@ -15,5 +15,5 @@ router.get('/user/:department',authenticateAdmin,getUsersByDepartment)
 router.post('/external-login/:department',authenticateAdmin, external);
 
 
-router.post('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
+router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
 export default router
