@@ -17,6 +17,7 @@ import {
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faCircle } from '@fortawesome/free-solid-svg-icons';
+import PropTypes from 'prop-types';
 
 const TableVehicle = ({ vehicles, loading, onDeleteVehicle, onUpdateVehicle }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -161,4 +162,12 @@ const TableVehicle = ({ vehicles, loading, onDeleteVehicle, onUpdateVehicle }) =
   );
 };
 
+
+TableVehicle.propTypes = {
+    vehicles: PropTypes.array.isRequired, // Ensures 'vehicles' is an array and is required
+    loading: PropTypes.bool.isRequired,   // Ensures 'loading' is a boolean and is required
+    onDeleteVehicle: PropTypes.func.isRequired,  // Ensures 'onDeleteVehicle' is a function and is required
+    onUpdateVehicle: PropTypes.func.isRequired,  // Ensures 'onUpdateVehicle' is a function and is required
+  };
+  
 export default TableVehicle;
