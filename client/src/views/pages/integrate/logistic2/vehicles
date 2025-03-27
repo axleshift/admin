@@ -1,0 +1,72 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import { CButton, CCard, CCardBody, CCardHeader, CInput, CContainer, CAlert } from '@coreui/react';
+import { FaCar } from 'react-icons/fa'; // FontAwesome car icon
+
+// VehiclePage component
+const VehiclePage = () => {
+  const [vehicleId, setVehicleId] = useState('');
+  const [vehicleData, setVehicleData] = useState(null);
+  const [error, setError] = useState('');
+
+  // Define your API key and the API URL
+  const apiKey = '0ad3f5c013c42d2d0537672a260978c71dcd5a7d508019d748f991deee3d65665a477e3523c6bbc83fd6a51a71dd5003';
+  const apiUrl = 'https://backend-log1.axleshift.com/api/v1/vehicle/';
+
+  // Fetch vehicle data
+  const getVehicleData = async () => {
+    if (!vehicleId) {
+      setError('Please enter a vehicle ID.');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${apiUrl}${vehicleId}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      setVehicleData(response.data);
+      setError('');
+    } catch (err) {
+      setError('Error fetching vehicle data');
+      setVehicleData(null);
+    }
+  };
+
+  return (
+    <CContainer className="mt-5">
+      <h1 className="text-center my-4">Vehicle Information</h1>
+      <div className="text-center">
+        <CInput
+          type="text"
+          placeholder="Enter Vehicle ID"
+          value={vehicleId}
+          onChange={(e) => setVehicleId(e.target.value)}
+          className="mb-3"
+        />
+        <CButton color="primary" onClick={getVehicleData}>
+          <FaCar /> Get Vehicle Data
+        </CButton>
+      </div>
+
+      {/* Error Handling */}
+      {error && <CAlert color="danger" className="mt-4">{error}</CAlert>}
+
+      {/* Display Vehicle Data */}
+      {vehicleData && (
+        <CCard className="mt-4">
+          <CCardHeader>
+            <strong>Vehicle Details</strong>
+          </CCardHeader>
+          <CCardBody>
+            <pre>{JSON.stringify(vehicleData, null, 2)}</pre>
+          </CCardBody>
+        </CCard>
+      )}
+    </CContainer>
+  );
+};
+
+export default VehiclePage;

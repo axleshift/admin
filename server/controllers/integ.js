@@ -1,7 +1,7 @@
 import User from "../model/User.js";
 import axios from 'axios';
 import jwt from 'jsonwebtoken'
-import bcryptjs from 'bcryptjs'
+import bcryptjs from 'bcryptjs' 
 import dotenv from 'dotenv'
 
 
