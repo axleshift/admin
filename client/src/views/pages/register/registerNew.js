@@ -13,436 +13,267 @@ import {
   CTableRow,
   CTableHeaderCell,
   CTableDataCell,
-  CFormInput,
   CFormSelect,
   CButton,
   CSpinner,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
   CAlert
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserPlus, 
   faSave, 
-  faSync, 
-  faEye, 
-  faEyeSlash, 
-  faShieldAlt 
+  faSync,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
-import logActivity from '../../../utils/activityLogger';
-import SecurityAssistant from './SecurityAssist'; // Import the new component
 
 const HRUsersPage = () => {
+  // Redux RTK Query hooks
   const { data: users, isLoading, isError, refetch } = useGetNewUserQuery();
-  const [saveUser] = useSaveUserMutation();  
-  const [currentUser, setCurrentUser] = useState(null);
+  const [saveUser, { isLoading: isSaving }] = useSaveUserMutation();
 
-  const departments = ['Administrative', 'Finance', 'HR', 'Core', 'Logistics'];
+  // State management
   const [selectedUsers, setSelectedUsers] = useState({});
-  const [showPassword, setShowPassword] = useState({});
-  const [securityStatus, setSecurityStatus] = useState({});
-  const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [selectedUserForSecurity, setSelectedUserForSecurity] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [saveStatus, setSaveStatus] = useState({});
+
+  // Departments and roles configuration
+  const departments = ['Administrative', 'Finance', 'HR', 'Core', 'Logistics'];
   
-  useEffect(() => {
-    try {
-      const userString = localStorage.getItem('currentUser');
-      if (userString) {
-        const user = JSON.parse(userString);
-        setCurrentUser(user);
-        
-        logActivity({
-          name: user.name || 'Unknown User',
-          role: user.role || 'Unknown Role',
-          department: user.department || 'Unknown Department',
-          route: 'hr/users',
-          action: 'VIEW',
-          description: 'Accessed new users registration page'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to get current user:', error);
+  const departmentRoles = {
+    'Finance': ['User', 'Admin', 'Staff', 'Superadmin', 'Technician'],
+    'Administrative': ['Admin', 'Manager', 'Superadmin'],
+    'HR': ['Admin', 'Manager', 'Employee', 'Contractor'],
+    'Core': ['Admin', 'Manager', 'Employee', 'Contractor'],
+    'Logistics': ['Admin', 'Manager', 'Employee', 'Contractor']
+  };
+
+  // Validation helpers
+  const validateUserSelection = (userId) => {
+    const userSelection = selectedUsers[userId] || {};
+    const newErrors = {};
+
+    if (!userSelection.department) {
+      newErrors.department = 'Department is required';
     }
-  }, []);
-// Fix the getRolesForDepartment function
-const getRolesForDepartment = (department) => {
-  if (!department) return [];
-  
-  // Normalize department name for consistent comparison
-  const normalizedDept = department.toLowerCase();
-  
-  if (normalizedDept === 'finance') {
-    return ['user', 'admin', 'staff', 'superadmin', 'technician'];
-  } 
-  else if (normalizedDept === 'administrative' || normalizedDept === 'admin'){
-    return ['admin', 'manager', 'superadmin'];
-  }
-  else if (normalizedDept === "logistics"){
-    return ['Admin', 'Manager', 'Employee', 'Contractor'];
-  }
-  else if (normalizedDept === "core"){
-    return ['Admin', 'Manager', 'Employee', 'Contractor'];
-  }
-  else if (normalizedDept === "hr"){
-    return ['Admin', 'Manager', 'Employee', 'Contractor'];
-  }
-  
-  return [];
-};
+    if (!userSelection.role) {
+      newErrors.role = 'Role is required';
+    }
 
-  const handlePasswordChange = (userId, password) => {
-    setSelectedUsers({
-      ...selectedUsers,
-      [userId]: { ...selectedUsers[userId], password }
-    });
+    setErrors(prev => ({
+      ...prev,
+      [userId]: newErrors
+    }));
+
+    return Object.keys(newErrors).length === 0;
   };
 
-  const toggleShowPassword = (userId) => {
-    setShowPassword({
-      ...showPassword,
-      [userId]: !showPassword[userId]
-    });
-  };
-
+  // Event Handlers
   const handleDepartmentChange = (userId, department) => {
-    setSelectedUsers({
-      ...selectedUsers,
-      [userId]: { ...selectedUsers[userId], department, role: '' }
-    });
+    setSelectedUsers(prev => ({
+      ...prev,
+      [userId]: { 
+        ...prev[userId], 
+        department, 
+        role: '' 
+      }
+    }));
+    
+    // Clear any previous errors
+    setErrors(prev => ({
+      ...prev,
+      [userId]: {}
+    }));
   };
 
   const handleRoleChange = (userId, role) => {
-    setSelectedUsers({
-      ...selectedUsers,
-      [userId]: { ...selectedUsers[userId], role }
-    });
-  };
-  
-  // Handler for security status updates from the SecurityAssistant component
-  const handleSecurityUpdate = (userId, status) => {
-    setSecurityStatus({
-      ...securityStatus,
-      [userId]: status
-    });
-  };
-  
-  // Show security analysis modal
-  const openSecurityModal = (user) => {
-    const userId = user.id || user._id || user.email;
-    const userData = {
-      userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: selectedUsers[userId]?.password || '',
-      role: selectedUsers[userId]?.role || '',
-      department: selectedUsers[userId]?.department || ''
-    };
+    setSelectedUsers(prev => ({
+      ...prev,
+      [userId]: { 
+        ...prev[userId], 
+        role 
+      }
+    }));
     
-    setSelectedUserForSecurity(userData);
-    setShowSecurityModal(true);
+    // Clear any previous errors
+    setErrors(prev => ({
+      ...prev,
+      [userId]: {}
+    }));
   };
 
   const handleSaveUser = async (user) => {
-    const userId = user.id || user._id || user.email;
-    const userData = selectedUsers[userId] || {};
+    const userId = user.id;
     
-    // Check if security analysis has been performed and if it passed
-    const userSecurityStatus = securityStatus[userId];
-    if (!userSecurityStatus || !userSecurityStatus.isSecure) {
-      // Show security modal if security hasn't been checked or failed
-      openSecurityModal(user);
-      return;
-    }
-    
-    // Enhanced validation before submission
-    const payload = {
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email,
-      password: userData.password || '',
-      role: userData.role || '',
-      department: userData.department || ''
-    };
-  
-    // Frontend pre-validation
-    const errors = [];
-    
-    if (!payload.firstName) errors.push('First Name is required');
-    if (!payload.lastName) errors.push('Last Name is required');
-    if (!payload.email) errors.push('Email is required');
-    if (!payload.password) errors.push('Password is required');
-    if (!payload.role) errors.push('Role is required');
-    if (!payload.department) errors.push('Department is required');
-  
-    // Password complexity check
-    if (payload.password) {
-      if (payload.password.length < 8) 
-        errors.push('Password must be at least 8 characters long');
-      if (!/[a-z]/.test(payload.password)) 
-        errors.push('Password must contain at least one lowercase letter');
-      if (!/[A-Z]/.test(payload.password)) 
-        errors.push('Password must contain at least one uppercase letter');
-      if (!/[0-9]/.test(payload.password)) 
-        errors.push('Password must contain at least one number');
-      if (!/[@$!%*?&#]/.test(payload.password)) 
-        errors.push('Password must contain at least one special character');
-    }
-  
-    // If there are validation errors, show them and stop
-    if (errors.length > 0) {
-      // You might want to use a toast or alert system here
-      errors.forEach(error => {
-        console.error(error);
-        // Example: toast.error(error)
-      });
-      return;
-    }
-  
-    try {
-      const response = await saveUser(payload).unwrap();
-      console.log('User saved successfully:', response);
-      
-      if (currentUser) {
-        const detailedDescription = `Registered new user: ${user.firstName} ${user.lastName} (${user.email}) with role: ${userData.role} in department: ${userData.department}`;
-        
-        logActivity({
-          name: currentUser.name || 'Unknown User',
-          role: currentUser.role || 'Unknown Role',
-          department: currentUser.department || 'Unknown Department',
-          route: 'hr/users',
-          action: 'CREATE',
-          description: detailedDescription
-        });
-      }
-      
-      refetch();
-    } catch (error) {
-      console.error('Error saving user:', error);
-      
-      // More comprehensive error handling
-      if (error.data && error.data.errors) {
-        // Handle multiple validation errors from backend
-        error.data.errors.forEach(errorMsg => {
-          console.error(errorMsg);
-          // Example: toast.error(errorMsg)
-        });
-      } else if (error.data && error.data.message) {
-        // Handle single error message
-        console.error(error.data.message);
-        // Example: toast.error(error.data.message)
-      } else {
-        // Fallback error handling
-        console.error('An unexpected error occurred while saving the user');
-        // Example: toast.error('Failed to save user. Please try again.')
-      }
-  
-      if (currentUser) {
-        logActivity({
-          name: currentUser.name || 'Unknown User',
-          role: currentUser.role || 'Unknown Role',
-          department: currentUser.department || 'Unknown Department',
-          route: 'hr/users',
-          action: 'ERROR',
-          description: `Failed to register user: ${user.firstName} ${user.lastName} (${user.email}). Error: ${error.message || 'Unknown error'}`
-        });
-      }
-    }
-  };
+    // Validate user selection
+    const isValid = validateUserSelection(userId);
+    if (!isValid) return;
 
-  // Prepare user data for security analysis
-  const getUserDataForSecurity = (user) => {
-    if (!user) return null;
-    
-    const userId = user.id || user._id || user.email;
-    const userData = selectedUsers[userId] || {};
-    
-    return {
+    // Prepare user data
+    const userData = {
+      id: userId,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      password: userData.password || '',
-      role: userData.role || '',
-      department: userData.department || ''
+      department: selectedUsers[userId].department,
+      role: selectedUsers[userId].role
     };
+
+    try {
+      // Update save status to loading
+      setSaveStatus(prev => ({
+        ...prev,
+        [userId]: { loading: true, error: null }
+      }));
+
+      // Attempt to save user using Redux mutation
+      const result = await saveUser(userData).unwrap();
+
+      // Success handling
+      setSaveStatus(prev => ({
+        ...prev,
+        [userId]: { 
+          loading: false, 
+          error: null, 
+          success: true 
+        }
+      }));
+
+      // Refetch users to update the list
+      refetch();
+    } catch (error) {
+      // Error handling
+      setSaveStatus(prev => ({
+        ...prev,
+        [userId]: { 
+          loading: false, 
+          error: error.data?.message || 'An unexpected error occurred', 
+          success: false 
+        }
+      }));
+
+      console.error('Save user error:', error);
+    }
   };
 
   return (
-    <>
-      <CRow>
-        <CCol md={12}>
-          <CCard>
-            <CCardHeader>
-              <h4><FontAwesomeIcon icon={faUserPlus} className="me-2" />New Users</h4>
-            </CCardHeader>
-            <CCardBody>
-              <CTable hover responsive className="align-middle">
-                <CTableHead color="light">
-                  <CTableRow>
-                    <CTableHeaderCell>First Name</CTableHeaderCell>
-                    <CTableHeaderCell>Last Name</CTableHeaderCell>
-                    <CTableHeaderCell>Email</CTableHeaderCell>
-                    <CTableHeaderCell>Password</CTableHeaderCell>
-                    <CTableHeaderCell>Department</CTableHeaderCell>
-                    <CTableHeaderCell>Role</CTableHeaderCell>
-                    <CTableHeaderCell>Security</CTableHeaderCell>
-                    <CTableHeaderCell>Actions</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                {users && users.map((user) => {
-                  const userId = user.id || user._id || user.email;
-                  const selectedDepartment = selectedUsers[userId]?.department || '';
-                  const availableRoles = getRolesForDepartment(selectedDepartment);
-                  const userSecurityStatus = securityStatus[userId] || {};
-                  const securityColor = userSecurityStatus?.isSecure ? 'success' : 
-                                    (userSecurityStatus ? 'warning' : 'secondary');
+    <CRow>
+      <CCol md={12}>
+        <CCard>
+          <CCardHeader>
+            <h4><FontAwesomeIcon icon={faUserPlus} className="me-2" />New Users Registration</h4>
+          </CCardHeader>
+          <CCardBody>
+            <CTable hover responsive>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Name</CTableHeaderCell>
+                  <CTableHeaderCell>Email</CTableHeaderCell>
+                  <CTableHeaderCell>Department</CTableHeaderCell>
+                  <CTableHeaderCell>Role</CTableHeaderCell>
+                  <CTableHeaderCell>Actions</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {users?.map((user) => {
+                  const userId = user.id;
+                  const userSelection = selectedUsers[userId] || {};
+                  const userErrors = errors[userId] || {};
+                  const saveStatusForUser = saveStatus[userId] || {};
 
                   return (
                     <CTableRow key={userId}>
-                      <CTableDataCell>{user.firstName}</CTableDataCell>
-                      <CTableDataCell>{user.lastName}</CTableDataCell>
+                      <CTableDataCell>
+                        {user.firstName} {user.lastName}
+                      </CTableDataCell>
                       <CTableDataCell>{user.email}</CTableDataCell>
                       <CTableDataCell>
-                        <div className="d-flex align-items-center">
-                          <CFormInput
-                            type={showPassword[userId] ? "text" : "password"}
-                            placeholder="Set password"
-                            value={selectedUsers[userId]?.password || ''}
-                            onChange={(e) => handlePasswordChange(userId, e.target.value)}
-                          />
-                          <CButton 
-                            color="link" 
-                            onClick={() => toggleShowPassword(userId)}
-                            className="ms-2"
-                          >
-                            <FontAwesomeIcon icon={showPassword[userId] ? faEyeSlash : faEye} />
-                          </CButton>
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
                         <CFormSelect
-                          value={selectedUsers[userId]?.department || ''}
+                          value={userSelection.department || ''}
                           onChange={(e) => handleDepartmentChange(userId, e.target.value)}
+                          invalid={!!userErrors.department}
                         >
-                          <option value="">Select department</option>
+                          <option value="">Select Department</option>
                           {departments.map((dept) => (
                             <option key={dept} value={dept}>{dept}</option>
                           ))}
                         </CFormSelect>
+                        {userErrors.department && (
+                          <div className="text-danger small">
+                            {userErrors.department}
+                          </div>
+                        )}
                       </CTableDataCell>
                       <CTableDataCell>
                         <CFormSelect
-                          value={selectedUsers[userId]?.role || ''}
+                          value={userSelection.role || ''}
                           onChange={(e) => handleRoleChange(userId, e.target.value)}
-                          disabled={!selectedUsers[userId]?.department}
+                          disabled={!userSelection.department}
+                          invalid={!!userErrors.role}
                         >
-                          <option value="">Select role</option>
-                          {availableRoles.map((role) => (
+                          <option value="">Select Role</option>
+                          {(departmentRoles[userSelection.department] || []).map((role) => (
                             <option key={role} value={role}>{role}</option>
                           ))}
                         </CFormSelect>
+                        {userErrors.role && (
+                          <div className="text-danger small">
+                            {userErrors.role}
+                          </div>
+                        )}
                       </CTableDataCell>
                       <CTableDataCell>
                         <CButton 
-                          color={securityColor}
-                          size="sm"
-                          onClick={() => openSecurityModal(user)}
-                        >
-                          <FontAwesomeIcon icon={faShieldAlt} className="me-1" />
-                          {userSecurityStatus?.isSecure ? 'Secure' : 'Check'}
-                        </CButton>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <CButton 
-                          color="primary"
+                          color={
+                            saveStatusForUser.success ? 'success' : 
+                            saveStatusForUser.error ? 'danger' : 'primary'
+                          }
                           onClick={() => handleSaveUser(user)}
-                          disabled={!selectedUsers[userId]?.department || !selectedUsers[userId]?.role || !selectedUsers[userId]?.password}
+                          disabled={saveStatusForUser.loading || isSaving}
                         >
-                          <FontAwesomeIcon icon={faSave} className="me-1" />
-                          Save
+                          {saveStatusForUser.loading || isSaving ? (
+                            <CSpinner size="sm" />
+                          ) : (
+                            <>
+                              <FontAwesomeIcon icon={faSave} className="me-2" />
+                              {saveStatusForUser.success ? 'Saved' : 
+                               saveStatusForUser.error ? 'Retry' : 'Save'}
+                            </>
+                          )}
                         </CButton>
+                        {saveStatusForUser.error && (
+                          <div className="text-danger small mt-1">
+                            <FontAwesomeIcon icon={faExclamationTriangle} className="me-1" />
+                            {saveStatusForUser.error}
+                          </div>
+                        )}
                       </CTableDataCell>
                     </CTableRow>
                   );
                 })}
               </CTableBody>
-              </CTable>
-              {isLoading && (
-                <div className="text-center my-3">
-                  <CSpinner color="primary" />
-                </div>
-              )}
-              {isError && (
-                <CAlert color="danger" className="mt-3">
-                  Error loading new users. Please try again.
-                </CAlert>
-              )}
-              {users && users.length === 0 && (
-                <CAlert color="info" className="mt-3">
-                  No new user registrations pending.
-                </CAlert>
-              )}
-              <div className="d-flex justify-content-end mt-3">
-                <CButton color="secondary" onClick={refetch}>
-                  <FontAwesomeIcon icon={faSync} className="me-1" />
-                  Refresh
-                </CButton>
-              </div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+            </CTable>
 
-      {/* Security Modal */}
-      <CModal 
-        visible={showSecurityModal} 
-        onClose={() => setShowSecurityModal(false)}
-        size="lg"
-      >
-        <CModalHeader onClose={() => setShowSecurityModal(false)}>
-          <CModalTitle>Security Analysis</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          {selectedUserForSecurity && (
-            <SecurityAssistant 
-              userData={selectedUserForSecurity} 
-              onSecurityUpdate={(status) => {
-                handleSecurityUpdate(selectedUserForSecurity.userId, status);
-              }}
-            />
-          )}
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowSecurityModal(false)}>
-            Close
-          </CButton>
-          {selectedUserForSecurity && securityStatus[selectedUserForSecurity.userId]?.isSecure && (
-            <CButton 
-              color="success" 
-              onClick={() => {
-                setShowSecurityModal(false);
-                // Find original user object to save
-                const userToSave = users.find(u => {
-                  const id = u.id || u._id || u.email;
-                  return id === selectedUserForSecurity.userId;
-                });
-                if (userToSave) {
-                  handleSaveUser(userToSave);
-                }
-              }}
-            >
-              <FontAwesomeIcon icon={faSave} className="me-1" />
-              Save User
-            </CButton>
-          )}
-        </CModalFooter>
-      </CModal>
-    </>
+            {isLoading && (
+              <div className="text-center my-3">
+                <CSpinner color="primary" />
+              </div>
+            )}
+
+            {isError && (
+              <CAlert color="danger">
+                Failed to load users. Please try again.
+              </CAlert>
+            )}
+
+            {(!users || users.length === 0) && !isLoading && (
+              <CAlert color="info">
+                No new users available for registration.
+              </CAlert>
+            )}
+          </CCardBody>
+        </CCard>
+      </CCol>
+    </CRow>
   );
 };
 

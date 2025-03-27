@@ -1,66 +1,118 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import axios from 'axios'
+import axiosInstance from '../../../utils/axiosInstance'
+
+// CoreUI imports
+import {
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CForm,
+  CFormInput,
+  CButton,
+  CContainer,
+  CRow,
+  CCol
+} from '@coreui/react'
+
+// FontAwesome imports
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faLock, faKey } from '@fortawesome/free-solid-svg-icons'
 
 function ResetPass() {
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
   const { id, token } = useParams()
 
-  axios.defaults.withCredentials = true
-
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
 
-    console.log('ID:', id)
-    console.log('Token:', token)
-    console.log('Password:', password)
+    // Validate password match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
 
     try {
-      const res = await axios.post(`http://localhost:5053/general/reset-password/${id}/${token}`, {
+      const res = await axiosInstance.post(`/general/reset-password/${id}/${token}`, {
         password,
       })
-      console.log('Response:', res.data)
 
       if (res.data.Status === 'Success') {
         navigate('/login')
       } else {
-        console.error('Reset failed:', res.data)
+        setError(res.data.Message || 'Password reset failed')
       }
     } catch (err) {
-      console.error('Error:', err.message)
-      if (err.response) {
-        console.error('Server responded with status:', err.response.status)
-        console.error('Response data:', err.response.data)
-      }
+      console.error('Error:', err)
+      setError(err.response?.data?.message || 'An error occurred')
     }
   }
 
   return (
-    <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
-      <div className="bg-white p-3 rounded w-25">
-        <h4>Reset Password</h4>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="password">
-              <strong>New Password</strong>
-            </label>
-            <input
-              type="password"
-              placeholder="Enter Password"
-              autoComplete="off"
-              name="password"
-              className="form-control rounded-0"
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-success w-100 rounded-0">
-            Update
-          </button>
-        </form>
-      </div>
-    </div>
+    <CContainer className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+      <CRow className="w-100 justify-content-center">
+        <CCol md={6} lg={4}>
+          <CCard className="shadow-lg border-0">
+            <CCardHeader className="bg-primary text-white text-center py-3">
+              <FontAwesomeIcon icon={faKey} size="2x" className="me-2" />
+              <h4 className="d-inline align-middle">Reset Password</h4>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CForm onSubmit={handleSubmit}>
+                {error && (
+                  <div className="alert alert-danger mb-3" role="alert">
+                    {error}
+                  </div>
+                )}
+                
+                <div className="mb-3">
+                  <CFormInput 
+                    type="password"
+                    placeholder="New Password"
+                    floatingLabel={
+                      <>
+                        <FontAwesomeIcon icon={faLock} className="me-2" />
+                        New Password
+                      </>
+                    }
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="mb-3"
+                  />
+                  
+                  <CFormInput 
+                    type="password"
+                    placeholder="Confirm Password"
+                    floatingLabel={
+                      <>
+                        <FontAwesomeIcon icon={faLock} className="me-2" />
+                        Confirm Password
+                      </>
+                    }
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <CButton 
+                  type="submit" 
+                  color="primary" 
+                  className="w-100"
+                >
+                  Update Password
+                </CButton>
+              </CForm>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+    </CContainer>
   )
 }
 

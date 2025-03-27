@@ -14,6 +14,7 @@ export const authenticateAdmin = (req, res, next) => {
     return res.status(403).json({ error: "Unauthorized" });
   }
 
-  console.log("Authentication successful!"); // Debugging line
+  console.log("Authentication successful!"); 
+  // Debugging line
   next(); // Proceed to the next middleware/controller
 };

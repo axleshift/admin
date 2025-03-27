@@ -31,7 +31,7 @@ const passwordComplexityOptions = {
 import Activitytracker from "../model/Activitytracker.js";
 //integrate model
 
-import { generateCode, generateUsername } from "../UTIL/generateCode.js";
+import { generateCode, generateUsername,generatePassword } from "../UTIL/generateCode.js";
 import bcryptjs from 'bcryptjs'
 
 
@@ -59,146 +59,147 @@ export const userSchema = Joi.object({
   image: Joi.string().optional().allow('')
 });
 
-
 export const saveUser = async (req, res) => {
-  console.log("Received user data:", req.body);
-  
-  try {
-    const { 
-      id, 
-      firstName, 
-      lastName, 
-      email, 
-      password, 
-      role, 
-      department,
-      phone = '',
-      address = '',
-      image = ''
-    } = req.body;
+    console.log("Received user data:", req.body);
     
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password || !role || !department) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields',
-        missingFields: [
-          !firstName && 'First Name',
-          !lastName && 'Last Name',
-          !email && 'Email',
-          !password && 'Password',
-          !role && 'Role',
-          !department && 'Department'
-        ].filter(Boolean)
-      });
-    }
-    
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email already exists in the system'
-      });
-    }
-    
-    // Hash the password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash(password, salt);
-    
-    // Normalize and validate department and role
-    const normalizedDepartment = capitalizeFirstLetter(department.trim());
-    const normalizedRole = role.toLowerCase().trim();
-    
-    // Prepare user data
-    const userData = {
-      name: `${firstName} ${lastName}`.trim(),
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      role: normalizedRole,
-      department: normalizedDepartment,
-      phoneNumber: phone || '0000000000',
-      username: generateUsername(normalizedRole),
-      
-      // Default additional fields
-      attendance: [],
-      performance: [],
-      benefits: {
-        healthInsurance: false,
-        retirementPlan: false,
-        vacationDays: 0,
-        sickLeave: 0
-      },
-      payroll: {
-        salary: 0,
-        payFrequency: 'monthly',
-        lastPaymentDate: new Date()
-      }
-    };
-    
-    // Create and save new user
-    const newUser = new User(userData);
-    
-    // Additional validation
     try {
-      const validationError = newUser.validateSync();
-      if (validationError) {
-        console.error("Mongoose validation error:", validationError);
+      const { 
+        id, 
+        firstName, 
+        lastName, 
+        email, 
+        role, 
+        department,
+        phone = '',
+        address = '',
+        image = ''
+      } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName || !email || !role || !department) {
         return res.status(400).json({
           success: false,
-          message: 'Validation failed',
-          errors: Object.values(validationError.errors).map(err => err.message)
+          message: 'Missing required fields',
+          missingFields: [
+            !firstName && 'First Name',
+            !lastName && 'Last Name',
+            !email && 'Email',
+            !role && 'Role',
+            !department && 'Department'
+          ].filter(Boolean)
         });
       }
-    } catch (validationError) {
-      console.error("Validation sync error:", validationError);
-      return res.status(400).json({
+      
+      // Check if email already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists in the system'
+        });
+      }
+      
+      // Automatically generate a secure password
+      const generatedPassword = generatePassword(firstName, lastName, department);
+      
+      // Hash the generated password
+      const salt = await bcryptjs.genSalt(10);
+      const hashedPassword = await bcryptjs.hash(generatedPassword, salt);
+      
+      // Normalize and validate department and role
+      const normalizedDepartment = capitalizeFirstLetter(department.trim());
+      const normalizedRole = role.toLowerCase().trim();
+      
+      // Prepare user data
+      const userData = {
+        name: `${firstName} ${lastName}`.trim(),
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role: normalizedRole,
+        department: normalizedDepartment,
+        phoneNumber: phone || '0000000000',
+        username: generateUsername(normalizedRole),
+        
+        // Default additional fields
+        attendance: [],
+        performance: [],
+        benefits: {
+          healthInsurance: false,
+          retirementPlan: false,
+          vacationDays: 0,
+          sickLeave: 0
+        },
+        payroll: {
+          salary: 0,
+          payFrequency: 'monthly',
+          lastPaymentDate: new Date()
+        }
+      };
+      
+      // Create and save new user
+      const newUser = new User(userData);
+      
+      // Additional validation
+      try {
+        const validationError = newUser.validateSync();
+        if (validationError) {
+          console.error("Mongoose validation error:", validationError);
+          return res.status(400).json({
+            success: false,
+            message: 'Validation failed',
+            errors: Object.values(validationError.errors).map(err => err.message)
+          });
+        }
+      } catch (validationError) {
+        console.error("Validation sync error:", validationError);
+        return res.status(400).json({
+          success: false,
+          message: 'User validation failed',
+          error: validationError.message
+        });
+      }
+      
+      // Save user
+      const savedUser = await newUser.save();
+      
+      // Remove sensitive information before sending response
+      const userResponse = savedUser.toObject();
+      delete userResponse.password;
+      
+      // IMPORTANT: Return the generated password to be sent to the user
+      return res.status(201).json({
+        success: true,
+        message: 'User created successfully',
+        user: userResponse,
+        generatedPassword: generatedPassword
+      });
+      
+    } catch (error) {
+      console.error("Comprehensive error in user creation:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        code: error.code
+      });
+      
+      // Handle specific error types
+      if (error.name === 'MongoError' && error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: 'Duplicate key error',
+          error: 'Email already exists'
+        });
+      }
+      
+      return res.status(500).json({
         success: false,
-        message: 'User validation failed',
-        error: validationError.message
+        message: 'Unexpected error occurred during user creation',
+        error: error.message
       });
     }
-    
-    // Save user
-    const savedUser = await newUser.save();
-    
-    // Remove sensitive information before sending response
-    const userResponse = savedUser.toObject();
-    delete userResponse.password;
-    
-    return res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: userResponse
-    });
-    
-  } catch (error) {
-    console.error("Comprehensive error in user creation:", {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      code: error.code
-    });
-    
-    // Handle specific error types
-    if (error.name === 'MongoError' && error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'Duplicate key error',
-        error: 'Email already exists'
-      });
-    }
-    
-    return res.status(500).json({
-      success: false,
-      message: 'Unexpected error occurred during user creation',
-      error: error.message
-    });
-  }
-};
-
+  };
 // Utility function to capitalize first letter
 function capitalizeFirstLetter(string) {
   if (!string) return '';

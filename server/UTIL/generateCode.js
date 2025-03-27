@@ -1,6 +1,3 @@
-// utils/generateCode.js
-
-// This function generates a random 12-digit code
 export function generateCode() {
     let code = "";
     for (let i = 0; i < 12; i++) {
@@ -19,3 +16,30 @@ export function generateUsername(role) {
     const randomDigits = Math.random().toString().slice(2, 12); // Generate 10 random digits
     return `${rolePrefix}${randomDigits}`; // Combine them to create the username
 }
+
+export const generatePassword = (firstName, lastName, department) => {
+    // Normalize inputs
+    const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : '';
+    const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+    const deptCode = department ? department.slice(0, 3).toUpperCase() : '';
+    
+    // Use a more predictable random number generation
+    const randomNum = '6174';  // Fixed, consistent number
+    
+    // Use a fixed special character for consistency
+    const specialChar = '!';
+    
+    // Combine all parts to create a password
+    const password = `${firstInitial}${lastInitial}${deptCode}${randomNum}${specialChar}`;
+    
+    console.log("Generated Password Details:", {
+        firstInitial,
+        lastInitial,
+        deptCode,
+        randomNum,
+        specialChar,
+        password
+    });
+    
+    return password;
+};

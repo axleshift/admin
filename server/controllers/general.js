@@ -159,7 +159,7 @@ export const forgotPassword = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Reset your password",
-            text: `Reset link: http://localhost:3000/resetpass/${user._id}/${token}`,
+            text: `Reset link: https://admin.axleshift.com/resetpass/${user._id}/${token}`,
         };
 
         await transporter.sendMail(mailOptions);
