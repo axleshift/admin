@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcryptjs from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -100,24 +99,8 @@ const userSchema = new mongoose.Schema(
 
 );
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-
-  try {
-    const salt = await bcryptjs.genSalt(10);
-    this.password = await bcryptjs.hash(this.password, salt);
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcryptjs.compare(candidatePassword, this.password);
-};
+// Removed pre-save hook for password hashing
+// Removed comparePassword method
 
 const User = mongoose.model("User", userSchema);
 export default User;

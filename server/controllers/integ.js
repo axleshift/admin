@@ -58,83 +58,115 @@ export const getUsersByDepartment = async (req, res) => {
 };
 
 export const external = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const { department } = req.params; // Get department from URL parameter
-  
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
-      }
-  
-      // Validate department (assuming these are the only valid ones)
-      const validDepartments = ["HR", "Core", "Logistics", "Finance"];
-      if (!validDepartments.includes(department)) {
-        return res.status(400).json({ message: "Invalid department" });
-      }
-  
-      // Find user by email and department
-      const user = await User.findOne({ email, department });
-      if (!user) {
-        return res.status(404).json({ message: "User not found or not in this department" });
-      }
-  
-      // Verify password
-      const isMatch = await bcryptjs.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Generate JWT token
-      const token = jwt.sign(
-        { id: user._id, role: user.role, department: user.department },
-        process.env.JWT_SECRET_KEY,
-        { expiresIn: "1h" }
-      );
-  
-      // Send Webhook Notification
-      const webhookUrl = process.env.WEBHOOK_URL;
-      if (webhookUrl) {
-        const webhookPayload = {
-          eventType: "user_logged_in",
-          user: {
-            id: user._id,
-            email: user.email,
-            role: user.role,
-            department: user.department,
-          },
-        };
-  
-        try {
-          await axios.post(webhookUrl, webhookPayload, {
-            headers: {
-              "x-event-type": "user_logged_in",
-              "Content-Type": "application/json",
-            },
-          });
-          console.log("Webhook sent successfully.");
-        } catch (webhookError) {
-          console.error("Webhook failed:", webhookError.response?.data || webhookError.message);
-        }
-      }
-  
-      // Respond with token and user info
-      res.status(200).json({
-        message: "Login successful",
-        token,
+  try {
+    const { email, password } = req.body;
+    const { department } = req.params;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email and password are required" 
+      });
+    }
+
+    // Validate department
+    const validDepartments = ["HR", "Core", "Logistics", "Finance"];
+    if (!validDepartments.includes(department)) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid department" 
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Incorrect email" 
+      });
+    }
+
+    // Verify department
+    if (user.department !== department) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found in this department" 
+      });
+    }
+
+    // Compare password
+    const isPasswordMatch = await bcryptjs.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({ 
+        success: false,
+        message: "Incorrect password" 
+      });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        role: user.role, 
+        department: user.department 
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    // Send Webhook Notification
+    const webhookUrl = process.env.WEBHOOK_URL;
+    if (webhookUrl) {
+      const webhookPayload = {
+        eventType: "user_logged_in",
         user: {
           id: user._id,
-          name: user.name,
           email: user.email,
           role: user.role,
           department: user.department,
         },
-      });
-  
-    } catch (error) {
-      console.error("Error:", error.message);
-      res.status(500).json({ message: "Internal Server Error" });
+      };
+
+      try {
+        await axios.post(webhookUrl, webhookPayload, {
+          headers: {
+            "x-event-type": "user_logged_in",
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Webhook sent successfully.");
+      } catch (webhookError) {
+        console.error("Webhook failed:", webhookError.response?.data || webhookError.message);
+      }
     }
-  };
+
+    // Successful login response
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+      },
+    });
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal Server Error",
+      error: error.message 
+    });
+  }
+};
+
+
 export const getExternalUsersByDepartment = async (req, res) => {
     try {
       const { department } = req.params; // Get department from URL parameter

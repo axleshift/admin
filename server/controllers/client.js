@@ -3,7 +3,7 @@ import User from "../model/User.js";
 import Joi from "joi";
 import LoginAttempt from '../model/LoginAttempt.js';
 import Anomaly from '../model/Anomaly.js';
-import jwt from 'jsonwebtoken'
+
 import {
     logLoginAttempt,
     checkForUnusualLogin,
@@ -99,12 +99,12 @@ export const saveUser = async (req, res) => {
         });
       }
       
-      // Automatically generate a secure password
+      // Automatically generate a password
       const generatedPassword = generatePassword(firstName, lastName, department);
       
-      // Hash the generated password
-      const salt = await bcryptjs.genSalt(10);
-      const hashedPassword = await bcryptjs.hash(generatedPassword, salt);
+      // Hash the password using bcryptjs
+      const saltRounds = 10;
+      const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
       
       // Normalize and validate department and role
       const normalizedDepartment = capitalizeFirstLetter(department.trim());
@@ -116,7 +116,7 @@ export const saveUser = async (req, res) => {
         firstName,
         lastName,
         email,
-        password: hashedPassword,
+        password: hashedPassword, // Store hashed password
         role: normalizedRole,
         department: normalizedDepartment,
         phoneNumber: phone || '0000000000',
@@ -200,6 +200,7 @@ export const saveUser = async (req, res) => {
       });
     }
   };
+
 // Utility function to capitalize first letter
 function capitalizeFirstLetter(string) {
   if (!string) return '';
