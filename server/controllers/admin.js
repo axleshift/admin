@@ -37,10 +37,7 @@ passport.use(
       try {
         console.log('GitHub access token:', accessToken);
         let user = await User.findOne({ githubId: profile.id });
-        let coreuser = await coreuserModel.findOne({githubId:profile.id})
-        let financeuser = await financeuserModel.findOne({githubId:profile.id})
-        let logisticuser = await logisticuserModel.findOne({githubId:profile.id})
-        let hruser = await hruserModel.findOne({githubId:profile.id})
+       
         if (!user) {
           const departments = ["HR", "Administrative", "Finance", "Core", "Logistics"];
           const roles = ["admin", "manager", "superadmin", "employee"];
