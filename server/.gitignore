@@ -7,7 +7,7 @@
 /vendor
 /public/vendor
 /public/*.zip
-.env
+# .env
 .env.backup
 .env.production
 .phpunit.result.cache
