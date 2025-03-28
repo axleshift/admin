@@ -13,7 +13,9 @@ import {
     getUserPermissions,
     revokeAccess,
     ExternalHR,
-    handleWebhook
+    handleWebhook,
+    leave, 
+    updateLeaveRequest
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -44,4 +46,7 @@ router.get('/hrdash', getHrDashStats)
 router.post('/grant-access', access);
 router.get('/permissions/:userId', getUserPermissions);
 router.post('/revoke-access',revokeAccess);
+
+router.get('/leaveRequest',leave)
+router.put('/leaveRequest/:id', updateLeaveRequest);
 export default router;

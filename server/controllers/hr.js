@@ -5,7 +5,9 @@ import JobPosting from "../model/h2.js";
 import {io}  from '../index.js'
 import axios from 'axios';
 import newuser from '../model/newuserhr.js';
-import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv';
+  
+dotenv.config();
 
 const EXTERNAL_HR_API = process.env.EXTERNAL_HR;
 
@@ -365,5 +367,74 @@ export const getJobPostings = async (req, res) => {
     }
   };
   
-    
+
+   // Ensure environment variables are loaded
+  
+  const HR3 = process.env.EXTERNALHr3;
+  
+  export const leave = async (req, res) => {
+    try {
+      if (!HR3) {
+        console.error("Error: EXTERNAL_HR3 is not defined in the environment variables.");
+        return res.status(500).json({ error: "Server configuration error: Missing HR3 API URL" });
+      }
+  
+      console.log("Fetching data from External HR3 API...");
+  
+      const response = await axios.get(`${HR3}/api/leave-requests`);
+      
+      console.log("Full Response:", JSON.stringify(response.data, null, 2));
+      
+      return res.json(response.data);  // Send only the data to the frontend
+    } catch (error) {
+      console.error("Error fetching leave requests:", error.message);
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch leave requests", 
+        details: error.response?.data || error.message 
+      });
+    }
+  };
+  export const updateLeaveRequest = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, comments } = req.body;
+      
+      if (!id) {
+        return res.status(400).json({ error: "Request ID is required" });
+      }
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      if (!HR3) {
+        console.error("Error: EXTERNAL_HR3 is not defined in the environment variables.");
+        return res.status(500).json({ error: "Server configuration error: Missing HR3 API URL" });
+      }
+      
+      console.log(`Updating leave request ${id} status to ${status}`);
+      
+      // Make the PUT request to update the status
+      const response = await axios.put(
+        `${HR3}/api/leave-requests/${id}`,
+        { status, comments }
+      );
+      
+      console.log("Update Response:", JSON.stringify(response.data, null, 2));
+      
+      return res.status(200).json({
+        success: true,
+        message: `Leave request has been ${status.toLowerCase()} successfully`,
+        data: response.data
+      });
+    } catch (error) {
+      console.error(`Error updating leave request:`, error.message);
+      
+      return res.status(500).json({
+        error: "Failed to update leave request",
+        details: error.response?.data || error.message
+      });
+    }
+  };
   
