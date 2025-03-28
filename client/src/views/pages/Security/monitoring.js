@@ -109,13 +109,6 @@ const SecurityDashboard = () => {
     error: loginsError
   } = useGetLoginAttemptsQuery(prepareLoginQuery());
 
-  const {
-    data: userActivities = [],
-    isLoading: activitiesLoading,
-    error: activitiesError
-  } = useGetUserActivitiesQuery(activityFilters);
-
-  
   const loginAttempts = React.useMemo(() => {
     if (loginFilters.status === 'attempt') {
       

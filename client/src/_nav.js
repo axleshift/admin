@@ -344,8 +344,19 @@ const _nav = () => {
           name:'Announce',
           icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
           to:'/announce'
-        }
-       
+        },
+        {
+          component: CNavItem,
+          name:'Monitoring',
+          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+          to:'/monitoring'
+        },
+       {
+        component: CNavItem,
+        name:'Employee Leaves',
+        icon: <FontAwesomeIcon icon={faSquarePersonConfined} style={{ marginRight: '8px' }} />,
+        to:'/hr3leaverequest'
+       }
       );
     }
 

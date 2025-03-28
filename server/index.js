@@ -19,6 +19,7 @@ import adminRoutes from './routes/admin.js';
 import securityRoutes from './routes/security.js'
 import webhookRoutes from './routes/webhook.js'
 import integRoutes from './routes/integ.js'
+import apiRoutes from './routes/api.js'
 
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
@@ -127,6 +128,7 @@ app.use("/finance", financeRoutes);
 app.use("/notifications", notificationsRoutes);
 app.use('/webhook',webhookRoutes);
 app.use('/integ',integRoutes);
+app.use('/api',apiRoutes);
 // ✅ 9. Load AI service
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 

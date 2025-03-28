@@ -152,7 +152,7 @@ export const adminApi = createApi({
     invalidatesTags: ['Requests']
   }),
 
-  
+//security route
   getSecurityAlerts: build.query({
     query: (params = {}) => ({
       url: 'security/security-alert',
@@ -166,6 +166,9 @@ export const adminApi = createApi({
     })
   }),
 
+  getAnomalies: build.query({
+    query: () => '/security/anomalies',
+}),
 
     getPerformance: build.query({
       query: () => 'hr/performance',
@@ -311,9 +314,7 @@ export const adminApi = createApi({
       }),
     }),
 
-    getAnomalies: build.query({
-      query: () => '/security/anomalies',
-  }),
+ 
   
   saveUser: build.mutation({
     query: (userData) => ({

@@ -19,6 +19,8 @@ const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagem
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
 const Payroll = React.lazy(() => import('./views/pages/integrate/hr/payroll'));
+const LeaveRequest = React.lazy(() => import('./views/pages/integrate/hr/h3leaverequest'));
+
 
 const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
 
@@ -78,6 +80,8 @@ const routes = [
    { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },
   { path: '/jobposting', name: 'Job Posting', element: <ProtectedRoute><Jobpost /></ProtectedRoute> },
   { path: '/payroll', name: 'Payroll', element: <ProtectedRoute><Payroll /></ProtectedRoute> },
+  { path: '/hr3leaverequest', name: 'Leave Request', element: <ProtectedRoute><LeaveRequest /></ProtectedRoute> },
+
   { path: '/profile', name: 'Profile Page', element: <ProtectedRoute><Profile /></ProtectedRoute> },
   { path: '/freight/land', name: 'Freight Land', element: <ProtectedRoute><Land /></ProtectedRoute> },
   { path: '/freight/transaction', name: 'Freight transaction', element: <ProtectedRoute><Transaction /></ProtectedRoute> },
