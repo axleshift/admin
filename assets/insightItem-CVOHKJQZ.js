@@ -1,1 +1,0 @@
-import{j as t}from"./index-BEkeLSf2.js";import"./vendor-react-B6URQkMn.js";import"./vendor-redux-DipIbRRz.js";import"./vendor-coreui-DbIDZSkS.js";const e=()=>t.jsx("div",{children:"Item"});export{e as default};
