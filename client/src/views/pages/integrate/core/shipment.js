@@ -10,7 +10,10 @@ import {
   CCardHeader,
   CCardBody,
   CBadge,
-  CSpinner
+  CSpinner,
+  CPagination,
+  CPaginationItem,
+  CCardFooter
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -20,12 +23,14 @@ import {
   faMoneyBillWave
 } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../../utils/axiosInstance';
-import  logActivity  from '../../../../utils/activityLogger';
+import logActivity from '../../../../utils/activityLogger';
 
 const FreightTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Retrieve user information from sessionStorage
   const userName = sessionStorage.getItem('name'); 
@@ -82,6 +87,30 @@ const FreightTable = () => {
 
     fetchFreightData();
   }, []);
+
+  // Pagination handlers
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    
+    // Log page change activity
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: '/freight-table',
+      action: 'Pagination',
+      description: `User navigated to page ${page} of shipments`
+    });
+  };
+
+  // Get current page data
+  const getCurrentPageData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
 
   // Render loading state
   if (loading) {
@@ -140,6 +169,23 @@ const FreightTable = () => {
     });
   };
 
+  // Get paginated data
+  const currentData = getCurrentPageData();
+
+  // Create pagination items
+  const paginationItems = [];
+  for (let i = 1; i <= totalPages; i++) {
+    paginationItems.push(
+      <CPaginationItem 
+        key={i} 
+        active={i === currentPage} 
+        onClick={() => handlePageChange(i)}
+      >
+        {i}
+      </CPaginationItem>
+    );
+  }
+
   return (
     <CCard>
       <CCardHeader>
@@ -160,7 +206,7 @@ const FreightTable = () => {
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {data.map((shipment) => (
+            {currentData.map((shipment) => (
               <CTableRow 
                 key={shipment._id} 
                 onClick={() => handleRowClick(shipment)}
@@ -192,6 +238,30 @@ const FreightTable = () => {
           </CTableBody>
         </CTable>
       </CCardBody>
+      {totalPages > 1 && (
+        <CCardFooter className="d-flex justify-content-between align-items-center">
+          <div className="small text-muted">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, data.length)} of {data.length} shipments
+          </div>
+          <CPagination aria-label="Shipment navigation">
+            <CPaginationItem 
+              aria-label="Previous" 
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              <span aria-hidden="true">&laquo;</span>
+            </CPaginationItem>
+            {paginationItems}
+            <CPaginationItem 
+              aria-label="Next" 
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              <span aria-hidden="true">&raquo;</span>
+            </CPaginationItem>
+          </CPagination>
+        </CCardFooter>
+      )}
     </CCard>
   );
 };

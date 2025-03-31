@@ -1,7 +1,6 @@
 import express from "express";
 import { 
 
-    generateAnnouncement,
     chatbox,sendMessage,
     getDepartmentMessages,
     updateMessageStatus, 
@@ -9,9 +8,7 @@ import {
     getallmessage,
 
     getRequestStatus,
-    githubAuth, 
-    githubCallback,
-    sendToken,
+
     // getUsersBy ,
    
     
@@ -20,6 +17,7 @@ import {
     restoreDatabase, 
     listBackups, 
     listCollections,
+    
   
 } from "../controllers/admin.js";
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
@@ -33,13 +31,9 @@ const router = express.Router();
     router.get('/list-backups', listBackups);
     router.get('/list-collections/:backupName', listCollections);
 
-router.get('/github', githubAuth);
-router.get('/github/callback',githubCallback, sendToken)
 
 //router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
 
-//announce.js
-router.post('/generate', generateAnnouncement)
 
 //chat.js
 

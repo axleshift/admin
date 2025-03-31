@@ -1,6 +1,8 @@
 import model from '../model/finance.js';
 const { FreightAudit } = model
 const { Invoice } = model
+
+const EXTERNALFinance = process.env.EXTERNALFinance;
 export const createFreightAudit = async (req, res) => {
     try {
         const newAudit = new FreightAudit(req.body);
@@ -72,5 +74,37 @@ export const   getFinancialAnalytics =  async (req, res) => {
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+
+  export const getYearlySalesRevenue = async (req, res) => {
+
+    
+    try {
+      const response = await fetch(`${EXTERNALFinance}/api/salesAndRevenue/yearly-sales-revenue`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error('Failed to fetch yearly sales revenue data:', error);
+      return res.status(500).json({ error: 'Failed to fetch yearly sales revenue data' });
+    }
+  };
+  export const getMonthly = async(req,res)=>{
+    try {
+      const response = await fetch(`${EXTERNALFinance}/api/salesAndRevenue/monthly-sales-revenue`);
+
+      if(!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error('Failed to fetch monthly sales revenue data:', error);
+      return res.status(500).json({ error: 'Failed to fetch monthly sales revenue data' });
     }
   }

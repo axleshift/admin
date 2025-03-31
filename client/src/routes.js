@@ -23,7 +23,10 @@ const LeaveRequest = React.lazy(() => import('./views/pages/integrate/hr/h3leave
 
 
 const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
-
+const Shipment_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightShipment'))
+const Cost_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightCost'))
+const Item_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightItem'))
+const Weight_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightWeight'))
 
 const FreightAudit = React.lazy(() => import("./views/pages/integrate/finance/freightaudit"))
 const FinancialAnalytics = React.lazy(() => import("./views/pages/integrate/finance/financialanalytics"))
@@ -33,8 +36,6 @@ const Customers = React.lazy(() => import('./views/pages/integrate/finance/custo
 
 const Profile = React.lazy(() => import('./views/pages/profile/Profile'));
 const Land = React.lazy(() => import('./views/pages/freight/land'));
-const Transaction = React.lazy(() => import('./views/pages/freight/transaction'));
-const Shipping = React.lazy(() => import('./views/pages/freight/shipping'));
 
 
 const Sales = React.lazy(() => import('./views/pages/sales/oversales'));
@@ -84,8 +85,6 @@ const routes = [
 
   { path: '/profile', name: 'Profile Page', element: <ProtectedRoute><Profile /></ProtectedRoute> },
   { path: '/freight/land', name: 'Freight Land', element: <ProtectedRoute><Land /></ProtectedRoute> },
-  { path: '/freight/transaction', name: 'Freight transaction', element: <ProtectedRoute><Transaction /></ProtectedRoute> },
-  { path: '/freight/shipping', name: 'Freight shipping', element: <ProtectedRoute><Shipping /></ProtectedRoute> },
   { path: '/useractivity/index', name: 'ACTIVITY', element: <ProtectedRoute><Activity /></ProtectedRoute> },
   { path: '/AccessReview', name: 'AccessReview', element: <ProtectedRoute><AccessReview /></ProtectedRoute> },
   { path: '/restore', name: 'RESTORE', element: <ProtectedRoute><Restore /></ProtectedRoute> },
@@ -110,6 +109,11 @@ const routes = [
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
   
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
+  { path: '/insShipment', name: 'Insight', element: <ProtectedRoute><Shipment_insight/></ProtectedRoute>},
+  { path: '/insCost', name: 'Insight', element: <ProtectedRoute><Cost_insight/></ProtectedRoute>},
+  { path: '/insItem', name: 'Insight', element: <ProtectedRoute><Item_insight/></ProtectedRoute>},
+  { path: '/insWeight', name: 'Insight', element: <ProtectedRoute><Weight_insight/></ProtectedRoute>},
+
   
   { path: '/button', name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },

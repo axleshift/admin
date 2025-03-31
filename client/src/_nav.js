@@ -15,7 +15,8 @@ import {
   faShield,
   faHand,
   faUniversalAccess,
-  faPersonBooth
+  faPersonBooth,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -455,7 +456,32 @@ const _nav = () => {
           name: 'Shipment', 
           icon: <FontAwesomeIcon icon={faTruckFast} style={{ marginRight: '8px' }} />, 
           to: '/shipment' 
-        }
+        },
+        {
+          component:CNavItem,
+          name:'Shipment Insight Overtime',
+          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
+          to:'/insShipment'
+        },
+        {
+          component:CNavItem,
+          name:'Cost Insight Overtime',
+          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
+          to:'/insCost'
+        },
+        {
+          component:CNavItem,
+          name:'Item Insight Overtime',
+          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
+          to:'/insItem'
+        },
+        {
+          component:CNavItem,
+          name:'Weight Insight Overtime',
+          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
+          to:'/insWeight'
+        },
+       
       );
     }
     

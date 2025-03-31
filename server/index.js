@@ -21,6 +21,9 @@ import webhookRoutes from './routes/webhook.js'
 import integRoutes from './routes/integ.js'
 import apiRoutes from './routes/api.js'
 
+import { startAutoSync } from "./UTIL/scheduler.js";
+
+
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { Server } from "socket.io";
@@ -139,6 +142,7 @@ mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
         server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
+       // startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 

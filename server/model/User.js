@@ -23,7 +23,16 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["admin", "manager", "superadmin",'employee'], 
+      enum: [
+        "admin", 
+        "manager", 
+        "superadmin",
+        'employee',
+        "user",
+        "inpector",
+        "driver",
+        "chief mechanic"
+      ], 
       lowercase: true, 
     },
     username: {
@@ -38,15 +47,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     
-    // OAuth token management
-    token: {
-      type: String,
-      default: null, // Default value is null if no token is set
-    },
-    tokenExpiry: {
-      type: Date,
-      default: null, // Default value is null if no expiration is set
-    },
+  
 
     refreshToken: { type: String },
     backupDirectory: { type: String},

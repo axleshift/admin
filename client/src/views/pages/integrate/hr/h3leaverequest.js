@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../../../utils/axiosInstance";
 import {
   CTable,
@@ -15,9 +15,6 @@ import {
   CBadge,
   CRow,
   CCol,
-  CCardFooter,
-  CPagination,
-  CPaginationItem,
   CButton,
   CModal,
   CModalHeader,
@@ -28,7 +25,9 @@ import {
   CToast,
   CToastBody,
   CToastHeader,
-  CToaster
+  CToaster,
+  CPagination,
+  CPaginationItem
 } from "@coreui/react";
 import CIcon from '@coreui/icons-react';
 import {
@@ -38,9 +37,8 @@ import {
   cilBriefcase,
   cilUser,
   cilInfo,
-  cilCheck,
-  cilX,
-  cilPencil
+  cilPencil,
+  cilMoney
 } from '@coreui/icons';
 
 const H3LeaveRequest = () => {
@@ -56,7 +54,7 @@ const H3LeaveRequest = () => {
   const itemsPerPage = 5;
   
   // Reference for the toaster
-  const toaster = React.useRef();
+  const toaster = useRef();
 
   useEffect(() => {
     fetchLeaveRequests();
@@ -65,8 +63,11 @@ const H3LeaveRequest = () => {
   const fetchLeaveRequests = async () => {
     try {
       setLoading(true);
+      // Updated to match the new endpoint
       const response = await axiosInstance.get("/hr/leaveRequest");
-      setLeaveRequests(response.data.leaveRequests || []);
+      
+      // Extract the data using the new structure from the endpoint
+      setLeaveRequests(response.data.data || []);
     } catch (error) {
       console.error("Error fetching leave requests:", error);
       showToast('danger', 'Error', 'Failed to load leave requests');
@@ -82,6 +83,8 @@ const H3LeaveRequest = () => {
   const totalPages = Math.ceil(leaveRequests.length / itemsPerPage);
 
   const getStatusBadge = (status) => {
+    if (!status) return <CBadge color="secondary">Unknown</CBadge>;
+    
     switch (status.toLowerCase()) {
       case 'approved':
         return <CBadge color="success">{status}</CBadge>;
@@ -95,18 +98,29 @@ const H3LeaveRequest = () => {
   };
 
   const getPaidStatusBadge = (isPaid) => {
+    if (!isPaid) return <CBadge color="secondary">Unknown</CBadge>;
+    
     return isPaid.toLowerCase() === 'paid' ? 
       <CBadge color="success">{isPaid}</CBadge> : 
       <CBadge color="secondary">{isPaid}</CBadge>;
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
-    });
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return 'Error';
+    }
   };
 
   const handleActionClick = (request, action) => {
@@ -176,10 +190,35 @@ const H3LeaveRequest = () => {
     }
   };
 
+  const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined) return 'N/A';
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount);
+    } catch (error) {
+      console.error("Currency formatting error:", error);
+      return 'Error';
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleDocumentView = (documentPath) => {
+    if(!documentPath){
+      showToast('warning','info','No document available');
+    }
+  }
+
   return (
-    <CContainer className="mt-4">
+    <CContainer fluid className="mt-4">
+      {/* Render toast notifications */}
       <CToaster ref={toaster} push={toast} placement="top-end" />
-      
+    
       <CCard className="shadow">
         <CCardHeader className="bg-primary text-white d-flex justify-content-between align-items-center">
           <h4 className="mb-0">
@@ -189,13 +228,14 @@ const H3LeaveRequest = () => {
           <CButton 
             color="light" 
             size="sm" 
-            onClick={() => fetchLeaveRequests()}
+            onClick={fetchLeaveRequests}
             disabled={loading}
           >
             <CIcon icon={cilPencil} className="me-1" />
             Refresh
           </CButton>
         </CCardHeader>
+    
         <CCardBody>
           {loading ? (
             <div className="text-center p-4">
@@ -209,8 +249,9 @@ const H3LeaveRequest = () => {
             </div>
           ) : (
             <>
+              {/* Responsive Summary Cards */}
               <CRow className="mb-3">
-                <CCol sm={12} md={4} className="mb-2">
+                <CCol xs={12} sm={6} md={4} lg={3} className="mb-2">
                   <CCard className="text-white bg-info">
                     <CCardBody className="d-flex justify-content-between">
                       <div>
@@ -221,26 +262,26 @@ const H3LeaveRequest = () => {
                     </CCardBody>
                   </CCard>
                 </CCol>
-                <CCol sm={12} md={4} className="mb-2">
+                <CCol xs={12} sm={6} md={4} lg={3} className="mb-2">
                   <CCard className="text-white bg-warning">
                     <CCardBody className="d-flex justify-content-between">
                       <div>
                         <h5 className="mb-0">Pending</h5>
                         <h3 className="mb-0">
-                          {leaveRequests.filter(r => r.status.toLowerCase() === 'pending').length}
+                          {leaveRequests.filter(r => r.status && r.status.toLowerCase() === 'pending').length}
                         </h3>
                       </div>
                       <CIcon icon={cilMedicalCross} size="3xl" />
                     </CCardBody>
                   </CCard>
                 </CCol>
-                <CCol sm={12} md={4} className="mb-2">
+                <CCol xs={12} sm={6} md={4} lg={3} className="mb-2">
                   <CCard className="text-white bg-success">
                     <CCardBody className="d-flex justify-content-between">
                       <div>
                         <h5 className="mb-0">Approved</h5>
                         <h3 className="mb-0">
-                          {leaveRequests.filter(r => r.status.toLowerCase() === 'approved').length}
+                          {leaveRequests.filter(r => r.status && r.status.toLowerCase() === 'approved').length}
                         </h3>
                       </div>
                       <CIcon icon={cilBriefcase} size="3xl" />
@@ -248,112 +289,134 @@ const H3LeaveRequest = () => {
                   </CCard>
                 </CCol>
               </CRow>
-
-              <CTable striped hover responsive className="border">
-                <CTableHead className="bg-light">
-                  <CTableRow>
-                    <CTableHeaderCell>ID</CTableHeaderCell>
-                    <CTableHeaderCell>
-                      <CIcon icon={cilUser} className="me-1" /> 
-                      Employee
-                    </CTableHeaderCell>
-                    <CTableHeaderCell>Department</CTableHeaderCell>
-                    <CTableHeaderCell>Leave Type</CTableHeaderCell>
-                    <CTableHeaderCell>Duration</CTableHeaderCell>
-                    <CTableHeaderCell>Days</CTableHeaderCell>
-                    <CTableHeaderCell>Paid Status</CTableHeaderCell>
-                    <CTableHeaderCell>Status</CTableHeaderCell>
-                    <CTableHeaderCell>Actions</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {currentItems.map((request) => (
-                    <CTableRow key={request.id}>
-                      <CTableDataCell>{request.id}</CTableDataCell>
-                      <CTableDataCell>
-                        <div className="d-flex align-items-center">
-                          <div className="bg-light rounded-circle p-2 me-2 text-primary">
-                            <CIcon icon={cilUser} />
-                          </div>
-                          <div>
-                            <div className="fw-bold">{request.name}</div>
-                          </div>
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>{request.department}</CTableDataCell>
-                      <CTableDataCell>{request.leave_type}</CTableDataCell>
-                      <CTableDataCell>
-                        <small className="text-muted d-block">From</small>
-                        {formatDate(request.start_date)}
-                        <small className="text-muted d-block mt-1">To</small>
-                        {formatDate(request.end_date)}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <span className="fw-bold">{request.total_days}</span> {request.total_days === 1 ? 'day' : 'days'}
-                      </CTableDataCell>
-                      <CTableDataCell>{getPaidStatusBadge(request.is_paid)}</CTableDataCell>
-                      <CTableDataCell>{getStatusBadge(request.status)}</CTableDataCell>
-                      <CTableDataCell>
-                        {request.status.toLowerCase() === 'pending' && (
-                          <div className="d-flex gap-1">
-                            <CButton 
-                              color="success" 
-                              size="sm"
-                              onClick={() => handleActionClick(request, 'approve')}
-                            >
-                              <CIcon icon={cilCheck} />
-                            </CButton>
-                            <CButton 
-                              color="danger" 
-                              size="sm"
-                              onClick={() => handleActionClick(request, 'reject')}
-                            >
-                              <CIcon icon={cilX} />
-                            </CButton>
-                          </div>
-                        )}
-                      </CTableDataCell>
+    
+              {/* Responsive Table */}
+              <div className="table-responsive">
+                <CTable striped hover responsive className="border">
+                  <CTableHead className="bg-light">
+                    <CTableRow>
+                      <CTableHeaderCell>ID</CTableHeaderCell>
+                      <CTableHeaderCell>
+                        <CIcon icon={cilUser} className="me-1" /> 
+                        Employee
+                      </CTableHeaderCell>
+                      <CTableHeaderCell>Department</CTableHeaderCell>
+                      <CTableHeaderCell>Leave Type</CTableHeaderCell>
+                      <CTableHeaderCell>Start Date</CTableHeaderCell>
+                      <CTableHeaderCell>Days</CTableHeaderCell>
+                      <CTableHeaderCell>
+                        <CIcon icon={cilMoney} className="me-1" />
+                        Amount
+                      </CTableHeaderCell>
+                      <CTableHeaderCell>Paid Status</CTableHeaderCell>
+                      <CTableHeaderCell>Status</CTableHeaderCell>
+                      <CTableHeaderCell>Document</CTableHeaderCell>
+                      <CTableHeaderCell>Actions</CTableHeaderCell>
                     </CTableRow>
+                  </CTableHead>
+                  <CTableBody>
+                    {currentItems.map((request) => (
+                      <CTableRow key={request.id}>
+                        <CTableDataCell>{request.id}</CTableDataCell>
+                        <CTableDataCell>
+                          <div className="d-flex align-items-center">
+                            <div className="bg-light rounded-circle p-2 me-2 text-primary">
+                              <CIcon icon={cilUser} />
+                            </div>
+                            <div>
+                              <div className="fw-bold">{request.name || 'Unknown'}</div>
+                              <small className="text-muted">{request.reason || 'No reason'}</small>
+                            </div>
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell>{request.department || 'N/A'}</CTableDataCell>
+                        <CTableDataCell>{request.leave_type || 'N/A'}</CTableDataCell>
+                        <CTableDataCell>{formatDate(request.start_date)}</CTableDataCell>
+                        <CTableDataCell>{request.days || 'N/A'}</CTableDataCell>
+                        <CTableDataCell>{formatCurrency(request.amount)}</CTableDataCell>
+                        <CTableDataCell>{getPaidStatusBadge(request.isPaid)}</CTableDataCell>
+                        <CTableDataCell>{getStatusBadge(request.status)}</CTableDataCell>
+                        <CTableDataCell>
+                           {request.document_path ? (
+                                                      <CButton
+                                                        color="info"
+                                                        size="sm"
+                                                        onClick={() => handleDocumentView(request.document_path)}
+                                                      >
+                                                        <CIcon icon={cilFile} />
+                                                      </CButton>
+                                                    ) : (
+                                                      <span className="text-muted">No doc</span>
+                                                    )}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {request.status && request.status.toLowerCase() === 'pending' && (
+                            <>
+                              <CButton
+                                color="success"
+                                size="sm"
+                                onClick={() => handleActionClick(request, 'approve')}
+                                disabled={actionLoading}
+                              >
+                                Approve
+                              </CButton>
+                              <CButton
+                                color="danger"
+                                size="sm"
+                                className="ms-2"
+                                onClick={() => handleActionClick(request, 'reject')}
+                                disabled={actionLoading}
+                              >
+                                Reject
+                              </CButton>
+                            </>
+                          )}
+                          {(!request.status || request.status.toLowerCase() !== 'pending') && (
+                            <span className="text-muted">No actions available</span>
+                          )}
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))}
+                  </CTableBody>
+                </CTable>
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <CPagination className="mt-3 justify-content-center" aria-label="Page navigation">
+                  <CPaginationItem 
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                  >
+                    Previous
+                  </CPaginationItem>
+                  
+                  {[...Array(totalPages)].map((_, index) => (
+                    <CPaginationItem 
+                      key={index + 1}
+                      active={currentPage === index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                    >
+                      {index + 1}
+                    </CPaginationItem>
                   ))}
-                </CTableBody>
-              </CTable>
+                  
+                  <CPaginationItem 
+                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                  >
+                    Next
+                  </CPaginationItem>
+                </CPagination>
+              )}
             </>
           )}
         </CCardBody>
-        {!loading && leaveRequests.length > itemsPerPage && (
-          <CCardFooter>
-            <CPagination align="center" aria-label="Page navigation">
-              <CPaginationItem 
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Previous
-              </CPaginationItem>
-              
-              {[...Array(totalPages)].map((_, index) => (
-                <CPaginationItem 
-                  key={index + 1}
-                  active={currentPage === index + 1}
-                  onClick={() => setCurrentPage(index + 1)}
-                >
-                  {index + 1}
-                </CPaginationItem>
-              ))}
-              
-              <CPaginationItem 
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </CPaginationItem>
-            </CPagination>
-          </CCardFooter>
-        )}
       </CCard>
-
-      {/* Approval/Rejection Modal */}
+      
+      {/* Action Modal */}
       <CModal visible={showModal} onClose={handleModalClose}>
-        <CModalHeader>
+        <CModalHeader onClose={handleModalClose}>
           <CModalTitle>
             {actionType === 'approve' ? 'Approve' : 'Reject'} Leave Request
           </CModalTitle>
@@ -362,28 +425,20 @@ const H3LeaveRequest = () => {
           {selectedRequest && (
             <div className="mb-3">
               <p>
-                <strong>Employee:</strong> {selectedRequest.name}
+                <strong>Employee:</strong> {selectedRequest.name || 'Unknown'}<br />
+                <strong>Leave Type:</strong> {selectedRequest.leave_type || 'N/A'}<br />
+                <strong>Start Date:</strong> {formatDate(selectedRequest.start_date)}<br />
+                <strong>Duration:</strong> {selectedRequest.days || 'N/A'} days
               </p>
-              <p>
-                <strong>Leave Type:</strong> {selectedRequest.leave_type}
-              </p>
-              <p>
-                <strong>Duration:</strong> {formatDate(selectedRequest.start_date)} to {formatDate(selectedRequest.end_date)} ({selectedRequest.total_days} days)
-              </p>
-              <p>
-                <strong>Reason:</strong> {selectedRequest.reason || 'Not provided'}
-              </p>
-              <hr />
-              <div>
-                <label htmlFor="comments" className="form-label">Comments:</label>
-                <CFormTextarea 
-                  id="comments"
-                  rows={3}
-                  placeholder="Add your comments here (optional)"
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                />
-              </div>
+              
+              <label htmlFor="comments" className="form-label">Comments:</label>
+              <CFormTextarea
+                id="comments"
+                rows={3}
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                placeholder="Add any comments here (optional)"
+              />
             </div>
           )}
         </CModalBody>
@@ -396,8 +451,14 @@ const H3LeaveRequest = () => {
             onClick={handleActionSubmit}
             disabled={actionLoading}
           >
-            {actionLoading && <CSpinner size="sm" className="me-2" />}
-            {actionType === 'approve' ? 'Approve' : 'Reject'} Request
+            {actionLoading ? (
+              <>
+                <CSpinner size="sm" className="me-2" />
+                Processing...
+              </>
+            ) : (
+              actionType === 'approve' ? 'Approve' : 'Reject'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>

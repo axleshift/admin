@@ -98,44 +98,7 @@ export const getWorker = async (req, res) => {
     }
   };
   
-export const generateOAuth = async (req, res) => {
-    const { userId } = req.params;
 
-    if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
-    }
-
-    try {
-        // Find the user in the database
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // Check if the user already has a token and if it is still valid
-        if (user.token && user.tokenExpiry > new Date()) {
-            return res
-                .status(200)
-                .json({ token: user.token, message: "Token already exists and is valid." });
-        }
-
-        // Generate a new token using the imported function
-        const token = generateOAuthToken(userId);
-        const tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour expiration
-
-        // Update the user record with the new token
-        user.token = token;
-        user.tokenExpiry = tokenExpiry;
-        await user.save();
-
-        // Respond with the new token
-        res.status(200).json({ token, message: "New token generated successfully." });
-    } catch (err) {
-        console.error("Error generating token:", err);
-        res.status(500).json({ error: "Failed to generate token" });
-    }
-};
 
 export const getperform = async (req, res)=>{
     try{
@@ -211,23 +174,7 @@ export const getJobPostings = async (req, res) => {
     }
   };
 
-  export const getpayroll = async (req, res) => {
-    try {
-      // Fetch name and payroll only
-      const payroll = await User.find({}, 'name payroll');
-      
-      if (!payroll || payroll.length === 0) {
-        return res.status(404).json({ message: "Payroll not found" });
-      }
-  
-      // Send payroll data along with the user's name
-      res.status(200).json(payroll);
-    } catch (error) {
-      console.error("Error fetching Payroll:", error);
-      res.status(500).json({ message: "Failed to fetch Payroll" });
-    }
-  };
-  
+
   export const getHrDashStats = async (req,res)=>{
     try{
       const workers = await User.find({ role: { $in: ["manager", "admin", "employee"] } }).select("-password");
@@ -370,7 +317,7 @@ export const getJobPostings = async (req, res) => {
 
    // Ensure environment variables are loaded
   
-  const HR3 = process.env.EXTERNALHr3;
+  const HR3 = process.env.EXTERNAL_Hr3;
   
   export const leave = async (req, res) => {
     try {
@@ -385,7 +332,17 @@ export const getJobPostings = async (req, res) => {
       
       console.log("Full Response:", JSON.stringify(response.data, null, 2));
       
-      return res.json(response.data);  // Send only the data to the frontend
+      // Extract the leaveRequests array from the response
+      const leaveRequests = response.data.leaveRequests || [];
+      
+      // Count the number of leave requests
+      const count = leaveRequests.length;
+      
+      // Return both the count and the data
+      return res.json({
+        count: count,
+        data: leaveRequests
+      });
     } catch (error) {
       console.error("Error fetching leave requests:", error.message);
       
@@ -438,3 +395,19 @@ export const getJobPostings = async (req, res) => {
     }
   };
   
+  export const getpayroll = async (req, res) => {
+    try {
+      const response = await fetch(`${HR3}/api/payroll`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Payroll Data:", data);
+      return res.json(data);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      return res.status(500).json({ error: 'Failed to fetch payroll data' });
+    }
+  };
