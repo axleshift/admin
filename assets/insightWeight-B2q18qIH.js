@@ -1,0 +1,1 @@
+import{j as t}from"./index-BEkeLSf2.js";import"./vendor-react-B6URQkMn.js";import"./vendor-redux-DipIbRRz.js";import"./vendor-coreui-DbIDZSkS.js";const s=()=>t.jsx("div",{children:"wiehgt"});export{s as default};
