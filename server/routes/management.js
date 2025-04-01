@@ -2,10 +2,6 @@ import express from "express";
 import multer from 'multer';
 import path from 'path';
 import { 
-    sendToLogistics,
-    sendTocore,
-    sendTofinance,
-    sendToHR, 
     announce,
     getannounce,
     delannounce,
@@ -27,10 +23,7 @@ const storage = multer.diskStorage({
     }
 } );
 
-router.post("/logistics", sendToLogistics);
-router.post("/hr", sendToHR);
-router.post("/core", sendTocore);
-router.post("/finance", sendTofinance);
+
 
 router.post('/announcement', upload.single('banner'), announce);
 router.get('/getannounce', getannounce);
@@ -38,6 +31,5 @@ router.delete('/delannounce/:id', delannounce);
 
 router.post('/generate-banner', generateAiBanner);
 
-// router.get('/user/:department', verifySystemAccess,getUserDep)
-// router.post('/generate-system-token',genSysToken);
+
 export default router;

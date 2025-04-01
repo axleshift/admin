@@ -16,7 +16,8 @@ import {
   faHand,
   faUniversalAccess,
   faPersonBooth,
-  faTimes
+  faTimes,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -303,18 +304,7 @@ const _nav = () => {
     if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'User Activity', 
-          icon: <FontAwesomeIcon icon={faListCheck} style={{ marginRight: '8px' }} />, 
-          to: '/useractivity/index' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Restore', 
-          icon: <FontAwesomeIcon icon={faWindowRestore} style={{ marginRight: '8px' }} />, 
-          to: '/restore' 
-        },
+    
         {
           component: CNavItem, 
           name: 'Button', 
@@ -346,18 +336,8 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
           to:'/announce'
         },
-        {
-          component: CNavItem,
-          name:'Monitoring',
-          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
-          to:'/monitoring'
-        },
-       {
-        component: CNavItem,
-        name:'Employee Leaves',
-        icon: <FontAwesomeIcon icon={faSquarePersonConfined} style={{ marginRight: '8px' }} />,
-        to:'/hr3leaverequest'
-       }
+      
+       
       );
     }
 
@@ -382,7 +362,13 @@ const _nav = () => {
           name: 'Payroll',
           icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />,
           to: '/payroll'
-        }
+        },
+        {
+          component: CNavItem,
+          name:'Employee Leaves',
+          icon: <FontAwesomeIcon icon={faSquarePersonConfined} style={{ marginRight: '8px' }} />,
+          to:'/hr3leaverequest'
+         }
       );
     }
 
@@ -504,7 +490,35 @@ const _nav = () => {
       );
     }
 
-    
+    if(accessPermissions[userRole][userDepartment].includes('/employeedash')){
+      navItems.push(
+        { component: CNavTitle, name: 'Management', className:'custom-nav-title'},
+        { 
+          component: CNavItem, 
+          name: 'User Activity', 
+          icon: <FontAwesomeIcon icon={faListCheck} style={{ marginRight: '8px' }} />, 
+          to: '/useractivity/index' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Restore', 
+          icon: <FontAwesomeIcon icon={faWindowRestore} style={{ marginRight: '8px' }} />, 
+          to: '/restore' 
+        },
+        {
+          component: CNavItem,
+          name:'Monitoring',
+          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+          to:'/monitoring'
+        },
+        {
+          component: CNavItem,
+          name:'User Management',
+          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
+          to:'/usermanagement'
+        }
+      )
+    }
     
     if (userRole !== 'superadmin') {
       

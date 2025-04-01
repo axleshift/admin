@@ -18,12 +18,13 @@ import {
 } from "@coreui/react";
 import CIcon from "@coreui/icons-react";
 import { cilLockLocked, cilUser } from "@coreui/icons";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
   
   const [data, setData] = useState({ identifier: "", password: "" });
   const [errorMessage, setErrorMessage] = useState(null);
-  
+  const [captchaToken, setCaptchaToken] = useState(null);
   
   const [accountLocked, setAccountLocked] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
@@ -206,7 +207,10 @@ const Login = () => {
       }
     }
 };
-
+const handleCaptcha = (token) => {
+  console.log('CAPTCHA Token:', token);
+  setCaptchaToken(token);
+};  
   
   const formatRemainingTime = () => {
     const minutes = Math.floor(remainingTime / 60);
@@ -292,6 +296,16 @@ const Login = () => {
                       />
                     </CInputGroup>
   
+                        <CRow>
+                     
+                        <CCol xs={6}>
+                          <ReCAPTCHA
+                            sitekey={import.meta.env.VITE_RECAPTCHA_KEY}
+                            onChange={handleCaptcha}
+                          />
+                        </CCol>
+
+                        </CRow>
                     {/* Login Button Row */}
                     <CRow>
                       <CCol xs={6}>

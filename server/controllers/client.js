@@ -403,6 +403,27 @@ function capitalizeFirstLetter(string) {
         });
     }
   };
+  export const verifyCaptcha = async (req, res, next) => {
+    const { captchaToken } = req.body;
+    if (!captchaToken) return res.status(400).json({ error: "CAPTCHA is required" });
+  
+    try {
+      const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
+        params: {
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: captchaToken
+        }
+      });
+  
+      if (!response.data.success || response.data.score < 0.5) {
+        return res.status(403).json({ error: "Bot detected!" });
+      }
+  
+      next(); // Allow request to continue
+    } catch (error) {
+      return res.status(500).json({ error: "CAPTCHA verification failed" });
+    }
+  };
 
 const detectAnomaly = async (userId, ipAddress, userAgent) => {
     const recentAttempts = await LoginAttempt.find({ userId, ipAddress }).sort({ timestamp: -1 }).limit(5);
