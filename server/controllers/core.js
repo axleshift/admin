@@ -102,7 +102,7 @@ export const fetchcore1insightitem = async (req, res) => {
 
     try {
       const getResponse = await axios.get(
-        `${core1}api/v1/insights/item-overtime/`,
+        `${core1}/api/v1/insights/items-overtime/`,
         {
           headers: {
             Authorization: `Bearer ${core1Token}`,

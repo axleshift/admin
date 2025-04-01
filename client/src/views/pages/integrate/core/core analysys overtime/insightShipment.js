@@ -15,7 +15,14 @@ import {
   CTableBody,
   CTableDataCell,
   CTableFoot,
-  CProgress
+  CProgress,
+  CBadge,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem,
+  CButton,
+  CCallout
 } from "@coreui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
@@ -23,143 +30,443 @@ import {
   faChartBar, 
   faTable, 
   faExclamationTriangle,
-  faCalendarAlt
+  faCalendarAlt,
+  faArrowUp,
+  faArrowDown,
+  faEquals,
+  faDownload,
+  faFilter,
+  faInfoCircle,
+  faChartLine,
+  faSync,
+  faShippingFast
 } from "@fortawesome/free-solid-svg-icons";
 
 const InsightShipment = () => {
   const [shipmentData, setShipmentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeframe, setTimeframe] = useState("6months");
 
   useEffect(() => {
     const fetchShipmentData = async () => {
       try {
-        const response = await axiosInstance.get("/core/insight/shipment");
+        setLoading(true);
+        const response = await axiosInstance.get(`/core/insight/shipment?timeframe=${timeframe}`);
+        console.log("API Response:", response.data); // Debug log
         setShipmentData(response.data);
       } catch (err) {
-        setError(err.response?.data || "Failed to fetch data");
+        console.error("Error fetching data:", err);
+        setError(err.response?.data?.error || "Failed to fetch data");
       } finally {
         setLoading(false);
       }
     };
 
     fetchShipmentData();
-  }, []);
+  }, [timeframe]);
 
-  // Format data for the chart
+  // Format data for the chart with more flexible handling
   const formatChartData = () => {
     if (!shipmentData) return null;
     
-    const parsedData = typeof shipmentData === 'string' ? JSON.parse(shipmentData) : shipmentData;
+    // Handle the actual structure returned by the API
+    if (shipmentData.labels && shipmentData.data) {
+      return {
+        labels: shipmentData.labels,
+        data: shipmentData.data
+      };
+    }
+    
+    // Keep the existing fallback approaches
+    let months = [];
+    let shipments = [];
+    
+    // Case 1: Direct structure with months and shipments arrays
+    if (Array.isArray(shipmentData.months) && Array.isArray(shipmentData.shipments)) {
+      months = shipmentData.months;
+      shipments = shipmentData.shipments;
+    }
+    // Case 2: Array of objects with month and shipment properties
+    else if (Array.isArray(shipmentData)) {
+      shipmentData.forEach(item => {
+        if (item.month) months.push(item.month);
+        if (item.shipment !== undefined) shipments.push(item.shipment);
+      });
+    }
+    // Case 3: Data is in a nested property
+    else if (shipmentData.data) {
+      if (Array.isArray(shipmentData.data.months) && Array.isArray(shipmentData.data.shipments)) {
+        months = shipmentData.data.months;
+        shipments = shipmentData.data.shipments;
+      } else if (Array.isArray(shipmentData.data)) {
+        shipmentData.data.forEach(item => {
+          if (item.month) months.push(item.month);
+          if (item.shipment !== undefined) shipments.push(item.shipment);
+        });
+      }
+    }
+    
     return {
-      labels: parsedData.labels || [],
-      data: parsedData.data || []
+      labels: months,
+      data: shipments
     };
   };
 
   const chartData = formatChartData();
-  const totalShipments = chartData ? chartData.data.reduce((sum, value) => sum + value, 0) : 0;
-  const maxValue = chartData ? Math.max(...chartData.data, 1) : 1;
+  const totalShipments = chartData && chartData.data.length > 0 
+    ? chartData.data.reduce((sum, value) => sum + Number(value), 0) 
+    : 0;
+  const maxValue = chartData && chartData.data.length > 0 
+    ? Math.max(...chartData.data.map(v => Number(v)), 1) 
+    : 1;
+
+  // Calculate month-over-month changes
+  const calculateChange = (index) => {
+    if (!chartData || index === 0 || !chartData.data[index] || !chartData.data[index-1]) return null;
+    const currentValue = Number(chartData.data[index]);
+    const previousValue = Number(chartData.data[index - 1]);
+    if (previousValue === 0) return null;
+    
+    return ((currentValue - previousValue) / previousValue) * 100;
+  };
+
+  // Get color based on change direction
+  const getChangeColor = (change) => {
+    if (change === null) return "secondary";
+    if (change > 0) return "success";
+    if (change < 0) return "danger";
+    return "info";
+  };
+
+  // Get icon based on change direction
+  const getChangeIcon = (change) => {
+    if (change === null) return faEquals;
+    if (change > 0) return faArrowUp;
+    if (change < 0) return faArrowDown;
+    return faEquals;
+  };
+
+  // Calculate average shipments
+  const calculateAverageShipments = () => {
+    if (!chartData || chartData.data.length === 0) return 0;
+    return totalShipments / chartData.data.length;
+  };
+
+  // Function to refresh data
+  const refreshData = () => {
+    const fetchShipmentData = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(`/core/insight/shipment?timeframe=${timeframe}`);
+        setShipmentData(response.data);
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShipmentData();
+  };
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
       <div className="py-4">
         <CRow>
           <CCol md={12}>
-            <CCard className="mb-4">
-              <CCardHeader className="d-flex justify-content-between align-items-center">
+            <CCard className="mb-4 shadow-sm border-0">
+              <CCardHeader className="bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
                 <div>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0 text-primary">
                     <FontAwesomeIcon icon={faMoneyBillWave} className="me-2" /> 
                     Shipment Insights
                   </h3>
-                  <small className="text-medium-emphasis">Monthly shipment breakdown</small>
+                  <small className="text-medium-emphasis">Track and analyze your monthly shipment distribution</small>
+                </div>
+                <div className="d-flex gap-2">
+                  <CDropdown>
+                    <CDropdownToggle color="light" className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faFilter} className="me-2" />
+                      {timeframe === "6months" && "Last 6 Months"}
+                      {timeframe === "12months" && "Last 12 Months"}
+                      {timeframe === "ytd" && "Year to Date"}
+                    </CDropdownToggle>
+                    <CDropdownMenu>
+                      <CDropdownItem onClick={() => setTimeframe("6months")}>Last 6 Months</CDropdownItem>
+                      <CDropdownItem onClick={() => setTimeframe("12months")}>Last 12 Months</CDropdownItem>
+                      <CDropdownItem onClick={() => setTimeframe("ytd")}>Year to Date</CDropdownItem>
+                    </CDropdownMenu>
+                  </CDropdown>
+                  <CButton 
+                    color="light" 
+                    onClick={refreshData}
+                    disabled={loading}
+                  >
+                    <FontAwesomeIcon icon={faSync} className={loading ? "fa-spin me-2" : "me-2"} />
+                    Refresh
+                  </CButton>
+                  <CButton color="light">
+                    <FontAwesomeIcon icon={faDownload} className="me-2" />
+                    Export
+                  </CButton>
                 </div>
               </CCardHeader>
-              <CCardBody>
+              <CCardBody className="p-4">
                 {loading && (
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                    <CSpinner color="success" />
+                  <div className="d-flex justify-content-center align-items-center" style={{ height: "300px" }}>
+                    <div className="text-center">
+                      <CSpinner color="primary" style={{ width: "3rem", height: "3rem" }} />
+                      <p className="mt-3 text-medium-emphasis">Loading shipment data...</p>
+                    </div>
                   </div>
                 )}
 
                 {error && (
-                  <CAlert color="danger">
-                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-                    {error}
+                  <CAlert color="danger" className="d-flex align-items-center">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-3 fs-4" />
+                    <div>
+                      <h4 className="alert-heading">Data Fetch Error</h4>
+                      <p className="mb-0">{error}</p>
+                      <CButton color="danger" variant="ghost" size="sm" className="mt-2" onClick={refreshData}>
+                        <FontAwesomeIcon icon={faSync} className="me-1" /> Try Again
+                      </CButton>
+                    </div>
                   </CAlert>
                 )}
 
-                {chartData && !loading && !error && (
+                {!loading && !error && (!chartData || chartData.data.length === 0) && (
+                  <CAlert color="warning" className="d-flex align-items-center">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-3 fs-4" />
+                    <div>
+                      <h4 className="alert-heading">No Data Available</h4>
+                      <p className="mb-0">No shipment data available for the selected time period.</p>
+                      <CButton color="warning" variant="ghost" size="sm" className="mt-2" onClick={() => setTimeframe("12months")}>
+                        <FontAwesomeIcon icon={faFilter} className="me-1" /> Try Different Time Period
+                      </CButton>
+                    </div>
+                  </CAlert>
+                )}
+
+                {chartData && chartData.data.length > 0 && !loading && !error && (
                   <>
                     <CRow className="mb-4">
-                      <CCol md={12}>
-                        <h4 className="mb-3">
-                          <FontAwesomeIcon icon={faChartBar} className="me-2" />
-                          Monthly Shipments
-                        </h4>
-                        <div className="px-3">
-                          <CRow className="align-items-end g-0" style={{ height: "250px" }}>
-                            {chartData.data.map((value, index) => (
-                              <CCol key={index} className="px-1 text-center">
-                                <div className="d-flex flex-column align-items-center">
-                                  <small className="mb-2 fw-bold">${value.toFixed(2)}</small>
-                                  <div style={{ width: "100%", height: `${(value / maxValue) * 80}%`, minHeight: value > 0 ? "20px" : "4px" }}>
-                                    <CProgress 
-                                      value={100} 
-                                      color="success" 
-                                      className="h-100" 
-                                      style={{ minWidth: "25px" }}
-                                    />
-                                  </div>
-                                  <small className="mt-2 text-medium-emphasis">
-                                    <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
-                                    {chartData.labels[index]}
-                                  </small>
+                      <CCol lg={4} md={6} className="mb-4">
+                        <CCallout color="primary" className="h-100">
+                          <div className="d-flex align-items-center">
+                            <div className="p-3 bg-primary bg-opacity-25 rounded-circle me-3">
+                              <FontAwesomeIcon icon={faShippingFast} size="2x" className="text-primary" />
+                            </div>
+                            <div>
+                              <div className="text-medium-emphasis small">Total Shipments</div>
+                              <div className="fs-3 fw-bold">{totalShipments.toFixed(0)}</div>
+                            </div>
+                          </div>
+                        </CCallout>
+                      </CCol>
+                      
+                      <CCol lg={4} md={6} className="mb-4">
+                        <CCallout color="info" className="h-100">
+                          <div className="d-flex align-items-center">
+                            <div className="p-3 bg-info bg-opacity-25 rounded-circle me-3">
+                              <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info" />
+                            </div>
+                            <div>
+                              <div className="text-medium-emphasis small">Average Monthly Shipments</div>
+                              <div className="fs-3 fw-bold">
+                                {calculateAverageShipments().toFixed(1)}
+                              </div>
+                            </div>
+                          </div>
+                        </CCallout>
+                      </CCol>
+                      
+                      <CCol lg={4} md={12} className="mb-4">
+                        {chartData.data.length >= 2 && (
+                          <CCallout 
+                            color={getChangeColor(calculateChange(chartData.data.length - 1))} 
+                            className="h-100"
+                          >
+                            <div className="d-flex align-items-center">
+                              <div className={`p-3 bg-${getChangeColor(calculateChange(chartData.data.length - 1))} bg-opacity-25 rounded-circle me-3`}>
+                                <FontAwesomeIcon 
+                                  icon={getChangeIcon(calculateChange(chartData.data.length - 1))} 
+                                  size="2x" 
+                                  className={`text-${getChangeColor(calculateChange(chartData.data.length - 1))}`} 
+                                />
+                              </div>
+                              <div>
+                                <div className="text-medium-emphasis small">Month-over-Month Change</div>
+                                <div className="fs-3 fw-bold">
+                                  {calculateChange(chartData.data.length - 1) !== null 
+                                    ? `${calculateChange(chartData.data.length - 1) > 0 ? '+' : ''}${calculateChange(chartData.data.length - 1).toFixed(1)}%` 
+                                    : "N/A"}
                                 </div>
-                              </CCol>
-                            ))}
-                          </CRow>
-                        </div>
+                              </div>
+                            </div>
+                          </CCallout>
+                        )}
+                      </CCol>
+                    </CRow>
+
+                    <CRow className="mb-4">
+                      <CCol md={12}>
+                        <CCard className="border-0 shadow-sm">
+                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                            <h4 className="mb-0">
+                              <FontAwesomeIcon icon={faChartBar} className="me-2 text-primary" />
+                              Monthly Shipment Distribution
+                            </h4>
+                            <CButton color="light" size="sm">
+                              <FontAwesomeIcon icon={faInfoCircle} className="me-1" /> Shipment Analysis
+                            </CButton>
+                          </CCardHeader>
+                          <CCardBody className="p-4">
+                            <div className="px-3">
+                              <CRow className="align-items-end g-0" style={{ height: "250px" }}>
+                                {chartData.data.map((value, index) => (
+                                  <CCol key={index} className="px-1 text-center">
+                                    <div className="d-flex flex-column align-items-center">
+                                      <small className="mb-2 fw-bold">{Number(value).toFixed(0)}</small>
+                                      <div style={{ width: "100%", height: `${(Number(value) / maxValue) * 80}%`, minHeight: Number(value) > 0 ? "20px" : "4px" }}>
+                                        <CProgress 
+                                          value={100} 
+                                          color={index === chartData.data.length - 1 ? "primary" : "success"} 
+                                          className="h-100 shadow-sm" 
+                                          style={{ minWidth: "30px", borderRadius: "4px" }}
+                                        />
+                                      </div>
+                                      <small className="mt-2 text-medium-emphasis">
+                                        <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
+                                        {chartData.labels[index] || `Month ${index + 1}`}
+                                      </small>
+                                      
+                                      {/* Display change percentage */}
+                                      {index > 0 && (
+                                        <CBadge 
+                                          color={getChangeColor(calculateChange(index))}
+                                          shape="rounded-pill" 
+                                          className="mt-1"
+                                        >
+                                          <FontAwesomeIcon 
+                                            icon={getChangeIcon(calculateChange(index))} 
+                                            className="me-1" 
+                                            size="xs" 
+                                          />
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                        </CBadge>
+                                      )}
+                                    </div>
+                                  </CCol>
+                                ))}
+                              </CRow>
+                            </div>
+                          </CCardBody>
+                        </CCard>
                       </CCol>
                     </CRow>
 
                     <CRow>
                       <CCol md={12}>
-                        <h4 className="mb-3">
-                          <FontAwesomeIcon icon={faTable} className="me-2" />
-                          Shipment Data
-                        </h4>
-                        <CTable hover responsive>
-                          <CTableHead>
-                            <CTableRow>
-                              <CTableHeaderCell>Month</CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">Shipment </CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">% of Total</CTableHeaderCell>
-                            </CTableRow>
-                          </CTableHead>
-                          <CTableBody>
-                            {chartData.labels.map((month, index) => (
-                              <CTableRow key={index}>
-                                <CTableDataCell>
-                                  <FontAwesomeIcon icon={faCalendarAlt} className="me-2 text-medium-emphasis" />
-                                  {month}
-                                </CTableDataCell>
-                                <CTableDataCell className="text-end">{chartData.data[index].toFixed(2)}</CTableDataCell>
-                                <CTableDataCell className="text-end">
-                                  {totalShipments > 0 ? `${((chartData.data[index] / totalShipments) * 100).toFixed(1)}%` : '0%'}
-                                </CTableDataCell>
-                              </CTableRow>
-                            ))}
-                          </CTableBody>
-                          <CTableFoot>
-                            <CTableRow>
-                              <CTableDataCell className="fw-bold">Total</CTableDataCell>
-                              <CTableDataCell className="fw-bold text-end">{totalShipments.toFixed(2)}</CTableDataCell>
-                              <CTableDataCell className="fw-bold text-end">100%</CTableDataCell>
-                            </CTableRow>
-                          </CTableFoot>
-                        </CTable>
+                        <CCard className="border-0 shadow-sm">
+                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                            <h4 className="mb-0">
+                              <FontAwesomeIcon icon={faTable} className="me-2 text-primary" />
+                              Shipment Details
+                            </h4>
+                            <CButton color="primary" size="sm" variant="outline">
+                              <FontAwesomeIcon icon={faDownload} className="me-1" /> Export Data
+                            </CButton>
+                          </CCardHeader>
+                          <CCardBody className="p-0">
+                            <CTable hover responsive className="mb-0 border-0">
+                              <CTableHead className="bg-light">
+                                <CTableRow>
+                                  <CTableHeaderCell>Month</CTableHeaderCell>
+                                  <CTableHeaderCell className="text-end">Shipments</CTableHeaderCell>
+                                  <CTableHeaderCell className="text-end">% of Total</CTableHeaderCell>
+                                  <CTableHeaderCell className="text-end">Change</CTableHeaderCell>
+                                </CTableRow>
+                              </CTableHead>
+                              <CTableBody>
+                                {chartData.data.map((value, index) => (
+                                  <CTableRow key={index}>
+                                    <CTableDataCell>
+                                      <div className="d-flex align-items-center">
+                                        <div className="p-2 me-2 bg-light rounded">
+                                          <FontAwesomeIcon icon={faCalendarAlt} className="text-primary" />
+                                        </div>
+                                        <span className="fw-medium">{chartData.labels[index] || `Month ${index + 1}`}</span>
+                                      </div>
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end fw-bold">{Number(value).toFixed(0)}</CTableDataCell>
+                                    <CTableDataCell className="text-end">
+                                      <div className="d-flex align-items-center justify-content-end">
+                                        <span className="me-2">
+                                          {totalShipments > 0 ? `${((Number(value) / totalShipments) * 100).toFixed(1)}%` : '0%'}
+                                        </span>
+                                        <CProgress 
+                                          value={totalShipments > 0 ? ((Number(value) / totalShipments) * 100) : 0} 
+                                          color="success" 
+                                          className="flex-grow-1" 
+                                          style={{ maxWidth: "100px", height: "8px" }}
+                                        />
+                                      </div>
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end">
+                                      {index > 0 ? (
+                                        <CBadge 
+                                          color={getChangeColor(calculateChange(index))}
+                                          shape="rounded-pill"
+                                        >
+                                          <FontAwesomeIcon 
+                                            icon={getChangeIcon(calculateChange(index))} 
+                                            className="me-1" 
+                                          />
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                        </CBadge>
+                                      ) : (
+                                        <CBadge color="secondary" shape="rounded-pill">
+                                          <FontAwesomeIcon icon={faEquals} className="me-1" /> Base
+                                        </CBadge>
+                                      )}
+                                    </CTableDataCell>
+                                  </CTableRow>
+                                ))}
+                              </CTableBody>
+                              <CTableFoot className="bg-light">
+                                <CTableRow>
+                                  <CTableDataCell className="fw-bold">Total</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-end">{totalShipments.toFixed(0)}</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-end">100%</CTableDataCell>
+                                  <CTableDataCell className="text-end">
+                                    {chartData.data.length >= 2 && (
+                                      <CBadge 
+                                        color={
+                                          Number(chartData.data[chartData.data.length - 1]) > Number(chartData.data[0]) ? "success" :
+                                          Number(chartData.data[chartData.data.length - 1]) < Number(chartData.data[0]) ? "danger" : "info"
+                                        }
+                                        shape="rounded-pill"
+                                      >
+                                        <FontAwesomeIcon 
+                                          icon={
+                                            Number(chartData.data[chartData.data.length - 1]) > Number(chartData.data[0]) ? faArrowUp :
+                                            Number(chartData.data[chartData.data.length - 1]) < Number(chartData.data[0]) ? faArrowDown : faEquals
+                                          } 
+                                          className="me-1" 
+                                        />
+                                        {Number(chartData.data[0]) !== 0 ? 
+                                          `${(((Number(chartData.data[chartData.data.length - 1]) - Number(chartData.data[0])) / Number(chartData.data[0])) * 100).toFixed(1)}%` : 
+                                          "N/A"
+                                        }
+                                      </CBadge>
+                                    )}
+                                  </CTableDataCell>
+                                </CTableRow>
+                              </CTableFoot>
+                            </CTable>
+                          </CCardBody>
+                        </CCard>
                       </CCol>
                     </CRow>
                   </>

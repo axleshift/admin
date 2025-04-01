@@ -15,7 +15,7 @@
     "license": "CC-BY-NC-4.0",
     "description": "",
     "dependencies": {
-        "@google/generative-ai": "^0.23.0",
+        "@google/generative-ai": "^0.24.0",
         "archiver": "^7.0.1",
         "axios": "^1.7.9",
         "bcryptjs": "^2.4.3",
@@ -37,6 +37,7 @@
         "jsonwebtoken": "^9.0.2",
         "jwt-decode": "^4.0.0",
         "lint": "^1.1.2",
+        "ml-kmeans": "^6.0.0",
         "mongodb": "^6.12.0",
         "mongoose": "^8.12.1",
         "morgan": "^1.10.0",
@@ -59,7 +60,8 @@
         "socket.io": "^4.8.1",
         "twilio": "^5.4.5",
         "uuid": "^11.0.3",
-        "ws": "^8.18.0"
+        "ws": "^8.18.0",
+        "zxcvbn": "^4.4.2"
     },
     "devDependencies": {
         "@types/nodemailer": "^6.4.16",

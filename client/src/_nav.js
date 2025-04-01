@@ -444,29 +444,11 @@ const _nav = () => {
           to: '/shipment' 
         },
         {
-          component:CNavItem,
-          name:'Shipment Insight Overtime',
-          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
-          to:'/insShipment'
-        },
-        {
-          component:CNavItem,
-          name:'Cost Insight Overtime',
-          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
-          to:'/insCost'
-        },
-        {
-          component:CNavItem,
-          name:'Item Insight Overtime',
-          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
-          to:'/insItem'
-        },
-        {
-          component:CNavItem,
-          name:'Weight Insight Overtime',
-          icon:<FontAwesomeIcon icon={faTimes} style={{marginRight:'8px}'}}/>,
-          to:'/insWeight'
-        },
+          component: CNavItem,
+          name:"Insights",
+          icon:<FontAwesomeIcon icon={faUser} style={{marginRight: "8px"}}/>,
+          to:'/insight'
+        }
        
       );
     }
@@ -516,6 +498,18 @@ const _nav = () => {
           name:'User Management',
           icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
           to:'/usermanagement'
+        },
+        {
+          component: CNavItem,
+          name:'Password Analysis',
+          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
+          to:'/passwordanalysis'
+        },
+        {
+          component: CNavItem,
+          name:'User Security Report',
+          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
+          to:'/securitycheck'
         }
       )
     }

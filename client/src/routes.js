@@ -15,6 +15,8 @@ const Cron = React.lazy(()=> import ('./views/pages/scene/cron'))
 
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagement'))
+const SecurityCheck = React.lazy(() => import ('./views/pages/Security/SecurityCheck'))
+const PasswordAnalysis = React.lazy(()=>import('./views/pages/Security/PasswordAnalysis'))
 
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
@@ -23,6 +25,7 @@ const LeaveRequest = React.lazy(() => import('./views/pages/integrate/hr/h3leave
 
 
 const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
+const Insight = React.lazy(() => import ('./views/pages/integrate/core/insight'))
 const Shipment_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightShipment'))
 const Cost_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightCost'))
 const Item_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightItem'))
@@ -97,8 +100,12 @@ const routes = [
   { path: '/breakdown', name: 'Breakdown ', element: <ProtectedRoute><Breakdown /></ProtectedRoute> },
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },
   { path: '/logistic1/pin', name: 'Track', element: <ProtectedRoute><Pin /></ProtectedRoute> },
+
   { path: '/monitoring', name: 'Monitoring', element: <ProtectedRoute><Monitoring/></ProtectedRoute>},
   { path: '/usermanagement', name:'User Management', element: <ProtectedRoute><UserManager/></ProtectedRoute>},
+  { path: '/securitycheck' , name:'Security Check', element: <ProtectedRoute><SecurityCheck/></ProtectedRoute>},
+  { path: '/passwordanalysis', name:"password Analysis", element: <ProtectedRoute><PasswordAnalysis/></ProtectedRoute>},
+
   { path: '/PendingRequest', name:'PendingRequest', element: <ProtectedRoute><PendingRequest /></ProtectedRoute>},
 
   
@@ -109,6 +116,7 @@ const routes = [
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
   
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
+  { path: '/insight', name: 'Insight', element: <ProtectedRoute><Insight/></ProtectedRoute>},
   { path: '/insShipment', name: 'Insight', element: <ProtectedRoute><Shipment_insight/></ProtectedRoute>},
   { path: '/insCost', name: 'Insight', element: <ProtectedRoute><Cost_insight/></ProtectedRoute>},
   { path: '/insItem', name: 'Insight', element: <ProtectedRoute><Item_insight/></ProtectedRoute>},
