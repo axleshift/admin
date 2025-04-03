@@ -6,6 +6,7 @@ import bcryptjs from 'bcryptjs';
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
+import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
 dotenv.config();
 
@@ -159,7 +160,7 @@ export const forgotPassword = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Reset your password",
-            text: `Reset link: https://admin.axleshift.com/resetpass/${user._id}/${token}`,
+            text: `Reset link: http://localhost:3000/resetpass/${user._id}/${token}`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -179,25 +180,48 @@ export const forgotPassword = async (req, res) => {
 };
 export const resetPassword = async (req, res) => {
   const { id, token } = req.params;
-  const { password } = req.body;
+  const { password, passwordAnalysis } = req.body;
 
   try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-      const user = await User.findById(id);
-      if (!user) return res.status(404).json({ Status: "User not found" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ Status: "User not found" });
 
-      const salt = await bcryptjs.genSalt(10);
-      user.password = await bcryptjs.hash(password, salt);
-      await user.save();
-
-      res.json({ Status: "Success" });
-  } catch (err) {
-      if (err.name === "JsonWebTokenError") {
-          return res.status(400).json({ Status: "Error with token" });
-      } else if (err.name === "TokenExpiredError") {
-          return res.status(400).json({ Status: "Token has expired" });
+    // Store AI password strength data for security auditing
+    if (passwordAnalysis) {
+      // Log the AI analysis results (consider storing in a secure database table)
+      console.log(`Password reset for user ${id}: AI analysis - Strength: ${passwordAnalysis.strength}, Score: ${passwordAnalysis.score}`);
+      
+      // Enforce minimum password strength at server-side too
+      if (passwordAnalysis.score < 40) {
+        return res.status(400).json({ 
+          Status: "Error", 
+          Message: "Password does not meet minimum security requirements based on AI analysis" 
+        });
       }
-      res.status(500).json({ Status: "Internal Server Error", error: err.message });
+    }
+
+    const salt = await bcryptjs.genSalt(10);
+    user.password = await bcryptjs.hash(password, salt);
+    
+    // Optionally store password strength metadata with the user
+    // This can be useful for security auditing and encouraging stronger passwords over time
+    user.passwordMeta = {
+      lastChanged: new Date(),
+      strength: passwordAnalysis?.strength || 'Unknown',
+      score: passwordAnalysis?.score || 0
+    };
+    
+    await user.save();
+
+    res.json({ Status: "Success" });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError") {
+      return res.status(400).json({ Status: "Error with token" });
+    } else if (err.name === "TokenExpiredError") {
+      return res.status(400).json({ Status: "Token has expired" });
+    }
+    res.status(500).json({ Status: "Internal Server Error", error: err.message });
   }
 };
 
@@ -353,33 +377,41 @@ export const getDashboardStats = async (req, res) => {
 
   export const activity = async (req, res) => {
     try {
-        const { name, role, department, route, action, description } = req.body;
+      const { name, role, department, route, action, description } = req.body;
+      
+      if (!name || !role || !department || !route || !action || !description) {
+        return res.status(400).json({ error: 'All fields are required.' });
+      }
+      
+      // Get AI analysis for this activity
+      const aiAnalysisResult = await analyzeActivityWithAI({
+        name, role, department, route, action, description
+      });
   
-        if (!name || !role || !department || !route || !action || !description) {
-            return res.status(400).json({ error: 'All fields are required.' });
-        }
-
-        console.log('Activitytracker model:', Activitytracker); // This will now correctly log the model
-
-        console.log('Data to be saved:', { name, role, department, route, action, description });
-
-        const newActivity = new Activitytracker({
-            name,
-            role,
-            department,
-            route,
-            action,
-            description
-        });
-  
-        await newActivity.save();
-        console.log('Activity saved successfully.');  // Confirm the save operation
-        res.status(201).json({ message: 'Activity logged successfully.' });
+      // Create and save activity with AI analysis
+      const newActivity = new Activitytracker({
+        name,
+        role,
+        department,
+        route,
+        action,
+        description,
+        aiAnalysis: JSON.stringify(aiAnalysisResult) // Store the structured analysis as JSON string
+      });
+      
+      await newActivity.save();
+      console.log('Activity with AI analysis saved successfully.');
+      
+      res.status(201).json({ 
+        message: 'Activity logged successfully.',
+        aiAnalysis: aiAnalysisResult // Return the analysis as an object
+      });
+      
     } catch (error) {
-        console.error('Error saving activity:', error.message);  // Log the error
-        res.status(500).json({ error: error.message });
+      console.error('Error saving activity:', error.message);
+      res.status(500).json({ error: error.message });
     }
-};
+  };
 
 export const getact =async (req, res) => {
   try {
