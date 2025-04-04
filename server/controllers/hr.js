@@ -148,15 +148,7 @@ export const deleteUser = async (req, res) => {
 };
 
 //hr2
-export const getJobPostings = async (req, res) => {
-    try {
-      const jobPostings = await JobPosting.find(); // Fetch all job postings
-      res.status(200).json(jobPostings);
-    } catch (error) {
-      console.error("Error fetching job postings:", error);
-      res.status(500).json({ message: "Failed to fetch job postings" });
-    }
-  };
+
   
   export const getJobPostingById = async (req, res) => {
     try {
@@ -409,5 +401,42 @@ export const getJobPostings = async (req, res) => {
     } catch (error) {
       console.error('Failed to fetch data:', error);
       return res.status(500).json({ error: 'Failed to fetch payroll data' });
+    }
+  };
+
+  const HR2 = process.env.EXTERNAL_Hr2;
+  const Api_Key = process.env.Hr2_api_key;
+  
+  export const getJobPostings = async (req, res) => {
+    try {
+      if (!HR2) {
+        console.error("Error: EXTERNAL_Hr2 is not defined in the environment variables.");
+        return res.status(500).json({ error: "Server configuration error: Missing HR2 API URL" });
+      }
+  
+      if (!Api_Key) {
+        console.error("Error: Hr2_api_key is not defined in the environment variables.");
+        return res.status(500).json({ error: "Server configuration error: Missing HR2 API key" });
+      }
+  
+      console.log("Fetching data from External HR2 API...");
+  
+      const response = await axios.get(`${HR2}request/jobposting/all`, {
+        headers: {
+          'x-api-key': Api_Key
+        }
+      });
+      
+      console.log("Full Response:", JSON.stringify(response.data, null, 2));
+      
+      // Return the complete response data instead of just job postings
+      return res.status(200).json(response.data);
+    } catch (error) {
+      console.error("Error fetching job postings:", error.message);
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch job postings", 
+        details: error.response?.data || error.message 
+      });
     }
   };

@@ -16,14 +16,20 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
+  CBadge,
+  CCardTitle,
+  CCardSubtitle,
+  CCardText,
+  CRow,
+  CCol,
 } from '@coreui/react';
-import { useGetJobPostingsQuery, useGetJobPostingByIdQuery } from '../../../../state/hrApi';
+import { useGetJobPostingsQuery } from '../../../../state/hrApi';
 import logActivity from '../../../../utils/activityLogger'; 
 
 const RecruitmentModule = () => {
-  const { data: jobPostings, error, isLoading } = useGetJobPostingsQuery();
-  const [selectedJobId, setSelectedJobId] = useState(null);
+  const { data: jobPostingsResponse, error, isLoading } = useGetJobPostingsQuery();
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
   const [userInfo, setUserInfo] = useState({
     name: '',
     role: '',
@@ -31,7 +37,6 @@ const RecruitmentModule = () => {
     userId: ''
   });
 
-  
   useEffect(() => {
     setUserInfo({
       name: sessionStorage.getItem('name'),
@@ -41,59 +46,26 @@ const RecruitmentModule = () => {
     });
   }, []);
 
-  const { data: jobDetails, isLoading: isJobLoading } = useGetJobPostingByIdQuery(selectedJobId, {
-    skip: !selectedJobId, 
-  });
+  // Extract jobPostings from the response structure
+  const jobPostings = jobPostingsResponse?.data || [];
 
-  const viewApplications = (jobId) => {
-    setSelectedJobId(jobId);
+  const viewJobDetails = (job) => {
+    setSelectedJob(job);
     setModalVisible(true);
     
-    
     logActivity({
       name: userInfo.name,
       role: userInfo.role,
       department: userInfo.department,
       route: '/recruitment/job-postings',
-      action: 'View Applications',
-      description: `User viewed applications for job ID: ${jobId}`
+      action: 'View Job Details',
+      description: `User viewed details for job: ${job.title}`
     });
-  };
-
-  const editJob = (jobId) => {
-    
-    logActivity({
-      name: userInfo.name,
-      role: userInfo.role,
-      department: userInfo.department,
-      route: '/recruitment/job-postings',
-      action: 'Edit Job',
-      description: `User initiated editing for job ID: ${jobId}`
-    });
-    
-    
-    console.log(`Editing job: ${jobId}`);
-  };
-
-  const deleteJob = (jobId) => {
-    
-    logActivity({
-      name: userInfo.name,
-      role: userInfo.role,
-      department: userInfo.department,
-      route: '/recruitment/job-postings',
-      action: 'Delete Job',
-      description: `User deleted job ID: ${jobId}`
-    });
-    
-    
-    console.log(`Deleting job: ${jobId}`);
   };
 
   const closeModal = () => {
     setModalVisible(false);
-    setSelectedJobId(null);
-    
+    setSelectedJob(null);
     
     logActivity({
       name: userInfo.name,
@@ -101,96 +73,220 @@ const RecruitmentModule = () => {
       department: userInfo.department,
       route: '/recruitment/job-postings',
       action: 'Close Modal',
-      description: 'User closed the applications modal'
+      description: 'User closed the job details modal'
+    });
+  };
+
+  // Function to get category badge color
+  const getCategoryBadgeColor = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'fulltime':
+      case 'full-time':
+        return 'success';
+      case 'parttime':
+      case 'part-time':
+        return 'info';
+      case 'contract':
+        return 'warning';
+      case 'internship':
+        return 'primary';
+      default:
+        return 'secondary';
+    }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   return (
     <div>
-      <CCard className="mb-4">
-        <CCardHeader>
-          <h4>Job Postings</h4>
+      <CCard className="mb-4 shadow">
+        <CCardHeader className="bg-primary text-white d-flex justify-content-between align-items-center">
+          <div>
+            <span className="h4 m-0">Job Postings</span>
+          </div>
         </CCardHeader>
         <CCardBody>
           {isLoading ? (
-            <CSpinner color="primary" />
+            <div className="text-center p-5">
+              <CSpinner color="primary" style={{ width: '3rem', height: '3rem' }} />
+              <div className="mt-3">Loading job postings...</div>
+            </div>
           ) : error ? (
-            <div>Error loading job postings</div>
+            <div className="alert alert-danger">
+              <strong>Error loading job postings:</strong> {error.toString()}
+            </div>
           ) : (
-            <CTable striped hover>
-              <CTableHead>
-                <CTableRow>
-                  <CTableHeaderCell>Job Title</CTableHeaderCell>
-                  <CTableHeaderCell>Department</CTableHeaderCell>
-                  <CTableHeaderCell>Location</CTableHeaderCell>
-                  <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell>Applications</CTableHeaderCell>
-                  <CTableHeaderCell>Actions</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody>
-                {jobPostings.map((job) => (
-                  <CTableRow key={job._id}>
-                    <CTableDataCell>{job.title}</CTableDataCell>
-                    <CTableDataCell>{job.department}</CTableDataCell>
-                    <CTableDataCell>{job.location}</CTableDataCell>
-                    <CTableDataCell>{job.status}</CTableDataCell>
-                    <CTableDataCell>
-                      {job.applicationsCount}{' '}
-                      <CButton color="info" size="sm" onClick={() => viewApplications(job._id)}>
-                        View
-                      </CButton>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CButton color="warning" size="sm" className="me-2" onClick={() => editJob(job._id)}>
-                        Edit
-                      </CButton>
-                      <CButton color="danger" size="sm" onClick={() => deleteJob(job._id)}>
-                        Delete
-                      </CButton>
-                    </CTableDataCell>
+            <>
+              <div className="mb-4 p-3 bg-light rounded">
+                Total Job Postings: <strong>{jobPostingsResponse?.count || jobPostings.length || 0}</strong>
+              </div>
+              <CTable striped hover responsive className="border">
+                <CTableHead className="bg-light">
+                  <CTableRow>
+                    <CTableHeaderCell>Job Title</CTableHeaderCell>
+                    <CTableHeaderCell>Author</CTableHeaderCell>
+                    <CTableHeaderCell>Category</CTableHeaderCell>
+                    <CTableHeaderCell>Capacity</CTableHeaderCell>
+                    <CTableHeaderCell>Posted Date</CTableHeaderCell>
+                    <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
-                ))}
-              </CTableBody>
-            </CTable>
+                </CTableHead>
+                <CTableBody>
+                  {jobPostings.length > 0 ? (
+                    jobPostings.map((job) => (
+                      <CTableRow key={job._id}>
+                        <CTableDataCell className="fw-bold">{job.title}</CTableDataCell>
+                        <CTableDataCell>{job.author}</CTableDataCell>
+                        <CTableDataCell>
+                          <CBadge color={getCategoryBadgeColor(job.category)} shape="rounded-pill" className="px-3 py-2">
+                            {job.category}
+                          </CBadge>
+                        </CTableDataCell>
+                        <CTableDataCell>{job.capacity}</CTableDataCell>
+                        <CTableDataCell>{formatDate(job.createdAt)}</CTableDataCell>
+                        <CTableDataCell>
+                          <CButton color="primary" size="sm" onClick={() => viewJobDetails(job)}>
+                            View Details
+                          </CButton>
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))
+                  ) : (
+                    <CTableRow>
+                      <CTableDataCell colSpan="6" className="text-center py-5">
+                        <div className="text-muted mb-2">No job postings found</div>
+                      </CTableDataCell>
+                    </CTableRow>
+                  )}
+                </CTableBody>
+              </CTable>
+            </>
           )}
         </CCardBody>
       </CCard>
 
-      {/* Modal to view applications */}
-      <CModal visible={modalVisible} onClose={closeModal}>
-        <CModalHeader>
-          <CModalTitle>Applications</CModalTitle>
+      {/* Modal to view job details */}
+      <CModal visible={modalVisible} onClose={closeModal} size="lg">
+        <CModalHeader className="bg-primary text-white">
+          <CModalTitle>
+            Job Details
+          </CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          {isJobLoading ? (
-            <CSpinner color="primary" />
-          ) : jobDetails ? (
-            <>
-              <h5>Applicants for {jobDetails.title}</h5>
-              {jobDetails.applications && jobDetails.applications.length > 0 ? (
-                <CTable striped hover>
-                  <CTableHead>
-                    <CTableRow>
-                      <CTableHeaderCell>Applicant Name</CTableHeaderCell>
-                      <CTableHeaderCell>Status</CTableHeaderCell>
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {jobDetails.applications.map((application) => (
-                      <CTableRow key={application._id}>
-                        <CTableDataCell>{application.applicantName}</CTableDataCell>
-                        <CTableDataCell>{application.status}</CTableDataCell>
-                      </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-              ) : (
-                <div>No applications found for this job.</div>
+        <CModalBody className="px-4 py-4">
+          {selectedJob ? (
+            <div className="job-details">
+              <CCardTitle className="mb-1 h3">{selectedJob.title}</CCardTitle>
+              <CCardSubtitle className="mb-3 text-muted">
+                <div className="d-flex align-items-center mb-2">
+                  Posted by: <strong className="ms-1">{selectedJob.author}</strong>
+                  <span className="mx-2">|</span>
+                  {formatDate(selectedJob.createdAt)}
+                </div>
+                <CBadge color={getCategoryBadgeColor(selectedJob.category)} shape="rounded-pill" className="px-3 py-2">
+                  {selectedJob.category}
+                </CBadge>
+              </CCardSubtitle>
+              
+              <CRow className="mt-4">
+                <CCol>
+                  <CCard className="h-100 shadow-sm border-0">
+                    <CCardBody>
+                      <h5 className="card-title text-primary">Responsibilities</h5>
+                      <CCardText>{selectedJob.responsibilities || "No responsibilities specified."}</CCardText>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+              
+              <CRow className="mt-4">
+                <CCol md={6}>
+                  <CCard className="h-100 shadow-sm border-0">
+                    <CCardBody>
+                      <h5 className="card-title text-primary">Requirements</h5>
+                      <CCardText>{selectedJob.requirements || "No requirements specified."}</CCardText>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+                <CCol md={6}>
+                  <CCard className="h-100 shadow-sm border-0">
+                    <CCardBody>
+                      <h5 className="card-title text-primary">Qualifications</h5>
+                      <CCardText>{selectedJob.qualifications || "No qualifications specified."}</CCardText>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+              
+              <CRow className="mt-4">
+                <CCol md={8}>
+                  <CCard className="h-100 shadow-sm border-0">
+                    <CCardBody>
+                      <h5 className="card-title text-primary">Benefits</h5>
+                      <CCardText>{selectedJob.benefits || "No benefits specified."}</CCardText>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+                <CCol md={4}>
+                  <CCard className="h-100 shadow-sm border-0">
+                    <CCardBody>
+                      <h5 className="card-title text-primary">Capacity</h5>
+                      <div className="d-flex align-items-center justify-content-center h-100">
+                        <div className="text-center">
+                          <div className="display-4 fw-bold text-primary">{selectedJob.capacity}</div>
+                          <div className="text-muted">position(s)</div>
+                        </div>
+                      </div>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+              
+              {/* Applications section - kept but may not exist in your current data model */}
+              {selectedJob.applications && selectedJob.applications.length > 0 && (
+                <CCard className="mt-4 shadow-sm border-0">
+                  <CCardBody>
+                    <h5 className="card-title text-primary">Applications</h5>
+                    <CTable striped hover className="mt-3">
+                      <CTableHead className="bg-light">
+                        <CTableRow>
+                          <CTableHeaderCell>Applicant Name</CTableHeaderCell>
+                          <CTableHeaderCell>Status</CTableHeaderCell>
+                        </CTableRow>
+                      </CTableHead>
+                      <CTableBody>
+                        {selectedJob.applications.map((application) => (
+                          <CTableRow key={application._id}>
+                            <CTableDataCell>{application.applicantName}</CTableDataCell>
+                            <CTableDataCell>
+                              <CBadge color={
+                                application.status === 'Approved' ? 'success' :
+                                application.status === 'Rejected' ? 'danger' :
+                                application.status === 'Pending' ? 'warning' : 'info'
+                              }>
+                                {application.status}
+                              </CBadge>
+                            </CTableDataCell>
+                          </CTableRow>
+                        ))}
+                      </CTableBody>
+                    </CTable>
+                  </CCardBody>
+                </CCard>
               )}
-            </>
+            </div>
           ) : (
-            <div>Error loading job details.</div>
+            <div className="text-center py-5">
+              <CSpinner color="primary" />
+              <div className="mt-3">Loading job details...</div>
+            </div>
           )}
         </CModalBody>
         <CModalFooter>
