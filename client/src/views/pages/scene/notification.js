@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import socket from "../../../util/socket"; 
+import socket from "../../../utils/socket"; // Adjust the import path as necessary
 import { CToast, CToastHeader, CToastBody, CToaster } from "@coreui/react";
 
 const NotificationToast = () => {
