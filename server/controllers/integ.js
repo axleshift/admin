@@ -71,7 +71,7 @@ export const external = async (req, res) => {
     }
 
     // Validate department
-    const validDepartments = ["HR", "Core", "Logistics", "Finance"];
+    const validDepartments = ["HR", "Core", "Logistics", "Finance","Administrative"];
     if (!validDepartments.includes(department)) {
       return res.status(400).json({ 
         success: false,

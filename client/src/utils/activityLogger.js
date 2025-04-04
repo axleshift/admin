@@ -1,8 +1,10 @@
 // utils/logActivity.js
 import axiosInstance from '../utils/axiosInstance.js';
 
-const logActivity = async ({ name, role, department, route, action, description }) => {
+const logActivity = async (activityData) => {
   try {
+    const { name, role, department, route, action, description } = activityData;
+    
     // Validate inputs before sending
     if (!name || !role || !department || !route || !action || !description) {
       console.warn('Missing required activity parameters');
@@ -23,31 +25,7 @@ const logActivity = async ({ name, role, department, route, action, description 
       description
     });
     
-    // Handle different response formats
-    if (response.data?.aiAnalysis) {
-      if (typeof response.data.aiAnalysis === 'string') {
-        try {
-          // Try to parse if it's a JSON string
-          return JSON.parse(response.data.aiAnalysis);
-        } catch (e) {
-          // Return as is if parsing fails
-          return {
-            fullAnalysis: response.data.aiAnalysis,
-            category: 'General activity',
-            patterns: 'No unusual patterns detected',
-            riskLevel: 'UNKNOWN'
-          };
-        }
-      }
-      return response.data.aiAnalysis; // Return the object directly
-    }
-    
-    return {
-      fullAnalysis: 'AI analysis unavailable - unexpected response format',
-      category: 'General activity',
-      patterns: 'No unusual patterns detected',
-      riskLevel: 'UNKNOWN'
-    };
+    return response.data.aiAnalysis;
   } catch (error) {
     console.error('Failed to log activity:', error.message);
     return {

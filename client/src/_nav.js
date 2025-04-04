@@ -369,6 +369,7 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faSquarePersonConfined} style={{ marginRight: '8px' }} />,
           to:'/hr3leaverequest'
          }
+        
       );
     }
 

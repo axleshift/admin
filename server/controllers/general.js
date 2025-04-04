@@ -8,6 +8,7 @@ import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
 import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
+import mongoose from 'mongoose'
 dotenv.config();
 
 // Backend: Enhanced accessReview controller
@@ -379,6 +380,7 @@ export const getDashboardStats = async (req, res) => {
     try {
       const { name, role, department, route, action, description } = req.body;
       
+      // Validate input data
       if (!name || !role || !department || !route || !action || !description) {
         return res.status(400).json({ error: 'All fields are required.' });
       }
@@ -396,7 +398,7 @@ export const getDashboardStats = async (req, res) => {
         route,
         action,
         description,
-        aiAnalysis: JSON.stringify(aiAnalysisResult) // Store the structured analysis as JSON string
+        aiAnalysis: aiAnalysisResult // Store the complete object
       });
       
       await newActivity.save();
@@ -404,7 +406,7 @@ export const getDashboardStats = async (req, res) => {
       
       res.status(201).json({ 
         message: 'Activity logged successfully.',
-        aiAnalysis: aiAnalysisResult // Return the analysis as an object
+        aiAnalysis: aiAnalysisResult
       });
       
     } catch (error) {
@@ -412,12 +414,63 @@ export const getDashboardStats = async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   };
-
-export const getact =async (req, res) => {
-  try {
-      const activities = await Activitytracker.find();
-      res.status(200).json(activities);
-  } catch (error) {
+  
+  export const getact = async (req, res) => {
+    try {
+      // Check database connection
+      if (mongoose.connection.readyState !== 1) {
+        console.error('Database connection not established');
+        return res.status(500).json({ message: 'Database connection error' });
+      }
+      
+      // Get activities from database
+      const activities = await Activitytracker.find().sort({ timestamp: -1 });
+      
+      // Transform activities to ensure proper data structure
+      const formattedActivities = activities.map(activity => {
+        // Convert Mongoose document to plain object
+        const plainActivity = activity.toObject ? activity.toObject() : {...activity};
+        
+        // Process AI analysis to ensure consistent format for the frontend
+        if (plainActivity.aiAnalysis) {
+          // If it's already a string but not a stringified JSON
+          if (typeof plainActivity.aiAnalysis === 'string' && 
+              !plainActivity.aiAnalysis.startsWith('{')) {
+            // Keep it as is - it's already a text analysis
+          }
+          // If it's a string that appears to be JSON, parse it
+          else if (typeof plainActivity.aiAnalysis === 'string' && 
+                  plainActivity.aiAnalysis.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(plainActivity.aiAnalysis);
+              if (parsed.fullAnalysis) {
+                plainActivity.aiAnalysis = parsed.fullAnalysis;
+              }
+            } catch (e) {
+              // If parsing fails, keep the original string
+            }
+          }
+          // If it's an object with fullAnalysis property
+          else if (typeof plainActivity.aiAnalysis === 'object' && 
+                  plainActivity.aiAnalysis.fullAnalysis) {
+            // Store the full analysis text for display
+            plainActivity.aiAnalysis = plainActivity.aiAnalysis.fullAnalysis;
+            
+            // Also include the structured data for the UI components
+            plainActivity.aiStructuredAnalysis = {
+              category: plainActivity.aiAnalysis.category || 'General activity',
+              patterns: plainActivity.aiAnalysis.patterns || 'No unusual patterns detected',
+              riskLevel: plainActivity.aiAnalysis.riskLevel || 'UNKNOWN'
+            };
+          }
+        }
+        
+        return plainActivity;
+      });
+      
+      res.status(200).json(formattedActivities);
+    } catch (error) {
+      console.error('Error retrieving activity logs:', error);
       res.status(500).json({ message: error.message });
-  }
-};
+    }
+  };
