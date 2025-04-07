@@ -25,10 +25,11 @@ const databaseName = process.env.DATABASE_NAME || 'adminis';
 const normalizePath = (filepath) => {
   return path.normalize(filepath).replace(/\\/g, '/');
 };
+
 try {
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
-    console.log(`Created backup directory: ${backupDir}`);
+    console.log(`Created default backup directory: ${backupDir}`);
   }
 } catch (error) {
   console.error(`Failed to create default backup directory: ${error.message}`);
@@ -104,7 +105,6 @@ async function generateImage(prompt, username) {
 
 // Fix for setBackupDirectory function
 export const setBackupDirectory = (req, res) => {
-  // For security in production, you might want to restrict this to admin users only
   const { directory } = req.body;
 
   if (!directory) {
@@ -114,8 +114,8 @@ export const setBackupDirectory = (req, res) => {
   try {
     // Create absolute path based on OS
     const absolutePath = path.resolve(directory);
-    // Store the normalized path
-    backupDir = path.normalize(absolutePath);
+    // Store the normalized path - this update is crucial
+    backupDir = normalizePath(absolutePath);
     
     console.log(`Setting backup directory to: ${backupDir}`);
     
@@ -135,10 +135,18 @@ export const setBackupDirectory = (req, res) => {
     
     // Verify write permissions by creating a test file
     const testFilePath = path.join(backupDir, '.test_write_access');
-    fs.writeFileSync(testFilePath, 'test', { encoding: 'utf8' });
-    fs.unlinkSync(testFilePath); // Remove test file
+    try {
+      fs.writeFileSync(testFilePath, 'test', { encoding: 'utf8' });
+      fs.unlinkSync(testFilePath); // Remove test file
+      console.log(`Successfully verified write access to: ${backupDir}`);
+    } catch (writeError) {
+      console.error(`Failed to write to directory: ${writeError.message}`);
+      return res.status(500).json({
+        message: `No write permission to directory: ${writeError.message}`,
+        error: writeError.toString()
+      });
+    }
     
-    console.log(`Successfully verified write access to: ${backupDir}`);
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
       directory: backupDir // Return the directory to confirm it was set
@@ -152,7 +160,6 @@ export const setBackupDirectory = (req, res) => {
   }
 };
 
-// Get current backup directory
 export const getBackupDirectory = (req, res) => {
   res.status(200).json({ 
     directory: backupDir,
@@ -176,10 +183,13 @@ export const backupDatabase = async (req, res) => {
     }
   }
 
+  // Create timestamp for the backup
   const now = new Date();
   const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
-  const backupDirPath = path.join(backupDir, timestamp);
-  const archivePath = `${backupDirPath}.zip`;
+  
+  // Create absolute paths with normalized separators
+  const backupDirPath = normalizePath(path.join(backupDir, timestamp));
+  const archivePath = normalizePath(`${backupDirPath}.zip`);
 
   console.log(`Creating backup at: ${backupDirPath}`);
   console.log(`Archive will be created at: ${archivePath}`);
@@ -201,8 +211,8 @@ export const backupDatabase = async (req, res) => {
     // Run `mongodump` and wait for completion
     await new Promise((resolve, reject) => {
       // Explicitly use mongodump from path or use absolute path if needed
-      // For production, you should specify the full path to mongodump
       const mongoCommand = process.env.MONGODUMP_PATH || 'mongodump';
+      // Use double quotes around paths to handle spaces in directory names
       const command = `${mongoCommand} --uri "${mongoURL}" --db ${databaseName} --out "${backupDirPath}"`;
       
       console.log(`Executing command: ${command}`);
@@ -292,7 +302,7 @@ export const listBackups = (req, res) => {
         console.log(`Processing backup file: ${file}, created: ${stats.birthtime}`);
         return {
           name: file,
-          path: filePath,
+          path: normalizePath(filePath),
           created: stats.birthtime,
           size: stats.size
         };
@@ -314,8 +324,8 @@ export const listCollections = async (req, res) => {
   console.log(`Listing collections from backup: ${backupName}, database: ${databaseName || 'not specified'}`);
   console.log(`Using backup directory: ${backupDir}`);
 
-  const archivePath = path.join(backupDir, backupName);
-  const tempDir = path.join(backupDir, `temp_${Date.now()}`);
+  const archivePath = normalizePath(path.join(backupDir, backupName));
+  const tempDir = normalizePath(path.join(backupDir, `temp_${Date.now()}`));
 
   console.log(`Archive path: ${archivePath}`);
   console.log(`Temp directory: ${tempDir}`);
@@ -400,7 +410,7 @@ export const restoreDatabase = async (req, res) => {
   
   try {
     // Construct the complete path to the backup file
-    const backupPath = path.join(backupDir, timestamp);
+    const backupPath = normalizePath(path.join(backupDir, timestamp));
     console.log(`Backup path: ${backupPath}`);
     
     // Verify the backup file exists before proceeding
@@ -412,7 +422,7 @@ export const restoreDatabase = async (req, res) => {
     }
     
     // Create a temporary directory with a unique name for extraction
-    tempDir = path.join(backupDir, `temp_restore_${Date.now()}`);
+    tempDir = normalizePath(path.join(backupDir, `temp_restore_${Date.now()}`));
     fs.mkdirSync(tempDir, { recursive: true });
     console.log(`Created temp directory: ${tempDir}`);
     
@@ -422,8 +432,8 @@ export const restoreDatabase = async (req, res) => {
     console.log('Extraction completed');
     
     // Construct the path to the BSON file
-    const dbDir = path.join(tempDir, databaseName);
-    const filePath = path.join(dbDir, filename);
+    const dbDir = normalizePath(path.join(tempDir, databaseName));
+    const filePath = normalizePath(path.join(dbDir, filename));
     
     console.log(`Looking for file at: ${filePath}`);
     

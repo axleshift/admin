@@ -10,7 +10,7 @@ import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
 import mongoose from 'mongoose'
 dotenv.config();
-import Notification from "../model/notif.js";
+import notificationUtil from "../UTIL/notificationUtil.js";
 // Backend: Enhanced accessReview controller
 export const accessReview = async (req, res) => {
   try {
@@ -185,15 +185,14 @@ export const resetPassword = async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    
+    // Get full user details for notification
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ Status: "User not found" });
 
-    // Store AI password strength data for security auditing
+    // Password validation logic...
     if (passwordAnalysis) {
-      // Log the AI analysis results (consider storing in a secure database table)
-      console.log(`Password reset for user ${id}: AI analysis - Strength: ${passwordAnalysis.strength}, Score: ${passwordAnalysis.score}`);
-      
-      // Enforce minimum password strength at server-side too
+      // Password strength validation code...
       if (passwordAnalysis.score < 40) {
         return res.status(400).json({ 
           Status: "Error", 
@@ -202,11 +201,10 @@ export const resetPassword = async (req, res) => {
       }
     }
 
+    // Update password logic...
     const salt = await bcryptjs.genSalt(10);
     user.password = await bcryptjs.hash(password, salt);
     
-    // Optionally store password strength metadata with the user
-    // This can be useful for security auditing and encouraging stronger passwords over time
     user.passwordMeta = {
       lastChanged: new Date(),
       strength: passwordAnalysis?.strength || 'Unknown',
@@ -215,8 +213,23 @@ export const resetPassword = async (req, res) => {
     
     await user.save();
 
+    // Create detailed notification using the enhanced utility
+    await notificationUtil.createUserActivityNotification({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department
+      },
+      action: "has reset their password",
+      type: "system",
+      includeDetails: true // Include all user details in the message
+    });
+
     res.json({ Status: "Success" });
   } catch (err) {
+    // Error handling...
     if (err.name === "JsonWebTokenError") {
       return res.status(400).json({ Status: "Error with token" });
     } else if (err.name === "TokenExpiredError") {
@@ -476,93 +489,3 @@ export const getDashboardStats = async (req, res) => {
   };
 
 //notification
-export const createNotification = async (req, res) => {
-  try {
-    const { message } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ message: "Notification message is required" });
-    }
-    
-    const notification = new Notification({
-      message,
-      read: false
-    });
-    
-    const savedNotification = await notification.save();
-    
-    // Emit the notification to all connected clients
-    req.app.get("io").emit("newNotification", savedNotification);
-    
-    res.status(201).json(savedNotification);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const getAllNotifications = async (req, res) => {
-  try {
-    const notifications = await Notification.find().sort({ createdAt: -1 });
-    res.status(200).json(notifications);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const markAsRead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const notification = await Notification.findByIdAndUpdate(
-      id, 
-      { read: true },
-      { new: true }
-    );
-    
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-    
-    // Emit update to all clients
-    req.app.get("io").emit("notificationRead", notification);
-    
-    res.status(200).json(notification);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const markAllAsRead = async (req, res) => {
-  try {
-    await Notification.updateMany(
-      { read: false },
-      { read: true }
-    );
-    
-    // Emit update to all clients
-    req.app.get("io").emit("allNotificationsRead");
-    
-    res.status(200).json({ message: "All notifications marked as read" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const deleteNotification = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const notification = await Notification.findByIdAndDelete(id);
-    
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-    
-    // Emit deletion to all clients
-    req.app.get("io").emit("notificationDeleted", id);
-    
-    res.status(200).json({ message: "Notification deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};

@@ -71,6 +71,7 @@
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",
     "simplebar-react": "^3.2.5",
+    "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.13",
     "use-sync-external-store": "^1.4.0"
   },

@@ -210,125 +210,163 @@ function capitalizeFirstLetter(string) {
 
 
   
-  export const loginUser = async (req, res) => {
-    const { identifier, password } = req.body;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-    const MAX_ATTEMPTS = 5;
-  
-    try {
-        // Step 1: Check if we're already rate-limited based on IP
-        // For IP-based rate limiting only, don't use identifier here
-        const initialRateCheck = await checkLoginRateLimit(null, null, ipAddress);
-        
-        if (initialRateCheck.isLocked) {
-            return res.status(429).json({
-                message: "Too many failed login attempts. Please try again later.",
-                lockedUntil: initialRateCheck.lockedUntil,
-                remainingTime: initialRateCheck.remainingTime
-            });
-        }
-  
-        // Step 2: Find user by email or username
-        const user = await User.findOne({
-            $or: [
-                { email: identifier },
-                { username: identifier }
-            ]
-        });
-  
-        // Step 3: Check if the user account is already locked
-        if (user && user.accountLocked && user.lockExpiration > new Date()) {
-            await logLoginAttempt({
-                identifier,
-                userId: user._id,
-                name: user.name,
-                department: user.department,
-                role: user.role,
-                ipAddress,
-                userAgent,
-                status: 'unauthorized',
-                reason: 'Account locked'
-            });
-  
-            return res.status(429).json({
-                message: "This account is temporarily locked due to too many failed attempts.",
-                lockedUntil: user.lockExpiration,
-                remainingTime: Math.ceil((user.lockExpiration - new Date()) / 1000)
-            });
-        }
-  
-        // If account was locked but lock has expired, unlock it
-        if (user && user.accountLocked && user.lockExpiration <= new Date()) {
-            user.accountLocked = false;
-            user.lockExpiration = null;
-            await user.save();
-        }
-  
-        // Step 4: If user doesn't exist, log attempt but don't reveal this info
-        if (!user) {
-            await logLoginAttempt({
-                identifier,
-                ipAddress,
-                userAgent,
-                status: 'user_not_found',  // Changed from 'failed' to 'user_not_found'
-                reason: 'User not found'
-            });
-  
-            // For security, still show generic message but don't show attempt counts
-            return res.status(401).json({
-                message: "Invalid credentials"
-                // Removed remainingAttempts here
-            });
-        }
-  
-        // Step 5: Verify password
+export const loginUser = async (req, res) => {
+  const { identifier, password } = req.body;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+  const MAX_ATTEMPTS = 5;
+  const LOCK_DURATION_MINUTES = 15;
 
-        const isPasswordValid = await bcryptjs.compare(password, user.password);
-  
-        if (!isPasswordValid) {
-            // Log failed attempt first
-            await logLoginAttempt({
-                identifier,
-                userId: user._id,
-                name: user.name,
-                department: user.department,
-                role: user.role,
-                ipAddress,
-                userAgent,
-                status: 'failed',
-                reason: 'Incorrect password'
-            });
-  
-            // Check rate limiting after logging the failed attempt
-            const rateCheckResult = await checkLoginRateLimit(user._id, identifier, ipAddress);
-            
-            if (rateCheckResult.isLocked) {
-                return res.status(429).json({
-                    message: "Too many failed login attempts. This account has been temporarily locked.",
-                    lockedUntil: rateCheckResult.lockedUntil,
-                    remainingTime: rateCheckResult.remainingTime
-                });
-            }
-  
-            return res.status(401).json({
-                message: "Invalid credentials",
-                remainingAttempts: rateCheckResult.remainingAttempts
-            });
-        }
-  
-        // Step 6: Successful login - log it
-        await logLoginAttempt({
-            userId: user._id,
-            identifier,
-            name: user.name,
-            department: user.department,
-            role: user.role,
-            ipAddress,
-            userAgent,
-            status: 'success'
-        });
-        const logData = {
+  try {
+      // Validate input
+      if (!identifier || !password) {
+          return res.status(400).json({
+              message: "Email/username and password are required"
+          });
+      }
+
+      // Step 1: Find user by email or username
+      const user = await User.findOne({
+          $or: [
+              { email: identifier },
+              { username: identifier }
+          ]
+      });
+
+      // Step 2: Check if the user account is already locked
+      if (user && user.accountLocked && user.lockExpiration > new Date()) {
+          const remainingTime = Math.ceil((user.lockExpiration - new Date()) / 1000);
+          
+          await logLoginAttempt({
+              identifier,
+              userId: user._id,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              ipAddress,
+              userAgent,
+              status: 'unauthorized',
+              reason: 'Account locked'
+          });
+
+          return res.status(429).json({
+              message: "This account is temporarily locked due to too many failed attempts.",
+              lockedUntil: user.lockExpiration,
+              remainingTime: remainingTime
+          });
+      }
+
+      // If account was locked but lock has expired, unlock it
+      if (user && user.accountLocked && user.lockExpiration <= new Date()) {
+          user.accountLocked = false;
+          user.lockExpiration = null;
+          await user.save();
+          
+          console.log(`Account unlocked for user: ${user._id}`);
+      }
+
+      // Step 3: If user doesn't exist, log attempt but don't reveal this info
+      if (!user) {
+          await logLoginAttempt({
+              identifier,
+              ipAddress,
+              userAgent,
+              status: 'user_not_found',
+              reason: 'User not found'
+          });
+
+          // Consistent delay to prevent timing attacks
+          await delay(200);
+          
+          // For security, show generic message but don't show attempt counts
+          return res.status(401).json({
+              message: "Invalid credentials"
+          });
+      }
+
+      // Step 4: Verify password
+      const isPasswordValid = await bcryptjs.compare(password, user.password);
+
+      if (!isPasswordValid) {
+          // Log failed attempt first
+          await logLoginAttempt({
+              identifier,
+              userId: user._id,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              ipAddress,
+              userAgent,
+              status: 'failed',
+              reason: 'Incorrect password'
+          });
+
+          // Get current failed attempt count
+          const failedAttemptsCount = await getFailedAttemptsCount(user._id);
+          
+          // Check if we've reached the maximum attempts
+          if (failedAttemptsCount >= MAX_ATTEMPTS) {
+              // Lock the account
+              const lockoutUntil = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000);
+              user.accountLocked = true;
+              user.lockExpiration = lockoutUntil;
+              await user.save();
+              
+              // Create security alert for account lockout
+              await createAccountLockoutAlert(user._id, ipAddress, userAgent);
+              
+              console.log(`Account locked for user: ${user._id}, until: ${lockoutUntil}`);
+              
+              return res.status(429).json({
+                  message: "Too many failed login attempts. This account has been temporarily locked.",
+                  lockedUntil: lockoutUntil,
+                  remainingTime: Math.ceil((lockoutUntil - new Date()) / 1000)
+              });
+          }
+          
+          // Add a small delay to prevent timing attacks
+          await delay(200);
+
+          // Return remaining attempts
+          return res.status(401).json({
+              message: "Invalid credentials",
+              remainingAttempts: MAX_ATTEMPTS - failedAttemptsCount
+          });
+      }
+
+      // Step 5: Check account status (only for active accounts)
+      if (!user.isActive) {
+          await logLoginAttempt({
+              userId: user._id,
+              identifier,
+              name: user.name,
+              department: user.department,
+              role: user.role,
+              ipAddress,
+              userAgent,
+              status: 'unauthorized',
+              reason: 'Inactive account'
+          });
+          
+          return res.status(403).json({
+              message: "Account is inactive. Please contact support."
+          });
+      }
+
+      // Step 6: Successful login - log it
+      await logLoginAttempt({
+          userId: user._id,
+          identifier,
+          name: user.name,
+          department: user.department,
+          role: user.role,
+          ipAddress,
+          userAgent,
+          status: 'success'
+      });
+      
+      // Log activity
+      const logData = {
           name: user.name,
           role: user.role,
           department: user.department,
@@ -336,73 +374,105 @@ function capitalizeFirstLetter(string) {
           action: 'Login Successful',
           description: `Login successful from IP: ${ipAddress}, User-Agent: ${userAgent}`
       };
-  
+
       const newActivity = new Activitytracker(logData);
       await newActivity.save();
       console.log('Login activity logged successfully:', logData);
-  
-        // Step 7: Check for unusual login patterns
-        let securityAlert = null;
-        const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
-  
-        if (unusualLogin) {
-            securityAlert = {
-                type: 'unusual_login_detected',
-                message: "We noticed a login from a new location or device."
-            };
-  
-            await createSecurityAlert(user._id, 'unusual_login_detected', {
-                currentIp: ipAddress,
-                currentUserAgent: userAgent,
-                previousIp: unusualLogin.previousIp,
-                previousUserAgent: unusualLogin.previousUserAgent
-            });
-        }
-  
-        // Step 8: Reset failed attempts counter on successful login
-        await resetFailedAttempts(user._id, identifier);
-  
-        // Step 9: Update last login info
-        user.lastLogin = new Date();
-        user.lastIpAddress = ipAddress;
-        await user.save();
-  
-        // Step 10: Generate tokens and return response
-        const accessToken = generateAccessToken({ id: user._id, username: user.username });
-        const refreshToken = generateRefreshToken({ id: user._id, username: user.username });
-  
-        res.status(200).json({
-            message: "Login successful",
-            user: {
-                id: user._id,
-                username: user.username,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department,
-                permissions: user.permissions
-            },
-            accessToken,
-            refreshToken,
-            securityAlert
-        });
-  
-    } catch (error) {
-        console.error("Login error:", error);
-  
-        await logLoginAttempt({
-            identifier,
-            ipAddress,
-            userAgent,
-            status: 'error',
-            error: error.message
-        });
-  
-        return res.status(500).json({
-            message: "An error occurred during login."
-        });
-    }
-  };
+
+      // Step 7: Check for unusual login patterns
+      let securityAlert = null;
+      const unusualLogin = await checkForUnusualLogin(user._id, ipAddress, userAgent);
+
+      if (unusualLogin) {
+          securityAlert = {
+              type: 'unusual_login_detected',
+              message: "We noticed a login from a new location or device."
+          };
+
+          await createSecurityAlert(user._id, 'unusual_login_detected', {
+              currentIp: ipAddress,
+              currentUserAgent: userAgent,
+              previousIp: unusualLogin.previousIp,
+              previousUserAgent: unusualLogin.previousUserAgent
+          });
+      }
+
+      // Step 8: Reset failed attempts counter on successful login
+      await resetFailedAttempts(user._id, identifier);
+
+      // Step 9: Update last login info
+      user.lastLogin = new Date();
+      user.lastIpAddress = ipAddress;
+      await user.save();
+
+      // Step 10: Generate tokens and return response
+      const accessToken = generateAccessToken({ 
+          id: user._id, 
+          username: user.username,
+          role: user.role 
+      });
+      
+      const refreshToken = generateRefreshToken({ 
+          id: user._id, 
+          username: user.username 
+      });
+
+      res.status(200).json({
+          message: "Login successful",
+          user: {
+              id: user._id,
+              username: user.username,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              department: user.department,
+              permissions: user.permissions
+          },
+          accessToken,
+          refreshToken,
+          securityAlert
+      });
+
+  } catch (error) {
+      console.error("Login error:", error);
+
+      await logLoginAttempt({
+          identifier,
+          ipAddress,
+          userAgent,
+          status: 'error',
+          error: error.message
+      });
+
+      return res.status(500).json({
+          message: "An error occurred during login."
+      });
+  }
+};
+
+// Helper function to count failed attempts
+const getFailedAttemptsCount = async (userId) => {
+  try {
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      
+      const count = await LoginAttempt.countDocuments({
+          userId,
+          status: 'failed',
+          timestamp: { $gte: fifteenMinutesAgo }
+      });
+      
+      return count;
+  } catch (error) {
+      console.error("Error counting failed attempts:", error);
+      return 0;
+  }
+};
+
+// Simple delay function to help prevent timing attacks
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper function to count failed attempts
+
   export const verifyCaptcha = async (req, res, next) => {
     const { captchaToken } = req.body;
     if (!captchaToken) return res.status(400).json({ error: "CAPTCHA is required" });

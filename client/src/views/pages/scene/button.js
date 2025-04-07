@@ -1,6 +1,7 @@
-import React from 'react';
-import { CButton } from '@coreui/react';
+import React, { useState } from 'react';
+import { CButton, CToast, CToastHeader, CToastBody, CToaster } from '@coreui/react';
 import logActivity from '../../../utils/activityLogger';
+import notificationService from '../../../utils/notificationService';
 
 const ExampleButtonPage = () => {
   const userRole = sessionStorage.getItem('role');
@@ -9,31 +10,92 @@ const ExampleButtonPage = () => {
   const userId = sessionStorage.getItem('userId');
   const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
   const userName = sessionStorage.getItem('name'); 
+  
+  // State to manage toasts
+  const [toasts, setToasts] = useState([]);
 
-  const handleButtonClick = () => {
-    if (!userId || !userName || !userRole || !userDepartment) {
-      console.error("User information is missing. Please make sure it's properly fetched and stored in sessionStorage.");
-      return;
+  const handleButtonClick = async () => {
+    // Show notification and save it to MongoDB in one step
+    try {
+      const displayName = userName || "User";
+      const displayRole = userRole || "Unknown Role";
+      const title = "Button Clicked";
+      const message = `${displayName} (${displayRole}) has clicked the button successfully.`;
+      
+      // Use notification service to save and emit the notification
+      await notificationService.notify({
+        title,
+        message,
+        type: 'button_click',
+        userId
+      });
+      
+      // Show toast in UI
+      showToast(title, message);
+      
+      // Log activity
+      if (userId && userName && userRole && userDepartment) {
+        logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/button',
+          action: 'Button Click',
+          description: 'User clicked the button'
+        }).catch(console.warn);
+      }
+    } catch (error) {
+      console.warn("Error showing notification:", error);
+      
+      // Still show toast even if saving failed
+      showToast("Button Clicked", 
+        `${userName || "User"} (${userRole || "Unknown Role"}) has clicked the button successfully.`);
     }
+  };
 
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/button',
-      action: 'Button Click',
-      description: 'User clicked the button'
-    });
-  }
-
-  if (!userName) { 
-    return <div>Loading user data...</div>;
-  }
+  // Function to show toast UI only
+  const showToast = (title, message) => {
+    const currentTime = new Date().toLocaleTimeString();
+    
+    setToasts((prevToasts) => [
+      ...prevToasts,
+      <CToast autohide={true} visible={true} delay={5000} key={`click-${Date.now()}`}>
+        <CToastHeader closeButton>
+          <svg
+            className="rounded me-2"
+            width="20"
+            height="20"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="xMidYMid slice"
+            focusable="false"
+            role="img"
+          >
+            <rect width="100%" height="100%" fill="#007aff"></rect>
+          </svg>
+          <strong className="me-auto">{title}</strong>
+          <small>{currentTime}</small>
+        </CToastHeader>
+        <CToastBody>
+          {message}
+        </CToastBody>
+      </CToast>,
+    ]);
+  };
 
   return (
     <div>
-      <h1>Hi {userName}</h1>
-      <CButton onClick={handleButtonClick}>Click me</CButton>
+      <h1>Hi {userName || "there"}</h1>
+      <CButton 
+        onClick={handleButtonClick}
+        color="primary"
+      >
+        Click me
+      </CButton>
+      
+      {/* Toast container */}
+      <CToaster placement="top-end">
+        {toasts}
+      </CToaster>
     </div>
   );
 };

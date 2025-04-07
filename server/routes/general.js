@@ -12,11 +12,7 @@ import { getUser,
     getact,
     recertifyUserAccess,
     initiateAccessReview,
-    createNotification, 
-    getAllNotifications, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification 
+  
  } from "../controllers/general.js";
 
 const router = express.Router();
@@ -40,10 +36,6 @@ router.post('/log', activity)
 router.get('/log',getact);
 
 
-router.post('/notif', createNotification);
-router.get('/notif', getAllNotifications);
-router.patch('/notif/:id/read', markAsRead);
-router.patch('/notif/read-all', markAllAsRead);
-router.delete('/notif/:id', deleteNotification);
+
 
 export default router;

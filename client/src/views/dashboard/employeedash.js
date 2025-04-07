@@ -21,10 +21,7 @@ import StatBox from '../pages/scene/statbox';
 import OverviewChart from '../pages/sales/overviewChart';
 //integ
 import Monthly from '../pages/sales/monthly';
-import FreightTable from '..//pages/integrate/core/summary/shipment';
 import Papa from 'papaparse';
-import { saveAs } from 'file-saver';
-import BreakdownChart from '../pages/sales/breakdownchart';
 import '../../scss/dashboard.scss';
 import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import Loader from '../../components/Loader';  

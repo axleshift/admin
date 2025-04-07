@@ -302,122 +302,121 @@ const SecurityDashboard = () => {
           
           {/* Security Alerts Tab */}
           {activeTab === 'alerts' && (
-            <CCard className="mb-4">
-              <CCardHeader>
-                <strong><FaExclamationTriangle className="me-2" /> Security Alerts</strong>
-              </CCardHeader>
-              <CCardBody>
-                {/* Filters */}
-                <CRow className="mb-3 filter-section">
-                  <CCol sm={12}>
-                    <h6><FaFilter className="me-2" /> Filters</h6>
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormInput 
-                      placeholder="User ID"
-                      name="userId"
-                      value={alertFilters.userId}
-                      onChange={handleAlertFilterChange}
-                      className="mb-2"
-                    />
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormSelect 
-                      name="alertType"
-                      value={alertFilters.alertType}
-                      onChange={handleAlertFilterChange}
-                      className="mb-2"
-                    >
-                      <option value="">All Alert Types</option>
-                      <option value="SUSPICIOUS_LOGIN">Suspicious Login</option>
-                      <option value="BRUTE_FORCE">Brute Force</option>
-                      <option value="MULTIPLE_FAILURES">Multiple Failures</option>
-                      <option value="UNUSUAL_LOCATION">Unusual Location</option>
-                    </CFormSelect>
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormSelect 
-                      name="status"
-                      value={alertFilters.status}
-                      onChange={handleAlertFilterChange}
-                      className="mb-2"
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="OPEN">Open</option>
-                      <option value="RESOLVED">Resolved</option>
-                      <option value="FALSE_POSITIVE">False Positive</option>
-                    </CFormSelect>
-                  </CCol>
-                </CRow>
-                
-                {/* Error Handling */}
-                {alertsError && <div className="alert alert-danger">
-                  Failed to load security alerts: {alertsError.toString()}
-                </div>}
-                
-                {/* Alerts Table */}
-                {alertsLoading ? (
-                  <div className="text-center py-5">
-                    <CSpinner color="primary" />
-                    <p className="mt-3">Loading security alerts...</p>
-                  </div>
-                ) : (
-                  <CTable hover responsive>
-                    <CTableHead>
-                      <CTableRow>
-                        <CTableHeaderCell>Alert Type</CTableHeaderCell>
-                        <CTableHeaderCell>User</CTableHeaderCell>
-                        <CTableHeaderCell>Timestamp</CTableHeaderCell>
-                        <CTableHeaderCell>Details</CTableHeaderCell>
-                        <CTableHeaderCell>Status</CTableHeaderCell>
-                        <CTableHeaderCell>Resolution</CTableHeaderCell>
-                      </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                      {securityAlerts.length === 0 ? (
-                        <CTableRow>
-                          <CTableDataCell colSpan="6" className="text-center">
-                            No security alerts found
-                          </CTableDataCell>
-                        </CTableRow>
-                      ) : (
-                        securityAlerts.map(alert => (
-                          <CTableRow key={alert._id}>
-                            <CTableDataCell>
-                              <CBadge color={getAlertTypeBadgeColor(alert.alertType)}>
-                                {renderSafely(alert.alertType)}
-                              </CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaUserShield className="me-1" />
-                              {typeof alert.userId === 'object' && alert.userId !== null
-                                ? renderSafely(alert.userId.name) || renderSafely(alert.userId)
-                                : renderSafely(alert.userId)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaClock className="me-1" />
-                              {alert.timestamp ? formatDate(alert.timestamp) : '-'}
-                            </CTableDataCell>
-                            <CTableDataCell>{renderSafely(alert.details)}</CTableDataCell>
-                            <CTableDataCell>
-                              <CBadge color={getStatusBadgeColor(alert.status)}>
-                                {renderSafely(alert.status)}
-                              </CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {alert.resolution && typeof alert.resolution === 'object'
-                                ? renderSafely(alert.resolution.notes)
-                                : '-'}
-                            </CTableDataCell>
-                          </CTableRow>
-                        ))
-                      )}
-                    </CTableBody>
-                  </CTable>
-                )}
-              </CCardBody>
-            </CCard>
-          )}
+  <CCard className="mb-4">
+    <CCardHeader>
+      <strong><FaExclamationTriangle className="me-2" /> Security Alerts</strong>
+    </CCardHeader>
+    <CCardBody>
+      {/* Filters */}
+      <CRow className="mb-3 filter-section">
+        <CCol sm={12}>
+          <h6><FaFilter className="me-2" /> Filters</h6>
+        </CCol>
+        <CCol sm={3}>
+          <CFormInput 
+            placeholder="User ID"
+            name="userId"
+            value={alertFilters.userId}
+            onChange={handleAlertFilterChange}
+            className="mb-2"
+          />
+        </CCol>
+        <CCol sm={3}>
+          <CFormSelect 
+            name="alertType"
+            value={alertFilters.alertType}
+            onChange={handleAlertFilterChange}
+            className="mb-2"
+          >
+            <option value="">All Alert Types</option>
+            <option value="multiple_failed_attempts">Multiple Failed Attempts</option>
+            <option value="unusual_login_detected">Unusual Login Detected</option>
+            <option value="account_locked">Account Locked</option>
+          </CFormSelect>
+        </CCol>
+        <CCol sm={3}>
+          <CFormSelect 
+            name="status"
+            value={alertFilters.status}
+            onChange={handleAlertFilterChange}
+            className="mb-2"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="resolved">Resolved</option>
+            <option value="false_positive">False Positive</option>
+          </CFormSelect>
+        </CCol>
+      </CRow>
+      
+      {/* Error Handling */}
+      {alertsError && <div className="alert alert-danger">
+        Failed to load security alerts: {alertsError.toString()}
+      </div>}
+      
+      {/* Alerts Table */}
+      {alertsLoading ? (
+        <div className="text-center py-5">
+          <CSpinner color="primary" />
+          <p className="mt-3">Loading security alerts...</p>
+        </div>
+      ) : (
+        <CTable hover responsive>
+          <CTableHead>
+            <CTableRow>
+              <CTableHeaderCell>Alert Type</CTableHeaderCell>
+              <CTableHeaderCell>User</CTableHeaderCell>
+              <CTableHeaderCell>Timestamp</CTableHeaderCell>
+              <CTableHeaderCell>Details</CTableHeaderCell>
+              <CTableHeaderCell>Status</CTableHeaderCell>
+              <CTableHeaderCell>Resolution</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody>
+            {securityAlerts.length === 0 ? (
+              <CTableRow>
+                <CTableDataCell colSpan="6" className="text-center">
+                  No security alerts found
+                </CTableDataCell>
+              </CTableRow>
+            ) : (
+              securityAlerts.map(alert => (
+                <CTableRow key={alert._id}>
+                  <CTableDataCell>
+                    <CBadge color={getAlertTypeBadgeColor(alert.alertType)}>
+                      {renderSafely(alert.alertType)}
+                    </CBadge>
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    <FaUserShield className="me-1" />
+                    {typeof alert.userId === 'object' && alert.userId !== null
+                      ? renderSafely(alert.userId.name) || renderSafely(alert.userId)
+                      : renderSafely(alert.userId)}
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    <FaClock className="me-1" />
+                    {alert.timestamp ? formatDate(alert.timestamp) : '-'}
+                  </CTableDataCell>
+                  <CTableDataCell>{renderSafely(alert.details)}</CTableDataCell>
+                  <CTableDataCell>
+                    <CBadge color={getStatusBadgeColor(alert.status)}>
+                      {renderSafely(alert.status)}
+                    </CBadge>
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    {alert.resolution && typeof alert.resolution === 'object'
+                      ? renderSafely(alert.resolution.notes)
+                      : '-'}
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            )}
+          </CTableBody>
+        </CTable>
+      )}
+    </CCardBody>
+  </CCard>
+)}
           
         {/* Login Attempts Tab */}
         {activeTab === 'logins' && (

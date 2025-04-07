@@ -1,11 +1,15 @@
 import axios from 'axios';
 import Freight from '../model/core1.js';
+import notificationUtil from "../UTIL/notificationUtil.js";
 
 const core1 = process.env.EXTERNAL_CORE?.replace(/\/$/, '');
 const core1Token = process.env.CORE_API_TOKEN;
 
 
 //core1
+
+
+
 export const fetchCore1Data = async (req, res) => {
   try {
     const page = req.query.page || 1;
@@ -19,9 +23,25 @@ export const fetchCore1Data = async (req, res) => {
         },
       }
     );
+    
+    // Create notification for new freight data
+    if (response.data && response.data.results && response.data.results.length > 0) {
+      await notificationUtil.createSystemNotification(
+        "New Freight Data Available",
+        `${response.data.results.length} freight records have been fetched from Core1.`
+      );
+    }
+    
     return res.json(response.data);
   } catch (error) {
     console.error('Error fetching freight data:', error);
+
+    // Create notification for failed fetch
+    await notificationUtil.createNotification({
+      title: "Freight Data Fetch Failed",
+      message: `Failed to fetch freight data: ${error.message || "Unknown error"}`,
+      type: "error"
+    });
 
     if (error.response) {
       return res.status(error.response.status).json({
@@ -36,26 +56,23 @@ export const fetchCore1Data = async (req, res) => {
   }
 };
 
-
-
 export const fetchcore1insightshipment = async (req, res) => {
   try {
-    const postResponse = await axios.post(
-      `${core1}/api/v1/insights/shipment-overtime/`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${core1Token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return res.status(200).json(postResponse.data);
-  } catch (postError) {
+    let response;
     
     try {
-      const getResponse = await axios.get(
+      response = await axios.post(
+        `${core1}/api/v1/insights/shipment-overtime/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${core1Token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (postError) {
+      response = await axios.get(
         `${core1}/api/v1/insights/shipment-overtime/`,
         {
           headers: {
@@ -64,84 +81,147 @@ export const fetchcore1insightshipment = async (req, res) => {
           },
         }
       );
-
-      return res.status(200).json(getResponse.data);
-    } catch (getError) {
-      console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
-
-      return res.status(getError?.response?.status || 500).json({
-        error: getError?.response?.data || "Internal Server Error",
+    }
+    
+    // Create notification for new shipment insight data
+    if (response.data) {
+      await notificationUtil.createNotification({
+        title: "Shipment Insights Updated",
+        message: "New shipment overtime insights data has been fetched from Core1.",
+        type: "info"
       });
     }
+    
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error("❌ API Request Failed:", error?.response?.status, error?.response?.data);
+    
+    // Create notification for failed fetch
+    await notificationUtil.createNotification({
+      title: "Shipment Insights Fetch Failed",
+      message: `Failed to fetch shipment insights: ${error.message || "Unknown error"}`,
+      type: "error"
+    });
+    
+    return res.status(error?.response?.status || 500).json({
+      error: error?.response?.data || "Internal Server Error",
+    });
   }
 };
+
 export const fetchcore1insightcost = async (req, res) => {
+  try {
+    const getResponse = await axios.get(
+      `${core1}/api/v1/insights/cost-overtime/`,
+      {
+        headers: {
+          Authorization: `Bearer ${core1Token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    try {
-      const getResponse = await axios.get(
-        `${core1}/api/v1/insights/cost-overtime/`,
-        {
-          headers: {
-            Authorization: `Bearer ${core1Token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return res.status(200).json(getResponse.data);
-    } catch (getError) {
-      console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
-
-      return res.status(getError?.response?.status || 500).json({
-        error: getError?.response?.data || "Internal Server Error",
+    // Create notification for new cost insight data
+    if (getResponse.data) {
+      await notificationUtil.createNotification({
+        title: "Cost Insights Updated",
+        message: "New cost overtime insights data has been fetched from Core1.",
+        type: "info"
       });
     }
+
+    return res.status(200).json(getResponse.data);
+  } catch (getError) {
+    console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
+    
+    // Create notification for failed fetch
+    await notificationUtil.createNotification({
+      title: "Cost Insights Fetch Failed",
+      message: `Failed to fetch cost insights: ${getError.message || "Unknown error"}`,
+      type: "error"
+    });
+
+    return res.status(getError?.response?.status || 500).json({
+      error: getError?.response?.data || "Internal Server Error",
+    });
   }
+};
 
 export const fetchcore1insightitem = async (req, res) => {
+  try {
+    const getResponse = await axios.get(
+      `${core1}/api/v1/insights/items-overtime/`,
+      {
+        headers: {
+          Authorization: `Bearer ${core1Token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    try {
-      const getResponse = await axios.get(
-        `${core1}/api/v1/insights/items-overtime/`,
-        {
-          headers: {
-            Authorization: `Bearer ${core1Token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return res.status(200).json(getResponse.data);
-    } catch (getError) {
-      console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
-
-      return res.status(getError?.response?.status || 500).json({
-        error: getError?.response?.data || "Internal Server Error",
+    // Create notification for new item insight data
+    if (getResponse.data) {
+      await notificationUtil.createNotification({
+        title: "Item Insights Updated",
+        message: "New items overtime insights data has been fetched from Core1.",
+        type: "info"
       });
     }
+
+    return res.status(200).json(getResponse.data);
+  } catch (getError) {
+    console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
+    
+    // Create notification for failed fetch
+    await notificationUtil.createNotification({
+      title: "Item Insights Fetch Failed",
+      message: `Failed to fetch item insights: ${getError.message || "Unknown error"}`,
+      type: "error"
+    });
+
+    return res.status(getError?.response?.status || 500).json({
+      error: getError?.response?.data || "Internal Server Error",
+    });
   }
+};
+
 export const fetchcore1insightweight = async (req, res) => {
+  try {
+    const getResponse = await axios.get(
+      `${core1}/api/v1/insights/weight-overtime/`,
+      {
+        headers: {
+          Authorization: `Bearer ${core1Token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    try {
-      const getResponse = await axios.get(
-        `${core1}/api/v1/insights/weight-overtime/`,
-        {
-          headers: {
-            Authorization: `Bearer ${core1Token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return res.status(200).json(getResponse.data);
-    } catch (getError) {
-      console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
-
-      return res.status(getError?.response?.status || 500).json({
-        error: getError?.response?.data || "Internal Server Error",
+    // Create notification for new weight insight data
+    if (getResponse.data) {
+      await notificationUtil.createNotification({
+        title: "Weight Insights Updated",
+        message: "New weight overtime insights data has been fetched from Core1.",
+        type: "info"
       });
     }
+
+    return res.status(200).json(getResponse.data);
+  } catch (getError) {
+    console.error("❌ API Request Failed:", getError?.response?.status, getError?.response?.data);
+    
+    // Create notification for failed fetch
+    await notificationUtil.createNotification({
+      title: "Weight Insights Fetch Failed",
+      message: `Failed to fetch weight insights: ${getError.message || "Unknown error"}`,
+      type: "error"
+    });
+
+    return res.status(getError?.response?.status || 500).json({
+      error: getError?.response?.data || "Internal Server Error",
+    });
   }
+};
 
 
 export const syncCore1Data = async (req, res) => {

@@ -34,7 +34,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
+import { setupSocketEvents } from "./UTIL/socketHandlers.js";
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
@@ -139,11 +139,13 @@ mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
         server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
-       // startAutoSync();
+        startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 
 // ✅ 11. Handle WebSocket connections
+
+setupSocketEvents(io);
 io.on("connection", (socket) => {
     console.log(`✅ A user connected: ${socket.id}`);
 

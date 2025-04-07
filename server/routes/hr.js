@@ -28,8 +28,7 @@ router.put("/worker/:id/role", changeUserRole);
 // Route to delete a user
 router.delete("/worker/:id", deleteUser);
 
-//hr2
-router.get('/job-posting',getJobPostings)
+
 
 router.get("/job-postings/:id", getJobPostingById);
 
@@ -44,4 +43,7 @@ router.post('/revoke-access',revokeAccess);
 router.get('/leaveRequest',leave)
 router.put('/leaveRequest/:id', updateLeaveRequest);
 router.get('/payroll', getpayroll);
+
+//hr2
+router.get('/job-posting',getJobPostings)
 export default router;

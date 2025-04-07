@@ -85,9 +85,8 @@ const Monthly = () => {
     });
   }, []);
 
-  // Format data for the chart (same as your original code)
+  // Format data for the chart
   const formattedData = React.useMemo(() => {
-    // Your existing formattedData code
     if (!data || !Array.isArray(data) || data.length === 0) return {
       labels: [],
       salesData: [],
@@ -105,9 +104,8 @@ const Monthly = () => {
     };
   }, [data]);
 
-  // Calculate totals for summary (same as your original code)
+  // Calculate totals for summary
   const totals = React.useMemo(() => {
-    // Your existing totals code
     if (!data || !Array.isArray(data) || data.length === 0) return { sales: 0, revenue: 0 };
     
     return data.reduce((acc, entry) => {
@@ -118,9 +116,8 @@ const Monthly = () => {
     }, { sales: 0, revenue: 0 });
   }, [data]);
 
-  // Get highest values for highlight (same as your original code)
+  // Get highest values for highlight
   const highlights = React.useMemo(() => {
-    // Your existing highlights code
     if (!data || !Array.isArray(data) || data.length === 0) 
       return { highestSales: { value: 0, month: 'N/A' }, highestRevenue: { value: 0, month: 'N/A' } };
     
@@ -145,7 +142,7 @@ const Monthly = () => {
     return { highestSales, highestRevenue };
   }, [data]);
 
-  // New function to render system unavailability message
+  // Render system unavailability message
   const renderSystemUnavailable = () => {
     return (
       <CCardBody>
@@ -213,12 +210,163 @@ const Monthly = () => {
               </CAlert>
             </CCardBody>
           ) : (
-            // Rest of your original rendering code for successful data fetch
             <>
               <CCardBody>
-                {/* Your cards and chart components remain unchanged */}
-                {/* ... */}
+                {/* Summary Cards */}
+                <CRow className="mb-4">
+                  {/* Total Sales Card */}
+                  <CCol md={6} xl={3} className="mb-3 mb-xl-0">
+                    <CCard className="border-0 shadow-sm h-100">
+                      <CCardBody className="d-flex align-items-center">
+                        <div className="bg-light p-3 rounded me-3">
+                          <FontAwesomeIcon icon={faChartLine} size="lg" className="text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-muted small">Total Sales</div>
+                          <div className="fs-5 fw-bold">{totals.sales.toLocaleString()}</div>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  
+                  {/* Total Revenue Card */}
+                  <CCol md={6} xl={3} className="mb-3 mb-xl-0">
+                    <CCard className="border-0 shadow-sm h-100">
+                      <CCardBody className="d-flex align-items-center">
+                        <div className="bg-light p-3 rounded me-3">
+                          <FontAwesomeIcon icon={faMoneyBillWave} size="lg" className="text-success" />
+                        </div>
+                        <div>
+                          <div className="text-muted small">Total Revenue</div>
+                          <div className="fs-5 fw-bold">${totals.revenue.toLocaleString()}</div>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  
+                  {/* Highest Sales Card */}
+                  <CCol md={6} xl={3} className="mb-3 mb-xl-0">
+                    <CCard className="border-0 shadow-sm h-100">
+                      <CCardBody className="d-flex align-items-center">
+                        <div className="bg-light p-3 rounded me-3">
+                          <FontAwesomeIcon icon={faChartLine} size="lg" className="text-info" />
+                        </div>
+                        <div>
+                          <div className="text-muted small">Highest Sales</div>
+                          <div className="fs-5 fw-bold">{highlights.highestSales.value.toLocaleString()}</div>
+                          <div className="text-muted small">{highlights.highestSales.month}</div>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  
+                  {/* Highest Revenue Card */}
+                  <CCol md={6} xl={3} className="mb-3 mb-xl-0">
+                    <CCard className="border-0 shadow-sm h-100">
+                      <CCardBody className="d-flex align-items-center">
+                        <div className="bg-light p-3 rounded me-3">
+                          <FontAwesomeIcon icon={faMoneyBillWave} size="lg" className="text-warning" />
+                        </div>
+                        <div>
+                          <div className="text-muted small">Highest Revenue</div>
+                          <div className="fs-5 fw-bold">${highlights.highestRevenue.value.toLocaleString()}</div>
+                          <div className="text-muted small">{highlights.highestRevenue.month}</div>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                </CRow>
+                
+                {/* Chart */}
+                <CCard className="border-0 shadow-sm">
+                  <CCardBody>
+                    <h4 className="mb-3">Monthly Sales & Revenue Trend</h4>
+                    <div style={{ height: '300px' }}>
+                      <CChartLine
+                        data={{
+                          labels: formattedData.labels,
+                          datasets: [
+                            {
+                              label: 'Sales',
+                              backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                              borderColor: 'rgba(0, 123, 255, 1)',
+                              pointBackgroundColor: 'rgba(0, 123, 255, 1)',
+                              pointBorderColor: '#fff',
+                              tension: 0.4,
+                              fill: true,
+                              data: formattedData.salesData
+                            },
+                            {
+                              label: 'Revenue',
+                              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                              borderColor: 'rgba(40, 167, 69, 1)',
+                              pointBackgroundColor: 'rgba(40, 167, 69, 1)',
+                              pointBorderColor: '#fff',
+                              tension: 0.4,
+                              fill: true,
+                              data: formattedData.revenueData
+                            }
+                          ],
+                        }}
+                        options={{
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: true,
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  let label = context.dataset.label || '';
+                                  if (label) {
+                                    label += ': ';
+                                  }
+                                  if (context.parsed.y !== null) {
+                                    label += context.dataset.label === 'Revenue' 
+                                      ? `$${context.parsed.y.toLocaleString()}` 
+                                      : context.parsed.y.toLocaleString();
+                                  }
+                                  return label;
+                                }
+                              }
+                            }
+                          },
+                          scales: {
+                            x: {
+                              grid: {
+                                drawOnChartArea: false,
+                              },
+                            },
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function(value) {
+                                  return value.toLocaleString();
+                                }
+                              }
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </CCardBody>
+                </CCard>
               </CCardBody>
+              <CCardFooter className="bg-light d-flex justify-content-between align-items-center">
+                <div className="small text-muted">
+                  Data last updated: {new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+                <CButton color="primary" size="sm" onClick={fetchData}>
+                  <FontAwesomeIcon icon={faSync} className="me-1" />
+                  Refresh Data
+                </CButton>
+              </CCardFooter>
             </>
           )}
         </CCard>

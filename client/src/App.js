@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
 import "./scss/style.scss";
+import NotificationToast from "./views/pages/scene/notification";
+
 
 const DefaultLayout = React.lazy(() => import("./layout/DefaultLayout"));
 const Login = React.lazy(() => import("./views/pages/login/Login"));
@@ -59,8 +61,15 @@ const AppContent = () => {
 
 
 const App = () => {
+  // Check if user is authenticated by looking for token in localStorage or session
+  const isAuthenticated = () => {
+    // Assuming you store the authentication token in localStorage
+    return localStorage.getItem('accesstoken') !== null;
+  }
+
   return (
     <BrowserRouter>
+      {isAuthenticated() && <NotificationToast />}
       <AppContent />
     </BrowserRouter>
   );

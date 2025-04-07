@@ -433,99 +433,101 @@ const RecoveryPage = () => {
                                                     active={selectedDatabase === db}
                                                     onClick={() => setSelectedDatabase(db)} 
                                                     style={{ cursor: 'pointer' }}
-                                                    >
-                                                        {db}
-                                                    </CListGroupItem>
-                                                                                                ))}
-                                                                                            </CListGroup>
-                                                                                        )}
-                                                                                    </>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                    
-                                                                    <CCol md="4">
-                                                                        <CCard>
-                                                                            <CCardHeader>Select Collection</CCardHeader>
-                                                                            <CCardBody>
-                                                                                {loading ? <CSpinner /> : (
-                                                                                    <>
-                                                                                        {!selectedDatabase ? (
-                                                                                            <div className="text-center p-3">
-                                                                                                Select a database first
-                                                                                            </div>
-                                                                                        ) : collections.length === 0 ? (
-                                                                                            <div className="text-center p-3">
-                                                                                                No collections found in this database
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            <CListGroup>
-                                                                                                {collections.map((collection) => (
-                                                                                                    <CListGroupItem 
-                                                                                                        key={collection} 
-                                                                                                        active={selectedCollection === collection}
-                                                                                                        onClick={() => handleSelectCollection(collection)} 
-                                                                                                        style={{ cursor: 'pointer' }}
-                                                                                                    >
-                                                                                                        {collection}
-                                                                                                    </CListGroupItem>
-                                                                                                ))}
-                                                                                            </CListGroup>
-                                                                                        )}
-                                                                                    </>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                                </CRow>
-                                                    
-                                                                <CRow className="mt-4">
-                                                                    <CCol>
-                                                                        <CCard>
-                                                                            <CCardHeader>Restore Options</CCardHeader>
-                                                                            <CCardBody>
-                                                                                <div className="mb-3">
-                                                                                    {selectedBackup && (
-                                                                                        <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
-                                                                                    )}
-                                                                                    {selectedDatabase && (
-                                                                                        <div><strong>Selected Database:</strong> {selectedDatabase}</div>
-                                                                                    )}
-                                                                                    {selectedCollection && (
-                                                                                        <div><strong>Selected Collection:</strong> {selectedCollection}</div>
-                                                                                    )}
-                                                                                </div>
-                                                    
-                                                                                {selectedBackup && selectedDatabase && selectedCollection ? (
-                                                                                    <CButton 
-                                                                                        color="warning" 
-                                                                                        onClick={handleRestore}
-                                                                                        disabled={loading}
-                                                                                    >
-                                                                                        {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
-                                                                                    </CButton>
-                                                                                ) : (
-                                                                                    <div className="text-muted">
-                                                                                        Please select a backup, database, and collection to restore
-                                                                                    </div>
-                                                                                )}
-                                                    
-                                                                                {selectedCollection && (
-                                                                                    <CButton 
-                                                                                        color="link" 
-                                                                                        className="ms-3" 
-                                                                                        onClick={handleChangeCollection}
-                                                                                    >
-                                                                                        Change Selection
-                                                                                    </CButton>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                                </CRow>
-                                                            </CContainer>
-                                                        );
-                                                    };
-                                                    
-                                                    export default RecoveryPage;
+                                                >
+                                                    {db}
+                                                </CListGroupItem>
+                                            ))}
+                                        </CListGroup>
+                                    )}
+                                </>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+
+                <CCol md="4">
+                    <CCard>
+                        <CCardHeader>Select Collection</CCardHeader>
+                        <CCardBody>
+                            {loading ? <CSpinner /> : (
+                                <>
+                                    {!selectedDatabase ? (
+                                        <div className="text-center p-3">
+                                            Select a database first
+                                        </div>
+                                    ) : collections.length === 0 ? (
+                                        <div className="text-center p-3">
+                                            No collections found in this database
+                                        </div>
+                                    ) : selectedCollection ? (
+                                        <div className="p-3">
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <strong>{selectedCollection}</strong>
+                                                <CButton 
+                                                    color="link" 
+                                                    onClick={handleChangeCollection}
+                                                    size="sm"
+                                                >
+                                                    Change
+                                                </CButton>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <CListGroup>
+                                            {collections.map((collection) => (
+                                                <CListGroupItem 
+                                                    key={collection} 
+                                                    onClick={() => handleSelectCollection(collection)} 
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    {collection}
+                                                </CListGroupItem>
+                                            ))}
+                                        </CListGroup>
+                                    )}
+                                </>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+
+            <CRow className="mt-4">
+                <CCol>
+                    <CCard>
+                        <CCardHeader>Restore Options</CCardHeader>
+                        <CCardBody>
+                            <div className="mb-3">
+                                {selectedBackup && (
+                                    <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
+                                )}
+                                {selectedDatabase && (
+                                    <div><strong>Selected Database:</strong> {selectedDatabase}</div>
+                                )}
+                                {selectedCollection && (
+                                    <div><strong>Selected Collection:</strong> {selectedCollection}</div>
+                                )}
+                            </div>
+
+                            {selectedBackup && selectedDatabase && selectedCollection ? (
+                                <CButton 
+                                    color="warning" 
+                                    onClick={handleRestore}
+                                    disabled={loading}
+                                >
+                                    {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
+                                </CButton>
+                            ) : (
+                                <div className="text-muted">
+                                    Please select a backup, database, and collection to restore
+                                </div>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
+    );
+};
+
+export default RecoveryPage;

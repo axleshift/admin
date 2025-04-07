@@ -6,7 +6,7 @@ import {io}  from '../index.js'
 import axios from 'axios';
 import newuser from '../model/newuserhr.js';
 import dotenv from 'dotenv';
-  
+import notificationUtil from "../UTIL/notificationUtil.js";
 dotenv.config();
 
 const EXTERNAL_HR_API = process.env.EXTERNAL_HR;
@@ -315,6 +315,14 @@ export const deleteUser = async (req, res) => {
     try {
       if (!HR3) {
         console.error("Error: EXTERNAL_HR3 is not defined in the environment variables.");
+        
+        // Create notification for configuration error
+        await notificationUtil.createNotification({
+          title: "HR3 Configuration Error",
+          message: "Server configuration error: Missing HR3 API URL",
+          type: "error"
+        });
+        
         return res.status(500).json({ error: "Server configuration error: Missing HR3 API URL" });
       }
   
@@ -322,13 +330,24 @@ export const deleteUser = async (req, res) => {
   
       const response = await axios.get(`${HR3}/api/leave-requests`);
       
-      console.log("Full Response:", JSON.stringify(response.data, null, 2));
       
       // Extract the leaveRequests array from the response
       const leaveRequests = response.data.leaveRequests || [];
       
       // Count the number of leave requests
       const count = leaveRequests.length;
+      
+      // Create notification for successful fetch with count information
+      await notificationUtil.createNotification({
+        title: "Leave Requests Updated",
+        message: `${count} leave requests have been fetched from HR3 system.`,
+        type: "system",
+        metadata: {
+          source: "HR3",
+          endpoint: "leave-requests",
+          count: count
+        }
+      });
       
       // Return both the count and the data
       return res.json({
@@ -338,12 +357,20 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
       console.error("Error fetching leave requests:", error.message);
       
+      // Create notification for fetch error
+      await notificationUtil.createNotification({
+        title: "Leave Requests Fetch Failed",
+        message: `Failed to fetch leave requests: ${error.message || "Unknown error"}`,
+        type: "error"
+      });
+      
       return res.status(500).json({ 
         error: "Failed to fetch leave requests", 
         details: error.response?.data || error.message 
       });
     }
   };
+  
   export const updateLeaveRequest = async (req, res) => {
     try {
       const { id } = req.params;
@@ -396,13 +423,43 @@ export const deleteUser = async (req, res) => {
       }
       
       const data = await response.json();
-      console.log("Payroll Data:", data);
+      
+      // Create notification for successful payroll data fetch
+      const payrollEntries = data.payrollEntries || [];
+      const count = Array.isArray(payrollEntries) ? payrollEntries.length : 0;
+      
+      await notificationUtil.createNotification({
+        title: "Payroll Data Updated",
+        message: `Payroll data has been successfully fetched from HR3 system.`,
+        type: "system", // Changed from "info" to "system"
+        metadata: {
+          source: "HR3",
+          endpoint: "payroll",
+          recordsCount: count
+        }
+      });
+      
       return res.json(data);
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      
+      // Create notification for fetch error
+      await notificationUtil.createNotification({
+        title: "Payroll Data Fetch Failed",
+        message: `Failed to fetch payroll data: ${error.message || "Unknown error"}`,
+        type: "system", // Changed from "error" to "system"
+        metadata: {
+          source: "HR3",
+          endpoint: "payroll",
+          error: error.message || "Unknown error"
+        }
+      });
+      
       return res.status(500).json({ error: 'Failed to fetch payroll data' });
     }
   };
+  
+  
 
   const HR2 = process.env.EXTERNAL_Hr2;
   const Api_Key = process.env.Hr2_api_key;
@@ -411,11 +468,27 @@ export const deleteUser = async (req, res) => {
     try {
       if (!HR2) {
         console.error("Error: EXTERNAL_Hr2 is not defined in the environment variables.");
+        
+        // Create notification for configuration error
+        await notificationUtil.createNotification({
+          title: "HR2 Configuration Error",
+          message: "Server configuration error: Missing HR2 API URL",
+          type: "system"
+        });
+        
         return res.status(500).json({ error: "Server configuration error: Missing HR2 API URL" });
       }
   
       if (!Api_Key) {
         console.error("Error: Hr2_api_key is not defined in the environment variables.");
+        
+        // Create notification for configuration error
+        await notificationUtil.createNotification({
+          title: "HR2 Configuration Error",
+          message: "Server configuration error: Missing HR2 API key",
+          type: "system"
+        });
+        
         return res.status(500).json({ error: "Server configuration error: Missing HR2 API key" });
       }
   
@@ -427,12 +500,34 @@ export const deleteUser = async (req, res) => {
         }
       });
       
-      console.log("Full Response:", JSON.stringify(response.data, null, 2));
       
-      // Return the complete response data instead of just job postings
+      // Extract job postings data for notification
+      const jobPostings = response.data.jobPostings || [];
+      const count = Array.isArray(jobPostings) ? jobPostings.length : 0;
+      
+      // Create notification for successful job postings fetch
+      await notificationUtil.createNotification({
+        title: "Job Postings Updated",
+        message: `${count} job postings have been fetched from HR2 system.`,
+        type: "info",
+        metadata: {
+          source: "HR2",
+          endpoint: "jobposting/all",
+          count: count
+        }
+      });
+      
+      // Return the complete response data
       return res.status(200).json(response.data);
     } catch (error) {
       console.error("Error fetching job postings:", error.message);
+      
+      // Create notification for fetch error
+      await notificationUtil.createNotification({
+        title: "Job Postings Fetch Failed",
+        message: `Failed to fetch job postings: ${error.message || "Unknown error"}`,
+        type: "error"
+      });
       
       return res.status(500).json({ 
         error: "Failed to fetch job postings", 
