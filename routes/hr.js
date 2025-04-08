@@ -14,7 +14,8 @@ import {
     handleWebhook,
     leave, 
     updateLeaveRequest,
-    getpayroll
+    getpayroll,
+    updatePayroll, 
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -43,6 +44,9 @@ router.post('/revoke-access',revokeAccess);
 router.get('/leaveRequest',leave)
 router.put('/leaveRequest/:id', updateLeaveRequest);
 router.get('/payroll', getpayroll);
+router.get('/payroll/:id', updatePayroll);
+
+// Route to save payroll data to MongoDB
 
 //hr2
 router.get('/job-posting',getJobPostings)

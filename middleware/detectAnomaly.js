@@ -1,227 +1,223 @@
-import Anomaly from '../model/Anomaly.js';
+// middleware/detectAnomaly.js
 import LoginAttempt from '../model/LoginAttempt.js';
+import User from '../model/User.js';
+import Anomaly from '../model/Anomaly.js';
 import { createSecurityAlert } from '../UTIL/securityUtils.js';
 
-const detectAnomaly = async (req, res, next) => {
-    console.log('Running anomaly detection middleware');
-    const { identifier } = req.body;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-
-    try {
-        console.log(`Checking anomalies for IP: ${ipAddress}, identifier: ${identifier}`);
-        
-        // Pattern 1: Rapid succession attempts (automated tool detection)
-        const lastMinute = new Date(Date.now() - 60 * 1000);
-        const recentAttempts = await LoginAttempt.find({ 
-            ipAddress,
-            timestamp: { $gte: lastMinute }
-        }).sort({ timestamp: -1 });
-        
-        console.log(`Found ${recentAttempts.length} recent attempts from this IP in the last minute`);
-        
-        if (recentAttempts.length >= 3) {
-            // Calculate time gaps between successive attempts
-            const timeGaps = [];
-            for (let i = 0; i < recentAttempts.length - 1; i++) {
-                const gap = Math.abs(
-                    new Date(recentAttempts[i].timestamp) - 
-                    new Date(recentAttempts[i+1].timestamp)
-                );
-                timeGaps.push(gap);
-            }
-            
-            const avgGap = timeGaps.length > 0 
-                ? timeGaps.reduce((sum, gap) => sum + gap, 0) / timeGaps.length 
-                : 0;
-                
-            console.log(`Average gap between attempts: ${avgGap}ms`);
-            
-            // If average gap is less than 2 seconds, likely automated
-            if (avgGap < 2000) {
-                console.log('ANOMALY DETECTED: Suspected automated login attempts');
-                
-                // Create an anomaly record
-                const anomaly = new Anomaly({
-                    ipAddress,
-                    userAgent,
-                    identifier,
-                    reason: 'Suspected automated login attempts',
-                    severity: avgGap < 1000 ? 'high' : 'medium',
-                    details: {
-                        attemptCount: recentAttempts.length,
-                        averageGapMs: avgGap,
-                        timeframe: '60 seconds',
-                        patterns: 'Consistent timing between attempts'
-                    }
-                });
-                
-                // Add userId if available
-                if (recentAttempts[0].userId) {
-                    anomaly.userId = recentAttempts[0].userId;
-                }
-                
-                await anomaly.save();
-                console.log('Anomaly saved to database with ID:', anomaly._id);
-                
-                // Create security alert if we have a userId
-                if (recentAttempts[0].userId) {
-                    await createSecurityAlert(recentAttempts[0].userId, 'potential_automated_attack', {
-                        ipAddress,
-                        userAgent,
-                        attemptCount: recentAttempts.length,
-                        averageGapMs: avgGap,
-                        anomalyId: anomaly._id
-                    });
-                    console.log('Security alert created for user ID:', recentAttempts[0].userId);
-                }
-                
-                // You can choose to block the request here or add to req object to handle in controller
-                req.detectedAnomaly = {
-                    type: 'automated_attempts',
-                    severity: anomaly.severity,
-                    anomalyId: anomaly._id
-                };
-            }
-        }
-        
-        // Pattern 2: Distributed attack detection (from multiple IPs)
-        const lastFiveMinutes = new Date(Date.now() - 5 * 60 * 1000);
-        const distributedAttempts = await LoginAttempt.find({ 
-            identifier,
-            timestamp: { $gte: lastFiveMinutes }
-        }).sort({ timestamp: -1 });
-        
-        if (identifier && distributedAttempts.length >= 5) {
-            console.log(`Found ${distributedAttempts.length} attempts for identifier "${identifier}" in last 5 minutes`);
-            
-            // Count unique IPs
-            const uniqueIPs = new Set();
-            distributedAttempts.forEach(attempt => uniqueIPs.add(attempt.ipAddress));
-            
-            console.log(`Attempts come from ${uniqueIPs.size} unique IP addresses`);
-            
-            // If attempts coming from 3+ different IPs, could be distributed attack
-            if (uniqueIPs.size >= 3) {
-                console.log('ANOMALY DETECTED: Potential distributed brute force attack');
-                
-                // Create an anomaly record
-                const anomaly = new Anomaly({
-                    identifier,
-                    ipAddress, // Current IP
-                    userAgent,
-                    reason: 'Potential distributed brute force attack',
-                    severity: uniqueIPs.size >= 5 ? 'critical' : 'high',
-                    details: {
-                        attemptCount: distributedAttempts.length,
-                        uniqueIpCount: uniqueIPs.size,
-                        ipAddresses: Array.from(uniqueIPs),
-                        timeframe: '5 minutes'
-                    }
-                });
-                
-                // Add userId if available
-                if (distributedAttempts[0].userId) {
-                    anomaly.userId = distributedAttempts[0].userId;
-                }
-                
-                await anomaly.save();
-                console.log('Distributed attack anomaly saved with ID:', anomaly._id);
-                
-                // Create security alert if we have a userId
-                if (distributedAttempts[0].userId) {
-                    await createSecurityAlert(distributedAttempts[0].userId, 'distributed_brute_force', {
-                        identifier,
-                        attemptCount: distributedAttempts.length,
-                        uniqueIpCount: uniqueIPs.size,
-                        anomalyId: anomaly._id
-                    });
-                    console.log('Security alert created for distributed attack on user ID:', distributedAttempts[0].userId);
-                }
-                
-                // Add to request object
-                req.detectedAnomaly = {
-                    ...req.detectedAnomaly,
-                    type: 'distributed_attack', 
-                    severity: anomaly.severity,
-                    anomalyId: anomaly._id
-                };
-            }
-        }
-        
-        // Pattern 3: Password spray attack (same IP targeting multiple accounts)
-        const lastFifteenMinutes = new Date(Date.now() - 15 * 60 * 1000);
-        const ipBasedAttempts = await LoginAttempt.find({ 
-            ipAddress,
-            timestamp: { $gte: lastFifteenMinutes },
-            status: { $in: ['failed', 'user_not_found'] } // Make sure 'user_not_found' is in your LoginAttempt schema enum
-        });
-        
-        if (ipBasedAttempts.length >= 5) {
-            // Count unique identifiers
-            const uniqueIdentifiers = new Set();
-            ipBasedAttempts.forEach(attempt => {
-                if (attempt.identifier) uniqueIdentifiers.add(attempt.identifier);
-            });
-            
-            console.log(`IP ${ipAddress} has tried ${uniqueIdentifiers.size} different accounts in 15 minutes`);
-            
-            // If trying 3+ different accounts, likely password spray
-            if (uniqueIdentifiers.size >= 3) {
-                console.log('ANOMALY DETECTED: Potential password spray attack');
-                
-                // Create an anomaly record
-                const anomaly = new Anomaly({
-                    ipAddress,
-                    userAgent,
-                    reason: 'Potential password spray attack',
-                    severity: uniqueIdentifiers.size >= 5 ? 'high' : 'medium',
-                    details: {
-                        attemptCount: ipBasedAttempts.length,
-                        uniqueAccountCount: uniqueIdentifiers.size,
-                        accounts: Array.from(uniqueIdentifiers),
-                        timeframe: '15 minutes'
-                    }
-                });
-                
-                await anomaly.save();
-                console.log('Password spray anomaly saved with ID:', anomaly._id);
-                
-                // Create a general security alert (not user-specific)
-                await createSecurityAlert(null, 'password_spray_attack', {
-                    ipAddress,
-                    attemptCount: ipBasedAttempts.length,
-                    uniqueAccountCount: uniqueIdentifiers.size,
-                    anomalyId: anomaly._id
-                });
-                
-                // Add to request object
-                req.detectedAnomaly = {
-                    ...req.detectedAnomaly,
-                    type: 'password_spray',
-                    severity: anomaly.severity,
-                    anomalyId: anomaly._id
-                };
-            }
-        }
-        
-        // If critical anomalies detected, you can choose to block the request here
-        if (req.detectedAnomaly && req.detectedAnomaly.severity === 'critical') {
-            console.log('BLOCKING REQUEST due to critical security anomaly');
-            return res.status(429).json({
-                success: false,
-                message: "Access temporarily blocked due to suspicious activity",
-                details: "Multiple security anomalies detected. Please try again later or contact support."
-            });
-        }
-        
-        // Continue to next middleware or route handler
-        next();
-    } catch (error) {
-        console.error('Anomaly detection error:', error);
-        // Don't block the request on error, just log and continue
-        next();
-    }
+// Feature extraction and scoring functions
+const extractFeatures = (currentLogin, historicalData) => {
+  // Initialize feature vector
+  const features = {
+    timeOfDayAnomaly: 0,
+    locationAnomaly: 0,
+    deviceAnomaly: 0,
+    behavioralAnomaly: 0,
+    rapidLoginAttempts: 0
+  };
+  
+  // Skip if no historical data
+  if (!historicalData || historicalData.length === 0) {
+    return features;
+  }
+  
+  // Extract current login data
+  const currentTime = new Date(currentLogin.timestamp || Date.now());
+  const currentHour = currentTime.getHours();
+  const currentIP = currentLogin.ipAddress;
+  const currentUA = currentLogin.userAgent;
+  
+  // Time-based anomaly: Check if user typically logs in at this hour
+  const hourCounts = {};
+  historicalData.forEach(login => {
+    const loginHour = new Date(login.timestamp).getHours();
+    hourCounts[loginHour] = (hourCounts[loginHour] || 0) + 1;
+  });
+  
+  const totalLogins = historicalData.length;
+  const timeFrequency = (hourCounts[currentHour] || 0) / totalLogins;
+  if (timeFrequency < 0.1) { // Less than 10% of logins at this hour
+    features.timeOfDayAnomaly = 1 - timeFrequency;
+  }
+  
+  // IP-based anomaly: Check if IP has been used before
+  const knownIPs = new Set(historicalData.map(login => login.ipAddress));
+  if (!knownIPs.has(currentIP)) {
+    features.locationAnomaly = 1.0;
+  } else {
+    // How frequently this IP is used
+    const ipFrequency = historicalData.filter(login => login.ipAddress === currentIP).length / totalLogins;
+    features.locationAnomaly = 1 - ipFrequency;
+  }
+  
+  // User-Agent/Device anomaly
+  const knownUAs = new Set(historicalData.map(login => login.userAgent));
+  if (!knownUAs.has(currentUA)) {
+    features.deviceAnomaly = 1.0;
+  } else {
+    // How frequently this device is used
+    const uaFrequency = historicalData.filter(login => login.userAgent === currentUA).length / totalLogins;
+    features.deviceAnomaly = 1 - uaFrequency;
+  }
+  
+  // Rapid login attempts
+  const recentAttempts = historicalData.filter(login => {
+    const attemptTime = new Date(login.timestamp);
+    const timeDiff = currentTime - attemptTime;
+    return timeDiff <= 5 * 60 * 1000; // Last 5 minutes
+  });
+  
+  if (recentAttempts.length >= 3) {
+    features.rapidLoginAttempts = Math.min(1.0, (recentAttempts.length - 2) / 8); // Scale from 0 to 1
+  }
+  
+  // Behavioral anomaly (pattern of success/failure)
+  const recentBehavior = historicalData.slice(0, 10).map(login => login.status === 'success' ? 1 : 0);
+  const successRate = recentBehavior.reduce((sum, val) => sum + val, 0) / recentBehavior.length;
+  
+  // If recent success rate is low, could indicate brute force attempts
+  if (successRate < 0.5 && recentBehavior.length >= 5) {
+    features.behavioralAnomaly = 1 - successRate;
+  }
+  
+  return features;
 };
+
+const scoreAnomaly = (features) => {
+  // Weights for different features
+  const weights = {
+    timeOfDayAnomaly: 0.15,
+    locationAnomaly: 0.3,
+    deviceAnomaly: 0.25,
+    behavioralAnomaly: 0.2,
+    rapidLoginAttempts: 0.1
+  };
+  
+  // Calculate weighted score
+  let score = 0;
+  for (const [feature, value] of Object.entries(features)) {
+    score += value * weights[feature];
+  }
+  
+  return score;
+};
+
+const classifyThreat = (score) => {
+  if (score > 0.8) return { level: 'critical', action: 'block' };
+  if (score > 0.6) return { level: 'high', action: 'challenge' };
+  if (score > 0.4) return { level: 'medium', action: 'monitor' };
+  if (score > 0.2) return { level: 'low', action: 'log' };
+  return { level: 'normal', action: 'allow' };
+};
+
+const detectAnomaly = async (req, res, next) => {
+  const { identifier } = req.body;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+  
+  try {
+    // First check if user exists (but don't reveal this info to client)
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    });
+    
+    // If no user, still proceed but we'll just log without AI analysis
+    if (!user) {
+      req.anomalyData = {
+        detected: false,
+        score: 0,
+        threat: { level: 'normal', action: 'allow' }
+      };
+      return next();
+    }
+    
+    // Get historical login data
+    const historicalLogins = await LoginAttempt.find({ 
+      userId: user._id 
+    })
+    .sort({ timestamp: -1 })
+    .limit(20);
+    
+    // Current login attempt data
+    const currentLogin = {
+      userId: user._id,
+      ipAddress,
+      userAgent,
+      timestamp: new Date()
+    };
+    
+    // Extract features and calculate anomaly score
+    const features = extractFeatures(currentLogin, historicalLogins);
+    const anomalyScore = scoreAnomaly(features);
+    const threat = classifyThreat(anomalyScore);
+    
+    // Store the detection results in the request for later use
+    req.anomalyData = {
+      detected: anomalyScore > 0.2, // Low threshold for "detected"
+      score: anomalyScore,
+      features,
+      threat
+    };
+    
+    // Critical threats get special handling
+    if (threat.level === 'critical') {
+      // Log the anomaly
+      const anomaly = new Anomaly({
+        userId: user._id,
+        ipAddress,
+        userAgent,
+        score: anomalyScore,
+        features,
+        threatLevel: threat.level,
+        reason: 'AI detected critical security threat'
+      });
+      await anomaly.save();
+      
+      // Create security alert
+      await createSecurityAlert(user._id, 'critical_login_anomaly', {
+        ipAddress,
+        userAgent,
+        anomalyScore,
+        features
+      });
+      
+      // Block the login attempt for critical threats
+      return res.status(403).json({
+        message: "Login blocked due to security concerns. Please contact support."
+      });
+    }
+    
+    // For high threats, we could implement additional verification but for now just log
+    if (threat.level === 'high') {
+      const anomaly = new Anomaly({
+        userId: user._id,
+        ipAddress,
+        userAgent,
+        score: anomalyScore,
+        features,
+        threatLevel: threat.level,
+        reason: 'AI detected high-risk login pattern'
+      });
+      await anomaly.save();
+      
+      // We'll pass through to the login handler, which can implement additional verification
+    }
+    
+    // Proceed to the login handler
+    next();
+    
+  } catch (error) {
+    console.error("AI Anomaly Detection Error:", error);
+    // Don't block login on detection errors, just log and proceed
+    req.anomalyData = {
+      error: error.message,
+      detected: false
+    };
+    next();
+  }
+};
+
 
 export default detectAnomaly;

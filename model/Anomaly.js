@@ -1,67 +1,66 @@
-import mongoose from "mongoose";
+// models/Anomaly.js
+import mongoose from 'mongoose';
 
-const anomalySchema = new mongoose.Schema({
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User', 
-        required: false 
-    },
-    ipAddress: {
-        type: String,
-        required: true
-    },
-    userAgent: {
-        type: String,
-        required: true
-    },
-    identifier: {
-        type: String,
-        required: false
-    },
-    reason: {
-        type: String,
-        required: true
-    },
-    details: {
-        type: Object,
-        required: false
-    },
-    severity: {
-        type: String,
-        enum: ['low', 'medium', 'high', 'critical'],
-        default: 'medium'
-    },
-    mitigationStatus: {
-        type: String,
-        enum: ['detected', 'blocked', 'monitoring', 'resolved', 'false_positive'],
-        default: 'detected'
-    },
-    timestamp: {
-        type: Date,
-        default: Date.now
-    },
-    resolvedAt: {
-        type: Date,
-        default: null
-    },
-    resolvedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: false
-    },
-    notes: {
-        type: String,
-        required: false
-    }
+const AnomalySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // Allow anonymous anomalies
+  },
+  ipAddress: {
+    type: String,
+    required: true
+  },
+  userAgent: {
+    type: String,
+    required: false
+  },
+  score: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 1
+  },
+  features: {
+    timeOfDayAnomaly: Number,
+    locationAnomaly: Number,
+    deviceAnomaly: Number,
+    behavioralAnomaly: Number,
+    rapidLoginAttempts: Number
+  },
+  threatLevel: {
+    type: String,
+    enum: ['normal', 'low', 'medium', 'high', 'critical'],
+    default: 'low'
+  },
+  reason: {
+    type: String,
+    required: true
+  },
+  resolved: {
+    type: Boolean,
+    default: false
+  },
+  resolvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  resolution: {
+    type: String
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-// Add indexes for performance
-anomalySchema.index({ userId: 1, timestamp: -1 });
-anomalySchema.index({ ipAddress: 1, timestamp: -1 });
-anomalySchema.index({ reason: 1 });
-anomalySchema.index({ severity: 1 });
-anomalySchema.index({ mitigationStatus: 1 });
+// Add indexes for common queries
+AnomalySchema.index({ userId: 1 });
+AnomalySchema.index({ ipAddress: 1 });
+AnomalySchema.index({ timestamp: -1 });
+AnomalySchema.index({ score: -1 });
+AnomalySchema.index({ threatLevel: 1 });
 
-const Anomaly = mongoose.model('Anomaly', anomalySchema);
+const Anomaly = mongoose.model('Anomaly', AnomalySchema);
 
 export default Anomaly;

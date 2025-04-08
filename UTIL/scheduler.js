@@ -2,22 +2,21 @@ import schedule from 'node-schedule';
 import axios from 'axios';
 import Freight from '../model/core1.js';
 import Payroll from '../model/Payroll.js';
-import notificationUtil from '../UTIL/notificationUtil.js';
 
-// Get environment variables with proper error handling
+// Get environment variables with proper error handling - standardized to uppercase
 const EXTERNAL_CORE = process.env.EXTERNAL_CORE?.replace(/\/$/, '') || 'https://backend-core1.axleshift.com';
 const CORE_API_TOKEN = process.env.CORE_API_TOKEN || 'core1_4464f45dff3a2310';
-const EXTERNAL_HR3 = process.env.EXTERNAL_Hr3?.replace(/\/$/, '') || 'https://hr3.axleshift.com';
+// Standardized to uppercase for consistency
+const EXTERNAL_HR3 = process.env.EXTERNAL_HR3?.replace(/\/$/, '') || process.env.EXTERNAL_Hr3?.replace(/\/$/, '') || 'https://hr3.axleshift.com';
 
 // Function to sync data automatically
 const syncFreightData = async () => {
   try {
     console.log('Auto-syncing data with External Core API...');
     
-    // Changed from GET to POST to match your fetchCore1Data function
     const response = await axios.post(
       `${EXTERNAL_CORE}/api/v1/freight/`,
-      { page: 1 }, // Sending page in the body for POST request
+      { page: 1 },
       {
         headers: {
           Authorization: `Bearer ${CORE_API_TOKEN}`,
@@ -31,10 +30,6 @@ const syncFreightData = async () => {
     
     if (!Array.isArray(externalData)) {
       console.error('Invalid API response format', response.data);
-      await notificationUtil.createSystemNotification(
-        "Freight Data Sync Failed",
-        `Invalid API response format received from Core API.`
-      );
       return;
     }
 
@@ -65,40 +60,33 @@ const syncFreightData = async () => {
       await Freight.deleteMany({ _id: { $nin: externalIds } });
     }
 
-    // Create notification for successful sync
-    await notificationUtil.createSystemNotification(
-      "Freight Data Sync Completed",
-      `${successCount} items synced, ${errorCount} errors.`
-    );
-
     console.log(`Auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
-    console.error('Error in auto-sync:', error);
-    
-    // Create notification for failed sync
-    await notificationUtil.createSystemNotification(
-      "Freight Data Sync Failed",
-      `Failed to sync freight data: ${error.message || "Unknown error"}`
-    );
+    console.error('Error in auto-sync:', error.message, error.stack);
   }
 };
 
-// Function to sync payroll data automatically
+// Function to sync payroll data automatically - changed to use axios for consistency
 const syncPayrollData = async () => {
   try {
     console.log('Auto-syncing payroll data with HR3 API...');
+    console.log(`Using HR3 endpoint: ${EXTERNAL_HR3}/api/payroll`);
     
-    const response = await fetch(`${EXTERNAL_HR3}/api/payroll`);
+    // Changed from fetch to axios for consistency and better compatibility
+    const response = await axios.get(`${EXTERNAL_HR3}/api/payroll`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    const data = await response.json();
+    // Extract data from axios response
+    const data = response.data;
     
     // Extract payroll entries
     const payrollEntries = data.payrollEntries || [];
     const count = Array.isArray(payrollEntries) ? payrollEntries.length : 0;
+    
+    console.log(`Retrieved ${count} payroll entries from HR3`);
     
     // Save to database - ensure Payroll model is imported
     let successCount = 0;
@@ -118,7 +106,7 @@ const syncPayrollData = async () => {
           );
           successCount++;
         } catch (itemError) {
-          console.error(`Error syncing payroll item:`, itemError);
+          console.error(`Error syncing payroll item:`, itemError.message);
           errorCount++;
         }
       }
@@ -130,35 +118,19 @@ const syncPayrollData = async () => {
     }
     
     console.log(`Payroll auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
-    
-    // Create notification for successful sync
-    await notificationUtil.createNotification({
-      title: "Payroll Data Updated",
-      message: `Payroll data has been successfully synced from HR3 system.`,
-      type: "system",
-      metadata: {
-        source: "HR3",
-        endpoint: "payroll",
-        recordsCount: count,
-        syncedCount: successCount,
-        errorCount: errorCount
-      }
-    });
-    
   } catch (error) {
-    console.error('Error in payroll auto-sync:', error);
-    
-    // Create notification for sync error
-    await notificationUtil.createNotification({
-      title: "Payroll Data Sync Failed",
-      message: `Failed to sync payroll data: ${error.message || "Unknown error"}`,
-      type: "system",
-      metadata: {
-        source: "HR3",
-        endpoint: "payroll",
-        error: error.message || "Unknown error"
-      }
-    });
+    console.error('Error in payroll auto-sync:', error.message);
+    // More detailed error logging
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+      console.error('Response headers:', error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    }
   }
 };
 

@@ -161,7 +161,7 @@ export const forgotPassword = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Reset your password",
-            text: `Reset link: http://localhost:3000/resetpass/${user._id}/${token}`,
+            text: `Reset link: https://admin.axleshift.com/resetpass/${user._id}/${token}`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -190,25 +190,57 @@ export const resetPassword = async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ Status: "User not found" });
 
-    // Password validation logic...
-    if (passwordAnalysis) {
-      // Password strength validation code...
-      if (passwordAnalysis.score < 40) {
-        return res.status(400).json({ 
-          Status: "Error", 
-          Message: "Password does not meet minimum security requirements based on AI analysis" 
-        });
+    // Enhanced password validation function
+    const validatePasswordStrength = (password, analysis) => {
+      // Always validate basic requirements regardless of AI analysis
+      if (password.length < 8) {
+        return { valid: false, message: "Password must be at least 8 characters long" };
       }
+      
+      // Check if password contains at least one uppercase, lowercase, number, and special character
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+      
+      if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+        return { 
+          valid: false, 
+          message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character" 
+        };
+      }
+      
+      // Check AI analysis score if available
+      if (analysis) {
+        if (analysis.score < 40) {
+          return { 
+            valid: false, 
+            message: "Password does not meet minimum security requirements based on AI analysis" 
+          };
+        }
+      }
+      
+      return { valid: true, message: "Password meets requirements" };
+    };
+
+    // Validate password strength
+    const validation = validatePasswordStrength(password, passwordAnalysis);
+    if (!validation.valid) {
+      return res.status(400).json({ 
+        Status: "Error", 
+        Message: validation.message
+      });
     }
 
-    // Update password logic...
+    // Update password if validation passes
     const salt = await bcryptjs.genSalt(10);
     user.password = await bcryptjs.hash(password, salt);
     
     user.passwordMeta = {
       lastChanged: new Date(),
       strength: passwordAnalysis?.strength || 'Unknown',
-      score: passwordAnalysis?.score || 0
+      score: passwordAnalysis?.score || 0,
+      validationPassed: true
     };
     
     await user.save();
