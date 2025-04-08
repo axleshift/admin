@@ -38,7 +38,8 @@ import {
   cilUser,
   cilInfo,
   cilPencil,
-  cilMoney
+  cilMoney,
+  cilFile 
 } from '@coreui/icons';
 
 const H3LeaveRequest = () => {

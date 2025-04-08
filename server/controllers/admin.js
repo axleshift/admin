@@ -112,14 +112,25 @@ export const setBackupDirectory = (req, res) => {
   }
 
   try {
-    // Create absolute path based on OS
-    const absolutePath = path.resolve(directory);
-    // Store the normalized path - this update is crucial
+    let absolutePath;
+    
+    // Check if it's a Windows-style absolute path (starts with drive letter)
+    if (/^[a-zA-Z]:[\\\/]/.test(directory)) {
+      // This is a Windows absolute path, keep as is
+      absolutePath = directory;
+      console.log("Windows absolute path detected:", absolutePath);
+    } else {
+      // For non-Windows paths or relative paths, use path.resolve
+      absolutePath = path.resolve(directory);
+      console.log("Resolved path:", absolutePath);
+    }
+    
+    // Store the normalized path
     backupDir = normalizePath(absolutePath);
     
     console.log(`Setting backup directory to: ${backupDir}`);
     
-    // Create directory if it doesn't exist
+    // The rest of your function remains the same...
     if (!fs.existsSync(backupDir)) {
       try {
         fs.mkdirSync(backupDir, { recursive: true });
@@ -149,7 +160,7 @@ export const setBackupDirectory = (req, res) => {
     
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
-      directory: backupDir // Return the directory to confirm it was set
+      directory: backupDir
     });
   } catch (error) {
     console.error(`Directory setup error: ${error.message}`);

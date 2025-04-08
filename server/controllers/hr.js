@@ -458,6 +458,54 @@ export const deleteUser = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch payroll data' });
     }
   };
+  export const getUserById = async (req, res) => {
+    const userId = req.params.id;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    try {
+      const response = await fetch(`${HR3}/api/users/${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Create notification for successful user data fetch
+      await notificationUtil.createNotification({
+        title: "User Data Retrieved",
+        message: `User data has been successfully fetched from HR3 system for ID: ${userId}`,
+        type: "system",
+        metadata: {
+          source: "HR3",
+          endpoint: `users/${userId}`,
+          userId: userId
+        }
+      });
+      
+      return res.json(data);
+    } catch (error) {
+      console.error(`Failed to fetch user with ID ${userId}:`, error);
+      
+      // Create notification for fetch error
+      await notificationUtil.createNotification({
+        title: "User Data Fetch Failed",
+        message: `Failed to fetch user data for ID ${userId}: ${error.message || "Unknown error"}`,
+        type: "system",
+        metadata: {
+          source: "HR3",
+          endpoint: `users/${userId}`,
+          userId: userId,
+          error: error.message || "Unknown error"
+        }
+      });
+      
+      return res.status(500).json({ error: `Failed to fetch user data for ID: ${userId}` });
+    }
+  };
  // Controller function remains the same
 export const updatePayroll = async (req, res) => {
   try {
