@@ -290,14 +290,7 @@ const SecurityDashboard = () => {
                 <FaKey className="me-2" /> Login Attempts
               </CNavLink>
             </CNavItem>
-            <CNavItem>
-              <CNavLink 
-                active={activeTab === 'activity'}
-                onClick={() => handleTabChange('activity')}
-              >
-                <FaHistory className="me-2" /> User Activity
-              </CNavLink>
-            </CNavItem>
+          
           </CNav>
           
           {/* Security Alerts Tab */}
@@ -332,6 +325,7 @@ const SecurityDashboard = () => {
             <option value="multiple_failed_attempts">Multiple Failed Attempts</option>
             <option value="unusual_login_detected">Unusual Login Detected</option>
             <option value="account_locked">Account Locked</option>
+            <option value="rapid_login_detected">Rapid  Login</option>
           </CFormSelect>
         </CCol>
         <CCol sm={3}>
@@ -540,179 +534,7 @@ const SecurityDashboard = () => {
             </CCard>
           )}
           
-          {/* User Activity Tab */}
-          {activeTab === 'activity' && (
-            <CCard className="mb-4">
-              <CCardHeader>
-                <strong><FaHistory className="me-2" /> User Activity Logs</strong>
-              </CCardHeader>
-              <CCardBody>
-                {/* Filters */}
-                <CRow className="mb-3 filter-section">
-                  <CCol sm={12}>
-                    <h6><FaFilter className="me-2" /> Filters</h6>
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormInput 
-                      placeholder="User Name"
-                      name="name"
-                      value={activityFilters.name}
-                      onChange={handleActivityFilterChange}
-                      className="mb-2"
-                    />
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormInput 
-                      placeholder="Route"
-                      name="route"
-                      value={activityFilters.route}
-                      onChange={handleActivityFilterChange}
-                      className="mb-2"
-                    />
-                  </CCol>
-                  <CCol sm={3}>
-                    <CFormSelect 
-                      name="action"
-                      value={activityFilters.action}
-                      onChange={handleActivityFilterChange}
-                      className="mb-2"
-                    >
-                      <option value="">All Actions</option>
-                      <option value="Login">Login</option>
-                      <option value="Logout">Logout</option>
-                      <option value="Tab Change">Tab Change</option>
-                      <option value="Filter Change">Filter Change</option>
-                      <option value="Button Click">Button Click</option>
-                      <option value="Data Export">Data Export</option>
-                      <option value="Alert Action">Alert Action</option>
-                    </CFormSelect>
-                  </CCol>
-                  <CCol sm={3}>
-                    <CButton 
-                      color="secondary"
-                      onClick={() => {
-                        setActivityFilters({
-                          name: '',
-                          action: '',
-                          route: ''
-                        });
-                        
-                        
-                        logActivity({
-                          name: currentUser.name,
-                          role: currentUser.role,
-                          department: currentUser.department,
-                          route: '/security/activity',
-                          action: 'Reset Filters',
-                          description: 'User reset activity filters'
-                        });
-                      }}
-                      className="mb-2"
-                    >
-                      Reset Filters
-                    </CButton>
-                  </CCol>
-                </CRow>
-                
-                {/* Error Handling */}
-                {activitiesError && <div className="alert alert-danger">
-                  Failed to load user activities: {activitiesError.toString()}
-                </div>}
-                
-                {/* User Activity Table */}
-                {activitiesLoading ? (
-                  <div className="text-center py-5">
-                    <CSpinner color="primary" />
-                    <p className="mt-3">Loading user activities...</p>
-                  </div>
-                ) : (
-                  <CTable hover responsive>
-                    <CTableHead>
-                      <CTableRow>
-                        <CTableHeaderCell>Timestamp</CTableHeaderCell>
-                        <CTableHeaderCell>User</CTableHeaderCell>
-                        <CTableHeaderCell>Role</CTableHeaderCell>
-                        <CTableHeaderCell>Department</CTableHeaderCell>
-                        <CTableHeaderCell>Action</CTableHeaderCell>
-                        <CTableHeaderCell>Route</CTableHeaderCell>
-                        <CTableHeaderCell>Description</CTableHeaderCell>
-                      </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                      {userActivities.length === 0 ? (
-                        <CTableRow>
-                          <CTableDataCell colSpan="7" className="text-center">
-                            No user activities found
-                          </CTableDataCell>
-                        </CTableRow>
-                      ) : (
-                        userActivities.map(activity => (
-                          <CTableRow key={activity._id}>
-                            <CTableDataCell>
-                              <FaClock className="me-1" />
-                              {activity.timestamp ? formatDate(activity.timestamp) : '-'}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaUser className="me-1" />
-                              {renderSafely(activity.name)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaSuitcaseRolling className="me-1" />
-                              {renderSafely(activity.role)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaBuilding className="me-1" />
-                              {renderSafely(activity.department)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <CBadge color={getActivityBadgeColor(activity.action)}>
-                                {renderSafely(activity.action)}
-                              </CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaRoute className="me-1" />
-                              {renderSafely(activity.route)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <FaClipboardList className="me-1" />
-                              {renderSafely(activity.description)}
-                            </CTableDataCell>
-                          </CTableRow>
-                        ))
-                      )}
-                    </CTableBody>
-                  </CTable>
-                )}
-                
-                {/* Export Button */}
-                <CRow className="mt-3">
-                  <CCol sm={12}>
-                    <CButton 
-                      color="primary"
-                      onClick={() => {
-                        
-                        
-                        
-                        logActivity({
-                          name: currentUser.name,
-                          role: currentUser.role,
-                          department: currentUser.department,
-                          route: '/security/activity',
-                          action: 'Data Export',
-                          description: 'User exported activity logs'
-                        });
-                        
-                        
-                        alert('Activity logs exported successfully');
-                      }}
-                    >
-                      Export Activity Logs
-                    </CButton>
-                  </CCol>
-                </CRow>
-              </CCardBody>
-            </CCard>
-          )}
+       
         </CCol>
       </CRow>
     </div>

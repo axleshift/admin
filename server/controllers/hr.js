@@ -458,7 +458,62 @@ export const deleteUser = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch payroll data' });
     }
   };
-  
+ // Controller function remains the same
+export const updatePayroll = async (req, res) => {
+  try {
+    const payrollId = req.params.id;
+    
+    // Validate payroll ID
+    if (!payrollId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payroll ID is required'
+      });
+    }
+
+    // Make request to the external payroll API
+    const response = await axios.get(`https://hr3.axleshift.com/api/payroll/${payrollId}`, {
+      headers: {
+        'Authorization': req.headers.authorization,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Return the payroll data
+    return res.status(200).json({
+      success: true,
+      data: response.data
+    });
+    
+  } catch (error) {
+    // Handle different error types
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      return res.status(error.response.status).json({
+        success: false,
+        message: error.response.data.message || 'Error retrieving payroll information',
+        error: error.response.data
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      return res.status(503).json({
+        success: false,
+        message: 'Payroll service unavailable'
+      });
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  }
+};
+
+
+
   
 
   const HR2 = process.env.EXTERNAL_Hr2;

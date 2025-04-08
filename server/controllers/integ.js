@@ -2,6 +2,9 @@ import User from "../model/User.js";
 import axios from 'axios';
 import jwt from 'jsonwebtoken'
 import bcryptjs from 'bcryptjs' 
+import fs from 'fs';
+import path from 'path';
+
 import dotenv from 'dotenv'
 
 
@@ -166,7 +169,64 @@ export const external = async (req, res) => {
   }
 };
 
-
+export const updateProfileImage = async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided"
+      });
+    }
+    
+    // Find user by username - using findOne instead of find
+    const user = await User.findOne({username: username});
+    if (!user) {
+      // Remove uploaded file if user not found
+      if (req.file.path) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Check if user has previous profile image and delete it
+    if (user.profileImage && user.profileImage !== 'default-profile.jpg') {
+      const oldImagePath = path.join('uploads/profile-images', path.basename(user.profileImage));
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+    
+    // Update user's profile image path in database
+    user.profileImage = req.file.filename;
+    await user.save();
+    
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: "Profile image updated successfully",
+      profileImage: req.file.filename
+    });
+  } catch (error) {
+    console.error("Profile Image Update Error:", error);
+    
+    // If there was an error and a file was uploaded, remove it
+    if (req.file && req.file.path) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
+};
 export const getExternalUsersByDepartment = async (req, res) => {
     try {
       const { department } = req.params; // Get department from URL parameter

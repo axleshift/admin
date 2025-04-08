@@ -494,24 +494,7 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
-        {
-          component: CNavItem,
-          name:'User Management',
-          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
-          to:'/usermanagement'
-        },
-        {
-          component: CNavItem,
-          name:'Password Analysis',
-          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
-          to:'/passwordanalysis'
-        },
-        {
-          component: CNavItem,
-          name:'User Security Report',
-          icon: <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />,
-          to:'/securitycheck'
-        }
+       
       )
     }
     

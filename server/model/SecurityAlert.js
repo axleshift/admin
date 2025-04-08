@@ -5,7 +5,7 @@ const securityAlertSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     alertType: { 
         type: String, 
-        enum: ['multiple_failed_attempts', 'unusual_login_detected', 'account_locked'],
+        enum: ['multiple_failed_attempts', 'unusual_login_detected', 'account_locked','rapid_login_detected',],
         required: true 
     },
     details: Object,

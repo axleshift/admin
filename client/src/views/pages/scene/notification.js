@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import socket from "../../../utils/socket"; 
 import { CToast, CToastHeader, CToastBody, CToaster } from "@coreui/react";
 import axios from "axios";
+import PropTypes from 'prop-types';
 
 const NotificationToast = ({ userId }) => {
   const [toasts, setToasts] = useState([]);
@@ -233,6 +234,10 @@ const NotificationToast = ({ userId }) => {
   }, [userId]); 
 
   return <CToaster placement="top-end">{toasts}</CToaster>; 
+};
+
+NotificationToast.propTypes = {
+  userId: PropTypes.string,
 };
 
 export default NotificationToast;
