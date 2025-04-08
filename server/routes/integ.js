@@ -55,7 +55,7 @@ const router = express.Router()
 router.get('/user/:department',authenticateAdmin,getUsersByDepartment)
 
 router.post('/external-login/:department',authenticateAdmin, external);
-router.put('/external-login/:username',  upload.single('profileImage'), updateProfileImage);
+router.put('/external-login/:username', authenticateAdmin, upload.single('profileImage'), updateProfileImage);
 
 
 router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
