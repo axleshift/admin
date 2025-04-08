@@ -153,6 +153,7 @@ export const external = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
         department: user.department,
