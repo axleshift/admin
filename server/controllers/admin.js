@@ -21,9 +21,12 @@ const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let backupDir = process.env.BACKUP_DIRECTORY || path.join(process.cwd(), 'backups');
 const mongoURL = process.env.MONGO_URL;
 const databaseName = process.env.DATABASE_NAME || 'adminis';
+const isWindows = process.platform === 'win32';
 
 const normalizePath = (filepath) => {
-  return path.normalize(filepath).replace(/\\/g, '/');
+  const normalized = path.normalize(filepath);
+  // Replace backslashes with forward slashes but preserve drive letter format on Windows
+  return normalized.replace(/\\/g, '/');
 };
 
 try {
@@ -34,7 +37,6 @@ try {
 } catch (error) {
   console.error(`Failed to create default backup directory: ${error.message}`);
 }
-
 
 
 
@@ -130,7 +132,7 @@ export const setBackupDirectory = (req, res) => {
     
     console.log(`Setting backup directory to: ${backupDir}`);
     
-    // The rest of your function remains the same...
+    // Create directory if it doesn't exist
     if (!fs.existsSync(backupDir)) {
       try {
         fs.mkdirSync(backupDir, { recursive: true });
@@ -160,7 +162,7 @@ export const setBackupDirectory = (req, res) => {
     
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
-      directory: backupDir
+      directory: backupDir // Return the directory to confirm it was set
     });
   } catch (error) {
     console.error(`Directory setup error: ${error.message}`);
@@ -223,8 +225,12 @@ export const backupDatabase = async (req, res) => {
     await new Promise((resolve, reject) => {
       // Explicitly use mongodump from path or use absolute path if needed
       const mongoCommand = process.env.MONGODUMP_PATH || 'mongodump';
-      // Use double quotes around paths to handle spaces in directory names
-      const command = `${mongoCommand} --uri "${mongoURL}" --db ${databaseName} --out "${backupDirPath}"`;
+      
+      // Properly quote paths based on platform
+      const outputPath = isWindows ? `"${backupDirPath}"` : `'${backupDirPath}'`;
+      const mongoUrl = isWindows ? `"${mongoURL}"` : `'${mongoURL}'`;
+      
+      const command = `${mongoCommand} --uri ${mongoUrl} --db ${databaseName} --out ${outputPath}`;
       
       console.log(`Executing command: ${command}`);
       
@@ -469,9 +475,12 @@ export const restoreDatabase = async (req, res) => {
       throw new Error('MongoDB connection URL is not defined');
     }
     
-    // Create the mongorestore command
+    // Create the mongorestore command with proper quoting based on platform
     const mongoCommand = process.env.MONGORESTORE_PATH || 'mongorestore';
-    const command = `${mongoCommand} --uri="${mongoURL}" --nsInclude="${databaseName}.${collectionName}" --drop "${filePath}"`;
+    const filePathQuoted = isWindows ? `"${filePath}"` : `'${filePath}'`;
+    const mongoUrlQuoted = isWindows ? `"${mongoURL}"` : `'${mongoURL}'`;
+    
+    const command = `${mongoCommand} --uri=${mongoUrlQuoted} --nsInclude="${databaseName}.${collectionName}" --drop ${filePathQuoted}`;
     console.log(`Executing restore command: ${command}`);
 
     // Execute the command and capture output
@@ -512,7 +521,6 @@ export const restoreDatabase = async (req, res) => {
     }
   }
 };
-
 //announcement .js
 
 
