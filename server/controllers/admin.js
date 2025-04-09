@@ -18,7 +18,8 @@ dotenv.config();
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-
+const mongoURL = process.env.MONGO_URL;
+const databaseName = process.env.DATABASE_NAME || 'adminis';
 const isWindows = process.platform === 'win32';
 
 // Improved path normalization that preserves Windows drive letters
@@ -39,11 +40,11 @@ const ensureAbsolutePath = (dirPath) => {
 };
 let backupDir = process.env.BACKUP_DIRECTORY || path.join(process.cwd(), 'backups');
 backupDir = ensureAbsolutePath(backupDir);
-const mongoURL = process.env.MONGO_URL;
-const databaseName = process.env.DATABASE_NAME || 'adminis';
 
 // Initialize backup directory
 try {
+  backupDir = ensureAbsolutePath(backupDir);
+  
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
     console.log(`Created default backup directory: ${backupDir}`);
@@ -51,6 +52,8 @@ try {
 } catch (error) {
   console.error(`Failed to create default backup directory: ${error.message}`);
 }
+
+
 
 
 async function generateImage(prompt, username) {
@@ -129,19 +132,15 @@ export const setBackupDirectory = (req, res) => {
   try {
     let absolutePath;
     
-    // Improved Windows path detection - check for drive letter pattern
-    if (isWindows && /^[a-zA-Z]:[\\\/]/.test(directory)) {
-      // For Windows absolute paths, use as-is
+    // Check if it's a Windows-style absolute path (starts with drive letter)
+    if (/^[a-zA-Z]:[\\\/]/.test(directory)) {
+      // This is a Windows absolute path, keep as is
       absolutePath = directory;
       console.log("Windows absolute path detected:", absolutePath);
-    } else if (!isWindows && directory.startsWith('/')) {
-      // For Unix absolute paths, use as-is
-      absolutePath = directory;
-      console.log("Unix absolute path detected:", absolutePath);
     } else {
-      // For relative paths, resolve against current directory
-      absolutePath = path.resolve(process.cwd(), directory);
-      console.log("Resolved relative path:", absolutePath);
+      // For non-Windows paths or relative paths, use path.resolve
+      absolutePath = path.resolve(directory);
+      console.log("Resolved path:", absolutePath);
     }
     
     // Store the normalized path
@@ -177,36 +176,6 @@ export const setBackupDirectory = (req, res) => {
       });
     }
     
-    // Persist the backup directory in environment if possible
-    try {
-      if (fs.existsSync('.env')) {
-        const envContent = fs.readFileSync('.env', 'utf8');
-        const envLines = envContent.split('\n');
-        let found = false;
-        
-        const updatedLines = envLines.map(line => {
-          if (line.startsWith('BACKUP_DIRECTORY=')) {
-            found = true;
-            return `BACKUP_DIRECTORY=${backupDir}`;
-          }
-          return line;
-        });
-        
-        if (!found) {
-          updatedLines.push(`BACKUP_DIRECTORY=${backupDir}`);
-        }
-        
-        fs.writeFileSync('.env', updatedLines.join('\n'));
-        console.log(`Updated BACKUP_DIRECTORY in .env file`);
-      }
-    } catch (envError) {
-      console.warn(`Could not update .env file: ${envError.message}`);
-      // Non-fatal error, continue
-    }
-    
-    // Update process environment
-    process.env.BACKUP_DIRECTORY = backupDir;
-    
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
       directory: backupDir // Return the directory to confirm it was set
@@ -228,9 +197,9 @@ export const getBackupDirectory = (req, res) => {
 };
 
 export const backupDatabase = async (req, res) => {
-  console.log(`Starting database backup using directory: ${backupDir}`);
+  console.log(`Using backup directory: ${backupDir}`);
 
-  // Double-check that backup directory exists and we can access it
+  // Ensure backup directory exists
   if (!fs.existsSync(backupDir)) {
     try {
       fs.mkdirSync(backupDir, { recursive: true });
@@ -255,10 +224,10 @@ export const backupDatabase = async (req, res) => {
   console.log(`Archive will be created at: ${archivePath}`);
 
   try {
-    // Ensure backup subdirectory exists
+    // Ensure backup directory exists
     if (!fs.existsSync(backupDirPath)) {
       fs.mkdirSync(backupDirPath, { recursive: true });
-      console.log(`Created backup subdirectory: ${backupDirPath}`);
+      console.log(`Created backup directory: ${backupDirPath}`);
     }
 
     if (!mongoURL) {
@@ -268,59 +237,44 @@ export const backupDatabase = async (req, res) => {
 
     console.log(`Starting mongodump with database: ${databaseName}`);
     
-    // Run `mongodump` with properly escaped paths
-    try {
-      // Always use quoted paths to handle spaces correctly
+    // Run `mongodump` and wait for completion
+    await new Promise((resolve, reject) => {
+      // Explicitly use mongodump from path or use absolute path if needed
       const mongoCommand = process.env.MONGODUMP_PATH || 'mongodump';
       
-      // Create command with proper quoting for different platforms
-      let command;
-      if (isWindows) {
-        command = `${mongoCommand} --uri "${mongoURL}" --db ${databaseName} --out "${backupDirPath}"`;
-      } else {
-        command = `${mongoCommand} --uri '${mongoURL}' --db ${databaseName} --out '${backupDirPath}'`;
-      }
+      // Properly quote paths based on platform
+      const outputPath = isWindows ? `"${backupDirPath}"` : `'${backupDirPath}'`;
+      const mongoUrl = isWindows ? `"${mongoURL}"` : `'${mongoURL}'`;
+      
+      const command = `${mongoCommand} --uri ${mongoUrl} --db ${databaseName} --out ${outputPath}`;
       
       console.log(`Executing command: ${command}`);
       
-      const { stdout, stderr } = await new Promise((resolve, reject) => {
-        exec(command, (error, stdout, stderr) => {
-          if (error) {
-            console.error('Error executing mongodump:', error);
-            console.error('stderr:', stderr);
-            return reject(error);
-          }
-          resolve({ stdout, stderr });
-        });
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error executing mongodump:', error);
+          console.error('stderr:', stderr);
+          return reject(error);
+        }
+        console.log('mongodump stdout:', stdout);
+        if (stderr) console.log('mongodump stderr:', stderr);
+        resolve(stdout);
       });
-      
-      console.log('mongodump stdout:', stdout);
-      if (stderr) console.log('mongodump stderr:', stderr);
-      
-      // Verify mongodump output exists
-      const dbOutputPath = path.join(backupDirPath, databaseName);
-      if (!fs.existsSync(dbOutputPath)) {
-        throw new Error(`mongodump did not create expected output at ${dbOutputPath}`);
-      }
-      
-      console.log('mongodump completed successfully');
-    } catch (dumpError) {
-      console.error('mongodump failed:', dumpError);
-      return res.status(500).json({ 
-        message: 'Database backup failed during mongodump', 
-        error: dumpError.message 
-      });
-    }
+    });
 
-    // Create zip archive
+    console.log('mongodump completed, creating zip archive');
+
+    // Create a zip archive
     const output = fs.createWriteStream(archivePath);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
+    // Handle archive errors
     archive.on('error', (err) => {
       console.error('Archiver Error:', err);
       return res.status(500).json({ message: 'Error compressing backup', error: err.message });
     });
 
+    // Set up completion handler before piping
     const archivePromise = new Promise((resolve, reject) => {
       output.on('close', () => {
         console.log(`Backup archived: ${archivePath} (${archive.pointer()} bytes)`);
@@ -333,10 +287,12 @@ export const backupDatabase = async (req, res) => {
       });
     });
 
+    // Pipe archive to file
     archive.pipe(output);
     archive.directory(backupDirPath, false);
     await archive.finalize();
     
+    // Wait for archive to complete
     await archivePromise;
     
     // Cleanup: Remove original backup folder asynchronously
@@ -348,6 +304,7 @@ export const backupDatabase = async (req, res) => {
       }
     });
 
+    // Send successful response
     res.status(200).json({
       message: 'Backup created and archived successfully',
       archivePath: archivePath,
@@ -549,14 +506,10 @@ export const restoreDatabase = async (req, res) => {
     
     // Create the mongorestore command with proper quoting based on platform
     const mongoCommand = process.env.MONGORESTORE_PATH || 'mongorestore';
+    const filePathQuoted = isWindows ? `"${filePath}"` : `'${filePath}'`;
+    const mongoUrlQuoted = isWindows ? `"${mongoURL}"` : `'${mongoURL}'`;
     
-    let command;
-    if (isWindows) {
-      command = `${mongoCommand} --uri="${mongoURL}" --nsInclude="${databaseName}.${collectionName}" --drop "${filePath}"`;
-    } else {
-      command = `${mongoCommand} --uri='${mongoURL}' --nsInclude="${databaseName}.${collectionName}" --drop '${filePath}'`;
-    }
-    
+    const command = `${mongoCommand} --uri=${mongoUrlQuoted} --nsInclude="${databaseName}.${collectionName}" --drop ${filePathQuoted}`;
     console.log(`Executing restore command: ${command}`);
 
     // Execute the command and capture output
