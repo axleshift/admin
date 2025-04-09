@@ -1,9 +1,11 @@
+
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
 import archiver from 'archiver';
 import extract from "extract-zip";
 import dotenv from 'dotenv';
+
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Message from '../model/message.js'
@@ -22,49 +24,57 @@ const mongoURL = process.env.MONGO_URL;
 const databaseName = process.env.DATABASE_NAME || 'adminis';
 const isWindows = process.platform === 'win32';
 
+
 // Improved path normalization that preserves Windows drive letters
 const normalizePath = (filepath) => {
   if (!filepath) return '';
-  const normalized = path.normalize(filepath);
-  // Replace backslashes with forward slashes but preserve drive letter format on Windows
-  return normalized.replace(/\\/g, '/');
+  return path.normalize(filepath).replace(/\\/g, '/');
 };
 
-// Check if path is a Windows-style absolute path
-const isWindowsAbsolutePath = (dirPath) => {
-  return /^[a-zA-Z]:[\\\/]/.test(dirPath);
+// Check if path is absolute (handles both Windows and POSIX)
+const isAbsolutePath = (dirPath) => {
+  return path.isAbsolute(dirPath);
 };
 
-// Convert relative paths to absolute paths
+// More reliable absolute path resolution
 const ensureAbsolutePath = (dirPath) => {
   if (!dirPath) return '';
-  
-  // If it's already a Windows absolute path, just normalize it
-  if (isWindowsAbsolutePath(dirPath)) {
-    return normalizePath(dirPath);
-  }
-  
-  // Otherwise, resolve against current working directory
-  if (path.isAbsolute(dirPath)) {
-    return normalizePath(dirPath);
-  }
-  
-  return normalizePath(path.resolve(process.cwd(), dirPath));
+  return path.isAbsolute(dirPath) ? dirPath : path.resolve(process.cwd(), dirPath);
 };
 
-// Initialize backup directory - use default path initially
-let backupDir = normalizePath(ensureAbsolutePath(process.env.BACKUP_DIRECTORY || path.join(process.cwd(), 'backups')));
+// Initialize backup directory with better logging
+let backupDir = '';
+if (process.env.BACKUP_DIRECTORY) {
+  backupDir = ensureAbsolutePath(process.env.BACKUP_DIRECTORY);
+} else {
+  backupDir = path.resolve(process.cwd(), 'backups');
+}
 
+// Normalize for consistent handling
+backupDir = normalizePath(backupDir);
+
+console.log(`=== BACKUP CONFIGURATION ===`);
+console.log(`Current working directory: ${process.cwd()}`);
+console.log(`User running process: ${process.env.USER || process.env.USERNAME || 'unknown'}`);
+console.log(`Initialized backup directory: ${backupDir}`);
+console.log(`Platform: ${isWindows ? 'Windows' : 'POSIX'}`);
+
+// Create default backup directory with better error handling
 try {
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
     console.log(`Created default backup directory: ${backupDir}`);
   }
+  
+  // Verify write permissions immediately
+  const testFile = path.join(backupDir, '.permission_test');
+  fs.writeFileSync(testFile, 'test');
+  fs.unlinkSync(testFile);
+  console.log(`Successfully verified write permissions to ${backupDir}`);
 } catch (error) {
-  console.error(`Failed to create default backup directory: ${error.message}`);
+  console.error(`CRITICAL ERROR with backup directory: ${error.message}`);
+  console.error(`Stack trace: ${error.stack}`);
 }
-
-
 // Fix for setBackupDirectory function
 export const setBackupDirectory = (req, res) => {
   const { directory } = req.body;
@@ -74,42 +84,26 @@ export const setBackupDirectory = (req, res) => {
   }
 
   try {
-    // If it's a Windows path (starts with drive letter like C:), use it directly
-    // Otherwise, resolve against current directory
-    let dirToUse = directory;
+    console.log(`Setting backup directory request received: ${directory}`);
     
-    // Detect Windows absolute path and preserve it exactly as provided
-    if (isWindowsAbsolutePath(directory)) {
-      console.log("Windows absolute path detected:", directory);
-      // Use the Windows path exactly as provided, just normalize slashes
-      backupDir = normalizePath(directory);
-    } else {
-      // For non-Windows paths or relative paths, use path.resolve
-      backupDir = normalizePath(path.resolve(directory));
-    }
+    // Ensure absolute path with simplified logic
+    const newBackupDir = ensureAbsolutePath(directory);
+    const normalizedDir = normalizePath(newBackupDir);
     
-    console.log(`Setting backup directory to: ${backupDir}`);
+    console.log(`Resolved absolute path: ${normalizedDir}`);
     
     // Create directory if it doesn't exist
-    if (!fs.existsSync(backupDir)) {
-      try {
-        fs.mkdirSync(backupDir, { recursive: true });
-        console.log(`Created directory: ${backupDir}`);
-      } catch (error) {
-        console.error(`Failed to create directory: ${error.message}`);
-        return res.status(500).json({ 
-          message: `Failed to create directory: ${error.message}`,
-          error: error.toString()
-        });
-      }
+    if (!fs.existsSync(normalizedDir)) {
+      fs.mkdirSync(normalizedDir, { recursive: true });
+      console.log(`Created directory: ${normalizedDir}`);
     }
     
-    // Verify write permissions by creating a test file
-    const testFilePath = path.join(backupDir, '.test_write_access');
+    // Verify write permissions with explicit test file
+    const testFilePath = path.join(normalizedDir, '.test_write_access');
     try {
       fs.writeFileSync(testFilePath, 'test', { encoding: 'utf8' });
       fs.unlinkSync(testFilePath); // Remove test file
-      console.log(`Successfully verified write access to: ${backupDir}`);
+      console.log(`Successfully verified write access to: ${normalizedDir}`);
     } catch (writeError) {
       console.error(`Failed to write to directory: ${writeError.message}`);
       return res.status(500).json({
@@ -118,12 +112,16 @@ export const setBackupDirectory = (req, res) => {
       });
     }
     
+    // Update the global variable only after all checks pass
+    backupDir = normalizedDir;
+    
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
       directory: backupDir // Return the directory to confirm it was set
     });
   } catch (error) {
     console.error(`Directory setup error: ${error.message}`);
+    console.error(`Stack trace: ${error.stack}`);
     return res.status(500).json({ 
       message: `Failed to set backup directory: ${error.message}`,
       error: error.toString() 
@@ -133,14 +131,42 @@ export const setBackupDirectory = (req, res) => {
 
 export const getBackupDirectory = (req, res) => {
   // Return the consistently formatted backup directory
-  res.status(200).json({ 
-    directory: backupDir,
-    exists: fs.existsSync(backupDir)
-  });
+  try {
+    const exists = fs.existsSync(backupDir);
+    let writable = false;
+    
+    // Check write permissions
+    if (exists) {
+      try {
+        const testFile = path.join(backupDir, '.permission_test');
+        fs.writeFileSync(testFile, 'test');
+        fs.unlinkSync(testFile);
+        writable = true;
+      } catch (e) {
+        console.error(`Directory exists but is not writable: ${e.message}`);
+      }
+    }
+    
+    res.status(200).json({ 
+      directory: backupDir,
+      exists: exists,
+      writable: writable
+    });
+  } catch (error) {
+    console.error(`Error checking backup directory: ${error.message}`);
+    res.status(500).json({ 
+      message: `Error checking backup directory: ${error.message}`,
+      directory: backupDir,
+      exists: false,
+      writable: false
+    });
+  }
 };
 
 export const backupDatabase = async (req, res) => {
+  console.log(`=== STARTING DATABASE BACKUP ===`);
   console.log(`Using backup directory: ${backupDir}`);
+  console.log(`Current working directory: ${process.cwd()}`);
 
   // Ensure backup directory exists
   if (!fs.existsSync(backupDir)) {
@@ -149,6 +175,7 @@ export const backupDatabase = async (req, res) => {
       console.log(`Created backup directory: ${backupDir}`);
     } catch (createError) {
       console.error(`Failed to create backup directory: ${createError.message}`);
+      console.error(`Stack trace: ${createError.stack}`);
       return res.status(500).json({ 
         message: `Failed to create backup directory: ${createError.message}` 
       });
@@ -159,15 +186,9 @@ export const backupDatabase = async (req, res) => {
   const now = new Date();
   const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
   
-  // Create absolute paths with normalized separators - keep Windows paths intact
-  let backupDirPath;
-  if (isWindowsAbsolutePath(backupDir)) {
-    backupDirPath = normalizePath(path.join(backupDir, timestamp));
-  } else {
-    backupDirPath = normalizePath(path.join(backupDir, timestamp));
-  }
-  
-  const archivePath = normalizePath(`${backupDirPath}.zip`);
+  // Create absolute paths - simpler approach
+  const backupDirPath = path.join(backupDir, timestamp);
+  const archivePath = `${backupDirPath}.zip`;
 
   console.log(`Creating backup at: ${backupDirPath}`);
   console.log(`Archive will be created at: ${archivePath}`);
@@ -213,6 +234,17 @@ export const backupDatabase = async (req, res) => {
 
     console.log('mongodump completed, creating zip archive');
 
+    // Verify directory content after mongodump
+    try {
+      const dirContents = fs.readdirSync(backupDirPath);
+      console.log(`Backup directory contents: ${dirContents.join(', ')}`);
+      if (dirContents.length === 0) {
+        console.warn('WARNING: Backup directory is empty after mongodump!');
+      }
+    } catch (readErr) {
+      console.error(`Failed to read backup directory: ${readErr.message}`);
+    }
+
     // Create a zip archive
     const output = fs.createWriteStream(archivePath);
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -253,6 +285,14 @@ export const backupDatabase = async (req, res) => {
       }
     });
 
+    // Verify zip file exists
+    if (fs.existsSync(archivePath)) {
+      const stats = fs.statSync(archivePath);
+      console.log(`Backup ZIP file created successfully: ${archivePath} (${stats.size} bytes)`);
+    } else {
+      console.error(`WARNING: Backup ZIP file not found after creation: ${archivePath}`);
+    }
+
     // Send successful response
     res.status(200).json({
       message: 'Backup created and archived successfully',
@@ -260,6 +300,7 @@ export const backupDatabase = async (req, res) => {
     });
   } catch (error) {
     console.error('Backup failed:', error);
+    console.error(`Stack trace: ${error.stack}`);
     return res.status(500).json({ message: 'Backup failed', error: error.message });
   }
 };
@@ -307,9 +348,9 @@ export const listCollections = async (req, res) => {
   console.log(`Using backup directory: ${backupDir}`);
 
   // Make sure we have absolute paths for both archive and temp dir
-  const archivePath = normalizePath(path.join(backupDir, backupName));
+  const archivePath = path.join(backupDir, backupName);
   const tempDirName = `temp_${Date.now()}`;
-  const tempDir = normalizePath(path.join(backupDir, tempDirName));
+  const tempDir = path.join(backupDir, tempDirName);
 
   console.log(`Archive absolute path: ${archivePath}`);
   console.log(`Temp directory absolute path: ${tempDir}`);
@@ -327,7 +368,7 @@ export const listCollections = async (req, res) => {
       console.log(`Created temp directory: ${tempDir}`);
     }
 
-    // Extract the backup archive - crucial fix: ensure both paths are absolute
+    // Extract the backup archive
     console.log(`Extracting backup: ${archivePath} to ${tempDir}`);
     try {
       await extract(archivePath, { dir: tempDir });
@@ -398,8 +439,8 @@ export const restoreDatabase = async (req, res) => {
   let tempDir = null;
   
   try {
-    // Construct the complete path to the backup file using absolute paths
-    const backupPath = normalizePath(path.join(backupDir, timestamp));
+    // Construct the complete path to the backup file
+    const backupPath = path.join(backupDir, timestamp);
     console.log(`Backup absolute path: ${backupPath}`);
     
     // Verify the backup file exists before proceeding
@@ -412,11 +453,11 @@ export const restoreDatabase = async (req, res) => {
     
     // Create a temporary directory with a unique name for extraction
     const tempDirName = `temp_restore_${Date.now()}`;
-    tempDir = normalizePath(path.join(backupDir, tempDirName));
+    tempDir = path.join(backupDir, tempDirName);
     fs.mkdirSync(tempDir, { recursive: true });
     console.log(`Created temp directory: ${tempDir}`);
     
-    // Extract the archive with absolute paths
+    // Extract the archive
     console.log(`Extracting ${backupPath} to ${tempDir}`);
     try {
       await extract(backupPath, { dir: tempDir });
@@ -481,6 +522,7 @@ export const restoreDatabase = async (req, res) => {
     });
   } catch (error) {
     console.error('Restore failed:', error);
+    console.error(`Stack trace: ${error.stack}`);
     
     res.status(500).json({ 
       message: `Restore failed: ${error.message}`,
@@ -497,7 +539,8 @@ export const restoreDatabase = async (req, res) => {
         console.error('Failed to clean up temp directory:', cleanupError);
       }
     }
-  }}
+  }
+}
 //announcement .js
 
 

@@ -50,7 +50,7 @@ const server = http.createServer(app);
 //uncommet niyo nlang pag may problema
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: ["http://localhost:3000", process.env.CLIENT_URL],
         methods: ["GET", "POST"]
     }
 });
