@@ -13,7 +13,7 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt  from 'jsonwebtoken'
 
 
-dotenv.config();
+dotenv.config(); 
 
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -34,17 +34,16 @@ const normalizePath = (filepath) => {
 const ensureAbsolutePath = (dirPath) => {
   if (!dirPath) return '';
   if (path.isAbsolute(dirPath)) {
-    return dirPath;
+    return normalizePath(dirPath);
   }
-  return path.resolve(process.cwd(), dirPath);
+  return normalizePath(path.resolve(process.cwd(), dirPath));
 };
-let backupDir = process.env.BACKUP_DIRECTORY || path.join(process.cwd(), 'backups');
-backupDir = ensureAbsolutePath(backupDir);
+
+// Initialize backup directory with absolute path and proper normalization
+let backupDir = normalizePath(ensureAbsolutePath(process.env.BACKUP_DIRECTORY || path.join(process.cwd(), 'backups')));
 
 // Initialize backup directory
 try {
-  backupDir = ensureAbsolutePath(backupDir);
-  
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
     console.log(`Created default backup directory: ${backupDir}`);
@@ -52,7 +51,6 @@ try {
 } catch (error) {
   console.error(`Failed to create default backup directory: ${error.message}`);
 }
-
 
 
 
@@ -130,21 +128,8 @@ export const setBackupDirectory = (req, res) => {
   }
 
   try {
-    let absolutePath;
-    
-    // Check if it's a Windows-style absolute path (starts with drive letter)
-    if (/^[a-zA-Z]:[\\\/]/.test(directory)) {
-      // This is a Windows absolute path, keep as is
-      absolutePath = directory;
-      console.log("Windows absolute path detected:", absolutePath);
-    } else {
-      // For non-Windows paths or relative paths, use path.resolve
-      absolutePath = path.resolve(directory);
-      console.log("Resolved path:", absolutePath);
-    }
-    
-    // Store the normalized path
-    backupDir = normalizePath(absolutePath);
+    // Always ensure we get a proper absolute path with consistent separators
+    backupDir = normalizePath(ensureAbsolutePath(directory));
     
     console.log(`Setting backup directory to: ${backupDir}`);
     
@@ -190,6 +175,7 @@ export const setBackupDirectory = (req, res) => {
 };
 
 export const getBackupDirectory = (req, res) => {
+  // Return the consistently formatted backup directory
   res.status(200).json({ 
     directory: backupDir,
     exists: fs.existsSync(backupDir)
@@ -358,9 +344,9 @@ export const listCollections = async (req, res) => {
   console.log(`Using backup directory: ${backupDir}`);
 
   // Make sure we have absolute paths for both archive and temp dir
-  const archivePath = path.resolve(path.join(backupDir, backupName));
+  const archivePath = normalizePath(path.join(backupDir, backupName));
   const tempDirName = `temp_${Date.now()}`;
-  const tempDir = path.resolve(path.join(backupDir, tempDirName));
+  const tempDir = normalizePath(path.join(backupDir, tempDirName));
 
   console.log(`Archive absolute path: ${archivePath}`);
   console.log(`Temp directory absolute path: ${tempDir}`);
@@ -450,7 +436,7 @@ export const restoreDatabase = async (req, res) => {
   
   try {
     // Construct the complete path to the backup file using absolute paths
-    const backupPath = path.resolve(path.join(backupDir, timestamp));
+    const backupPath = normalizePath(path.join(backupDir, timestamp));
     console.log(`Backup absolute path: ${backupPath}`);
     
     // Verify the backup file exists before proceeding
@@ -463,7 +449,7 @@ export const restoreDatabase = async (req, res) => {
     
     // Create a temporary directory with a unique name for extraction
     const tempDirName = `temp_restore_${Date.now()}`;
-    tempDir = path.resolve(path.join(backupDir, tempDirName));
+    tempDir = normalizePath(path.join(backupDir, tempDirName));
     fs.mkdirSync(tempDir, { recursive: true });
     console.log(`Created temp directory: ${tempDir}`);
     
