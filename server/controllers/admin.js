@@ -86,9 +86,16 @@ export const setBackupDirectory = (req, res) => {
   try {
     console.log(`Setting backup directory request received: ${directory}`);
     
-    // Ensure absolute path with simplified logic
-    const newBackupDir = ensureAbsolutePath(directory);
-    const normalizedDir = normalizePath(newBackupDir);
+    // Special handling for CyberPanel environment
+    let normalizedDir;
+    
+    // Check if this is a relative path that should be resolved against the application root
+    if (!path.isAbsolute(directory) && directory.startsWith('./')) {
+      // Resolve against application root
+      normalizedDir = path.resolve(process.cwd(), directory.substring(2));
+    } else {
+      normalizedDir = ensureAbsolutePath(directory);
+    }
     
     console.log(`Resolved absolute path: ${normalizedDir}`);
     
@@ -115,9 +122,29 @@ export const setBackupDirectory = (req, res) => {
     // Update the global variable only after all checks pass
     backupDir = normalizedDir;
     
+    // Store in environment file for persistence across server restarts
+    try {
+      const envContent = fs.readFileSync('.env', 'utf8');
+      let newEnvContent;
+      
+      if (envContent.includes('BACKUP_DIRECTORY=')) {
+        newEnvContent = envContent.replace(
+          /BACKUP_DIRECTORY=.*/,
+          `BACKUP_DIRECTORY=${normalizedDir}`
+        );
+      } else {
+        newEnvContent = `${envContent}\nBACKUP_DIRECTORY=${normalizedDir}`;
+      }
+      
+      fs.writeFileSync('.env', newEnvContent);
+      console.log('Updated .env file with new backup directory');
+    } catch (envError) {
+      console.error(`Could not update .env file: ${envError.message}`);
+    }
+    
     res.status(200).json({ 
       message: `Backup directory set to: ${backupDir}`,
-      directory: backupDir // Return the directory to confirm it was set
+      directory: backupDir
     });
   } catch (error) {
     console.error(`Directory setup error: ${error.message}`);
@@ -159,6 +186,42 @@ export const getBackupDirectory = (req, res) => {
       directory: backupDir,
       exists: false,
       writable: false
+    });
+  }
+};
+export const deleteBackup = async (req, res) => {
+  const { backupName } = req.params;
+  
+  if (!backupName) {
+    return res.status(400).json({ message: 'Backup name is required' });
+  }
+  
+  console.log(`Deleting backup: ${backupName}`);
+  console.log(`Using backup directory: ${backupDir}`);
+  
+  try {
+    const backupPath = path.join(backupDir, backupName);
+    
+    // Safety check to ensure we're only deleting zip files
+    if (!backupName.endsWith('.zip') || !fs.existsSync(backupPath)) {
+      return res.status(400).json({ 
+        message: `Invalid backup file: ${backupName}` 
+      });
+    }
+    
+    // Delete the file
+    fs.unlinkSync(backupPath);
+    
+    console.log(`Successfully deleted backup: ${backupPath}`);
+    
+    res.status(200).json({ 
+      message: `Backup ${backupName} deleted successfully` 
+    });
+  } catch (error) {
+    console.error(`Error deleting backup: ${error.message}`);
+    res.status(500).json({ 
+      message: `Failed to delete backup: ${error.message}`,
+      error: error.toString()
     });
   }
 };
