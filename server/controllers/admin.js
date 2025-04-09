@@ -129,13 +129,19 @@ export const setBackupDirectory = (req, res) => {
   try {
     let absolutePath;
     
-    // Handle Windows-style paths correctly
+    // Improved Windows path detection - check for drive letter pattern
     if (isWindows && /^[a-zA-Z]:[\\\/]/.test(directory)) {
+      // For Windows absolute paths, use as-is
       absolutePath = directory;
       console.log("Windows absolute path detected:", absolutePath);
+    } else if (!isWindows && directory.startsWith('/')) {
+      // For Unix absolute paths, use as-is
+      absolutePath = directory;
+      console.log("Unix absolute path detected:", absolutePath);
     } else {
-      absolutePath = path.resolve(directory);
-      console.log("Resolved path:", absolutePath);
+      // For relative paths, resolve against current directory
+      absolutePath = path.resolve(process.cwd(), directory);
+      console.log("Resolved relative path:", absolutePath);
     }
     
     // Store the normalized path
