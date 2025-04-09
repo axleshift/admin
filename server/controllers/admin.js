@@ -4,7 +4,6 @@ import { exec } from 'child_process';
 import archiver from 'archiver';
 import extract from "extract-zip";
 import dotenv from 'dotenv';
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Message from '../model/message.js'
 import User from '../model/User.js'
@@ -23,13 +22,25 @@ const mongoURL = process.env.MONGO_URL;
 const databaseName = process.env.DATABASE_NAME || 'adminis';
 const isWindows = process.platform === 'win32';
 
+// Improved path normalization that preserves Windows drive letters
 const normalizePath = (filepath) => {
   const normalized = path.normalize(filepath);
   // Replace backslashes with forward slashes but preserve drive letter format on Windows
   return normalized.replace(/\\/g, '/');
 };
 
+// Convert relative paths to absolute paths
+const ensureAbsolutePath = (dirPath) => {
+  if (path.isAbsolute(dirPath)) {
+    return dirPath;
+  }
+  return path.resolve(process.cwd(), dirPath);
+};
+
+// Initialize backup directory
 try {
+  backupDir = ensureAbsolutePath(backupDir);
+  
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
     console.log(`Created default backup directory: ${backupDir}`);
@@ -37,6 +48,7 @@ try {
 } catch (error) {
   console.error(`Failed to create default backup directory: ${error.message}`);
 }
+
 
 
 
@@ -341,11 +353,13 @@ export const listCollections = async (req, res) => {
   console.log(`Listing collections from backup: ${backupName}, database: ${databaseName || 'not specified'}`);
   console.log(`Using backup directory: ${backupDir}`);
 
-  const archivePath = normalizePath(path.join(backupDir, backupName));
-  const tempDir = normalizePath(path.join(backupDir, `temp_${Date.now()}`));
+  // Make sure we have absolute paths for both archive and temp dir
+  const archivePath = path.resolve(path.join(backupDir, backupName));
+  const tempDirName = `temp_${Date.now()}`;
+  const tempDir = path.resolve(path.join(backupDir, tempDirName));
 
-  console.log(`Archive path: ${archivePath}`);
-  console.log(`Temp directory: ${tempDir}`);
+  console.log(`Archive absolute path: ${archivePath}`);
+  console.log(`Temp directory absolute path: ${tempDir}`);
 
   try {
     // Ensure the backup file exists before extracting
@@ -360,10 +374,15 @@ export const listCollections = async (req, res) => {
       console.log(`Created temp directory: ${tempDir}`);
     }
 
-    // Extract the backup archive
+    // Extract the backup archive - crucial fix: ensure both paths are absolute
     console.log(`Extracting backup: ${archivePath} to ${tempDir}`);
-    await extract(archivePath, { dir: tempDir });
-    console.log('Extraction completed');
+    try {
+      await extract(archivePath, { dir: tempDir });
+      console.log('Extraction completed successfully');
+    } catch (extractError) {
+      console.error('Extract error details:', extractError);
+      throw new Error(`Extraction failed: ${extractError.message}`);
+    }
 
     if (!databaseName) {
       // If no database is specified, return a list of databases
@@ -426,9 +445,9 @@ export const restoreDatabase = async (req, res) => {
   let tempDir = null;
   
   try {
-    // Construct the complete path to the backup file
-    const backupPath = normalizePath(path.join(backupDir, timestamp));
-    console.log(`Backup path: ${backupPath}`);
+    // Construct the complete path to the backup file using absolute paths
+    const backupPath = path.resolve(path.join(backupDir, timestamp));
+    console.log(`Backup absolute path: ${backupPath}`);
     
     // Verify the backup file exists before proceeding
     if (!fs.existsSync(backupPath)) {
@@ -439,18 +458,24 @@ export const restoreDatabase = async (req, res) => {
     }
     
     // Create a temporary directory with a unique name for extraction
-    tempDir = normalizePath(path.join(backupDir, `temp_restore_${Date.now()}`));
+    const tempDirName = `temp_restore_${Date.now()}`;
+    tempDir = path.resolve(path.join(backupDir, tempDirName));
     fs.mkdirSync(tempDir, { recursive: true });
     console.log(`Created temp directory: ${tempDir}`);
     
-    // Extract the archive
+    // Extract the archive with absolute paths
     console.log(`Extracting ${backupPath} to ${tempDir}`);
-    await extract(backupPath, { dir: tempDir });
-    console.log('Extraction completed');
+    try {
+      await extract(backupPath, { dir: tempDir });
+      console.log('Extraction completed successfully');
+    } catch (extractError) {
+      console.error('Extract error details:', extractError);
+      throw new Error(`Extraction failed: ${extractError.message}`);
+    }
     
     // Construct the path to the BSON file
-    const dbDir = normalizePath(path.join(tempDir, databaseName));
-    const filePath = normalizePath(path.join(dbDir, filename));
+    const dbDir = path.join(tempDir, databaseName);
+    const filePath = path.join(dbDir, filename);
     
     console.log(`Looking for file at: ${filePath}`);
     
