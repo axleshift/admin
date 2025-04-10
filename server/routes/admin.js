@@ -12,25 +12,21 @@ import {
     // getUsersBy ,
    
     
-    setBackupDirectory, 
     backupDatabase, 
     restoreDatabase, 
     listBackups, 
     listCollections,
-    
   
 } from "../controllers/admin.js";
 import { verifyTokenAndDepartment } from "../middleware/verifyTokenAndDepartment.js";
 const router = express.Router();
 
 //backup
-    router.post('/set-directory', setBackupDirectory);
-    router.post('/backup', backupDatabase);
-    router.post('/restore', restoreDatabase);
-    // New routes for listing backups and collections
-    router.get('/list-backups', listBackups);
-    router.get('/list-collections/:backupName', listCollections);
-
+router.post('/backup', backupDatabase);
+router.post('/restore', restoreDatabase);
+// New routes for listing backups and collections
+router.get('/list-backups', listBackups);
+router.get('/list-collections/:backupName', listCollections);
 
 //router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)
 

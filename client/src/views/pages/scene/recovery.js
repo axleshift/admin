@@ -20,13 +20,12 @@ const RecoveryPage = () => {
     const [loading, setLoading] = useState(false);
     const [backupInProgress, setBackupInProgress] = useState(false);
     const [error, setError] = useState('');
-    const [directorySet, setDirectorySet] = useState(false);
     const navigate = useNavigate();
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('name'); 
-    
+
     const getUserInfo = () => {
         return {
             name: userName || 'Unknown User',
@@ -35,59 +34,14 @@ const RecoveryPage = () => {
         };
     };
 
-    // Check if server has a default backup directory and fetch backups on component mount
     useEffect(() => {
-        setLoading(true);
-        axiosInstance.get('/admin/get-directory')
-            .then(response => {
-                if (response.data && response.data.directory) {
-                    setDirectory(response.data.directory);
-                    setDirectorySet(true);
-                    
-                    // Save to localStorage for future visits
-                    localStorage.setItem('backupDirectory', response.data.directory);
-                    
-                    const userInfo = getUserInfo();
-                    logActivity({
-                        ...userInfo,
-                        route: '/recovery',
-                        action: 'GET_SERVER_DIRECTORY',
-                        description: `Retrieved server backup directory: ${response.data.directory}`
-                    });
-                    
-                    // Fetch backups after getting directory
-                    fetchBackups();
-                } else {
-                    // Try to use saved directory from localStorage if server doesn't have one set
-                    const savedDirectory = localStorage.getItem('backupDirectory');
-                    if (savedDirectory) {
-                        setDirectory(savedDirectory);
-                        handleSetDirectory(savedDirectory);
-                    }
-                }
-            })
-            .catch(err => {
-                console.error("Error fetching server directory:", err);
-                // Try to use saved directory as fallback
-                const savedDirectory = localStorage.getItem('backupDirectory');
-                if (savedDirectory) {
-                    setDirectory(savedDirectory);
-                    handleSetDirectory(savedDirectory);
-                }
-            })
-            .finally(() => setLoading(false));
+        fetchBackups();
     }, []);
 
-    // Fetch backups when directorySet changes
-    useEffect(() => {
-        if (directorySet) fetchBackups();
-    }, [directorySet]);
-
-    // Fetch databases when selectedBackup changes
     useEffect(() => {
         if (selectedBackup) {
             fetchDatabases(selectedBackup);
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -95,15 +49,13 @@ const RecoveryPage = () => {
                 action: 'SELECT_BACKUP',
                 description: `Selected backup: ${selectedBackup.name}`
             });
-        }
-        else setDatabases([]);
+        } else setDatabases([]);
     }, [selectedBackup]);
 
-    // Fetch collections when selectedDatabase changes
     useEffect(() => {
         if (selectedDatabase && selectedBackup) {
             fetchCollections(selectedBackup, selectedDatabase);
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -111,8 +63,7 @@ const RecoveryPage = () => {
                 action: 'SELECT_DATABASE',
                 description: `Selected database: ${selectedDatabase} from backup: ${selectedBackup.name}`
             });
-        }
-        else setCollections([]);
+        } else setCollections([]);
     }, [selectedDatabase, selectedBackup]);
 
     const fetchBackups = async () => {
@@ -121,13 +72,13 @@ const RecoveryPage = () => {
         try {
             const response = await axiosInstance.get('/admin/list-backups');
             setBackups(response.data.backups || []);
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
                 route: '/recovery',
                 action: 'FETCH_BACKUPS',
-                description: `Retrieved ${response.data.backups?.length || 0} backups from directory: ${directory}`
+                description: `Retrieved ${response.data.backups?.length || 0} backups`
             });
         } catch (error) {
             setError('Error fetching backups');
@@ -139,15 +90,15 @@ const RecoveryPage = () => {
 
     const fetchDatabases = async (backup) => {
         if (!backup) return;
-    
+
         setLoading(true);
         setError('');
         try {
             const response = await axiosInstance.get(`/admin/list-collections/${backup.name}`);
-            
+
             if (response.data.databases) {
                 setDatabases(response.data.databases);
-                
+
                 const userInfo = getUserInfo();
                 logActivity({
                     ...userInfo,
@@ -173,14 +124,14 @@ const RecoveryPage = () => {
             setCollections([]);
             return;
         }
-    
+
         setLoading(true);
         setError('');
         try {
             const response = await axiosInstance.get(`/admin/list-collections/${backup.name}?databaseName=${database}`);
-    
+
             setCollections(response.data.collections || []);
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -195,45 +146,6 @@ const RecoveryPage = () => {
             setLoading(false);
         }
     };
-    
-    const handleSetDirectory = async (dirPath = null) => {
-        const directoryToSet = dirPath || directory;
-        
-        if (!directoryToSet) {
-            setError('Please enter a directory.');
-            return;
-        }
-
-        setLoading(true);
-        setError('');
-        try {
-            const response = await axiosInstance.post('/admin/set-directory', { directory: directoryToSet });
-            
-            // If there's a response with a directory, use that (server might have normalized the path)
-            if (response.data && response.data.directory) {
-                setDirectory(response.data.directory);
-            } else {
-                setDirectory(directoryToSet);
-            }
-            
-            localStorage.setItem('backupDirectory', directoryToSet);
-            setDirectorySet(true);
-            fetchBackups();
-            
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'SET_DIRECTORY',
-                description: `Set backup directory to: ${directoryToSet}`
-            });
-        } catch (error) {
-            setError('Error setting directory');
-            setDirectorySet(false);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleBackup = async () => {
         setBackupInProgress(true);
@@ -241,13 +153,13 @@ const RecoveryPage = () => {
         try {
             await axiosInstance.post('/admin/backup');
             fetchBackups();
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
                 route: '/recovery',
                 action: 'CREATE_BACKUP',
-                description: `Created new backup in directory: ${directory}`
+                description: `Created new backup`
             });
         } catch (error) {
             setError('Error during backup');
@@ -262,7 +174,6 @@ const RecoveryPage = () => {
             return;
         }
 
-        // Show confirmation dialog
         if (!window.confirm(`Are you sure you want to restore collection "${selectedCollection}" from database "${selectedDatabase}"? This will replace the current data.`)) {
             return;
         }
@@ -275,7 +186,7 @@ const RecoveryPage = () => {
                 filename: selectedCollection,
                 databaseName: selectedDatabase,
             });
-            
+
             const userInfo = getUserInfo();
             logActivity({
                 ...userInfo,
@@ -283,7 +194,7 @@ const RecoveryPage = () => {
                 action: 'RESTORE_COLLECTION',
                 description: `Restored collection: ${selectedCollection} from database: ${selectedDatabase} in backup: ${selectedBackup.name}`
             });
-            
+
             alert('Restore successful!');
         } catch (error) {
             setError('Restore failed.');
@@ -291,7 +202,7 @@ const RecoveryPage = () => {
             setLoading(false);
         }
     };
-    
+
     const handlesched = async () => {
         const userInfo = getUserInfo();
         logActivity({
@@ -300,13 +211,13 @@ const RecoveryPage = () => {
             action: 'NAVIGATE_TO_SCHEDULER',
             description: 'Navigated to backup scheduler page'
         });
-        
+
         navigate('/cron');
     };
-    
+
     const handleSelectCollection = (collection) => {
         setSelectedCollection(collection);
-        
+
         const userInfo = getUserInfo();
         logActivity({
             ...userInfo,
@@ -315,7 +226,7 @@ const RecoveryPage = () => {
             description: `Selected collection: ${collection} from database: ${selectedDatabase} in backup: ${selectedBackup.name}`
         });
     };
-    
+
     const handleChangeCollection = () => {
         const userInfo = getUserInfo();
         logActivity({
@@ -324,10 +235,10 @@ const RecoveryPage = () => {
             action: 'CHANGE_COLLECTION',
             description: `Changed selection from collection: ${selectedCollection}`
         });
-        
+
         setSelectedCollection(null);
     };
-    
+
     return (
         <CContainer>
             {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
@@ -340,35 +251,11 @@ const RecoveryPage = () => {
                             <CButton className="ms-auto" color='primary' onClick={handlesched}>Schedule Backup</CButton>
                         </CCardHeader>
                         <CCardBody>
-                            <CForm>
-                                <CFormLabel>Backup Directory</CFormLabel>
-                                <div className="d-flex">
-                                    <CFormInput 
-                                        type="text" 
-                                        placeholder="Enter directory path" 
-                                        value={directory} 
-                                        onChange={(e) => setDirectory(e.target.value)}
-                                        disabled={loading} 
-                                    />
-                                    <CButton 
-                                        className="ms-2" 
-                                        onClick={() => handleSetDirectory()} 
-                                        disabled={loading}
-                                    >
-                                        {loading ? <CSpinner size="sm" /> : 'Set Directory'}
-                                    </CButton>
-                                </div>
-                                {directorySet && (
-                                    <small className="text-muted mt-1">
-                                        Using directory: {directory}
-                                    </small>
-                                )}
-                            </CForm>
                             <CButton 
                                 color="primary" 
                                 className="mt-3" 
                                 onClick={handleBackup} 
-                                disabled={!directorySet || backupInProgress}
+                                disabled={backupInProgress}
                             >
                                 {backupInProgress ? <><CSpinner size="sm" /> Creating Backup...</> : 'Create New Backup'}
                             </CButton>
@@ -433,99 +320,101 @@ const RecoveryPage = () => {
                                                     active={selectedDatabase === db}
                                                     onClick={() => setSelectedDatabase(db)} 
                                                     style={{ cursor: 'pointer' }}
-                                                    >
-                                                        {db}
-                                                    </CListGroupItem>
-                                                                                                ))}
-                                                                                            </CListGroup>
-                                                                                        )}
-                                                                                    </>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                    
-                                                                    <CCol md="4">
-                                                                        <CCard>
-                                                                            <CCardHeader>Select Collection</CCardHeader>
-                                                                            <CCardBody>
-                                                                                {loading ? <CSpinner /> : (
-                                                                                    <>
-                                                                                        {!selectedDatabase ? (
-                                                                                            <div className="text-center p-3">
-                                                                                                Select a database first
-                                                                                            </div>
-                                                                                        ) : collections.length === 0 ? (
-                                                                                            <div className="text-center p-3">
-                                                                                                No collections found in this database
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            <CListGroup>
-                                                                                                {collections.map((collection) => (
-                                                                                                    <CListGroupItem 
-                                                                                                        key={collection} 
-                                                                                                        active={selectedCollection === collection}
-                                                                                                        onClick={() => handleSelectCollection(collection)} 
-                                                                                                        style={{ cursor: 'pointer' }}
-                                                                                                    >
-                                                                                                        {collection}
-                                                                                                    </CListGroupItem>
-                                                                                                ))}
-                                                                                            </CListGroup>
-                                                                                        )}
-                                                                                    </>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                                </CRow>
-                                                    
-                                                                <CRow className="mt-4">
-                                                                    <CCol>
-                                                                        <CCard>
-                                                                            <CCardHeader>Restore Options</CCardHeader>
-                                                                            <CCardBody>
-                                                                                <div className="mb-3">
-                                                                                    {selectedBackup && (
-                                                                                        <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
-                                                                                    )}
-                                                                                    {selectedDatabase && (
-                                                                                        <div><strong>Selected Database:</strong> {selectedDatabase}</div>
-                                                                                    )}
-                                                                                    {selectedCollection && (
-                                                                                        <div><strong>Selected Collection:</strong> {selectedCollection}</div>
-                                                                                    )}
-                                                                                </div>
-                                                    
-                                                                                {selectedBackup && selectedDatabase && selectedCollection ? (
-                                                                                    <CButton 
-                                                                                        color="warning" 
-                                                                                        onClick={handleRestore}
-                                                                                        disabled={loading}
-                                                                                    >
-                                                                                        {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
-                                                                                    </CButton>
-                                                                                ) : (
-                                                                                    <div className="text-muted">
-                                                                                        Please select a backup, database, and collection to restore
-                                                                                    </div>
-                                                                                )}
-                                                    
-                                                                                {selectedCollection && (
-                                                                                    <CButton 
-                                                                                        color="link" 
-                                                                                        className="ms-3" 
-                                                                                        onClick={handleChangeCollection}
-                                                                                    >
-                                                                                        Change Selection
-                                                                                    </CButton>
-                                                                                )}
-                                                                            </CCardBody>
-                                                                        </CCard>
-                                                                    </CCol>
-                                                                </CRow>
-                                                            </CContainer>
-                                                        );
-                                                    };
-                                                    
-                                                    export default RecoveryPage;
+                                                >
+                                                    {db}
+                                                </CListGroupItem>
+                                            ))}
+                                        </CListGroup>
+                                    )}
+                                </>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+
+                <CCol md="4">
+                    <CCard>
+                        <CCardHeader>Select Collection</CCardHeader>
+                        <CCardBody>
+                            {loading ? <CSpinner /> : (
+                                <>
+                                    {!selectedDatabase ? (
+                                        <div className="text-center p-3">
+                                            Select a database first
+                                        </div>
+                                    ) : collections.length === 0 ? (
+                                        <div className="text-center p-3">
+                                            No collections found in this database
+                                        </div>
+                                    ) : selectedCollection ? (
+                                        <div className="p-3">
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <strong>{selectedCollection}</strong>
+                                                <CButton 
+                                                    color="link" 
+                                                    onClick={handleChangeCollection}
+                                                    size="sm"
+                                                >
+                                                    Change
+                                                </CButton>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <CListGroup>
+                                            {collections.map((collection) => (
+                                                <CListGroupItem 
+                                                    key={collection} 
+                                                    onClick={() => handleSelectCollection(collection)} 
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    {collection}
+                                                </CListGroupItem>
+                                            ))}
+                                        </CListGroup>
+                                    )}
+                                </>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+
+            <CRow className="mt-4">
+                <CCol>
+                    <CCard>
+                        <CCardHeader>Restore Options</CCardHeader>
+                        <CCardBody>
+                            <div className="mb-3">
+                                {selectedBackup && (
+                                    <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
+                                )}
+                                {selectedDatabase && (
+                                    <div><strong>Selected Database:</strong> {selectedDatabase}</div>
+                                )}
+                                {selectedCollection && (
+                                    <div><strong>Selected Collection:</strong> {selectedCollection}</div>
+                                )}
+                            </div>
+
+                            {selectedBackup && selectedDatabase && selectedCollection ? (
+                                <CButton 
+                                    color="warning" 
+                                    onClick={handleRestore}
+                                    disabled={loading}
+                                >
+                                    {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
+                                </CButton>
+                            ) : (
+                                <div className="text-muted">
+                                    Please select a backup, database, and collection to restore
+                                </div>
+                            )}
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
+    );
+};
+
+export default RecoveryPage;
