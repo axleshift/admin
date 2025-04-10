@@ -132,6 +132,18 @@ app.use('/integ',integRoutes);
 // ✅ 9. Load AI service
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Serve your React app's build folder if it exists
+// Modify this path to match your React app's build folder location
+const clientBuildPath = path.join(__dirname, '../client/build');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  
+  // Catch-all route for client-side routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
 // ✅ 10. Connect to MongoDB and start the server
 const PORT = process.env.PORT || 9000;
 
