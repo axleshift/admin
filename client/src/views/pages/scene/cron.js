@@ -3,26 +3,24 @@ import axiosInstance from './../../../utils/axiosInstance';
 import { 
   CButton, 
   CForm, 
-  CFormInput, 
   CFormLabel, 
   CCard, 
   CCardBody, 
   CCardHeader, 
   CAlert,
-  CFormSelect
+  CFormSelect,
+  CSpinner
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFolderOpen, faClock, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faPlay } from '@fortawesome/free-solid-svg-icons';
 
 const BackupManagerFrontend = () => {
-  const [backupDir, setBackupDir] = useState('');
   const [hours, setHours] = useState('02');
   const [minutes, setMinutes] = useState('00');
   const [ampm, setAmPm] = useState('AM');
   const [feedback, setFeedback] = useState({ message: '', type: '' });
   const [isLoading, setIsLoading] = useState(false);
 
-  
   useEffect(() => {
     if (feedback.message) {
       const timer = setTimeout(() => {
@@ -32,7 +30,6 @@ const BackupManagerFrontend = () => {
     }
   }, [feedback]);
 
-  
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -40,18 +37,10 @@ const BackupManagerFrontend = () => {
         const response = await axiosInstance.get('/backupauto/config');
         const config = response.data;
         
-        
-        if (config.backupDir) {
-          setBackupDir(config.backupDir);
-        }
-        
-        
         if (config.cronSchedule) {
-          
           const cronParts = config.cronSchedule.split(' ');
           const minutes = cronParts[0];
           const hours = cronParts[1];
-          
           
           let hour = parseInt(hours, 10);
           let period = 'AM';
@@ -68,7 +57,7 @@ const BackupManagerFrontend = () => {
         }
       } catch (error) {
         console.error('Error fetching backup configuration:', error);
-        showFeedback('Failed to load saved configuration', 'danger');
+        // Don't show error to user, just use defaults
       } finally {
         setIsLoading(false);
       }
@@ -77,13 +66,11 @@ const BackupManagerFrontend = () => {
     fetchConfig();
   }, []);
 
-  
   const hoursOptions = Array.from({ length: 12 }, (_, i) => {
     const hour = i + 1;
     return { value: hour.toString().padStart(2, '0'), label: hour.toString().padStart(2, '0') };
   });
 
-  
   const minutesOptions = Array.from({ length: 60 }, (_, i) => {
     const minute = i;
     return { value: minute.toString().padStart(2, '0'), label: minute.toString().padStart(2, '0') };
@@ -93,7 +80,6 @@ const BackupManagerFrontend = () => {
     setFeedback({ message, type });
   };
 
-  
   const convertTo24HourFormat = () => {
     let hour = parseInt(hours, 10);
     
@@ -109,30 +95,10 @@ const BackupManagerFrontend = () => {
     };
   };
 
-  const handleUpdateDirectory = async () => {
-    if (!backupDir.trim()) {
-      showFeedback('Please enter a valid backup directory path', 'danger');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await axiosInstance.post('/backupauto/update-directory', { backupDir });
-      showFeedback(response.data, 'success');
-    } catch (error) {
-      showFeedback(`Error updating directory: ${error.response?.data || error.message}`, 'danger');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleUpdateSchedule = async () => {
     setIsLoading(true);
     try {
-      
       const time24 = convertTo24HourFormat();
-      
-      
       const cronSchedule = `${time24.minutes} ${time24.hours} * * *`;
       
       const response = await axiosInstance.post('/backupauto/update-schedule', { cronSchedule });
@@ -145,11 +111,6 @@ const BackupManagerFrontend = () => {
   };
 
   const handleManualBackup = async () => {
-    if (!backupDir.trim()) {
-      showFeedback('Please configure a backup directory first', 'warning');
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await axiosInstance.post('/backupauto/backup');
@@ -176,26 +137,9 @@ const BackupManagerFrontend = () => {
           <div>Backup Configuration</div>
         </CCardHeader>
         <CCardBody>
-          <CForm className="mb-4">
-            <CFormLabel>Backup Directory</CFormLabel>
-            <div className="d-flex">
-              <CFormInput
-                type="text"
-                value={backupDir}
-                onChange={(e) => setBackupDir(e.target.value)}
-                placeholder="Enter backup directory path"
-                disabled={isLoading}
-              />
-              <CButton 
-                color="primary" 
-                onClick={handleUpdateDirectory} 
-                className="ms-2"
-                disabled={isLoading}
-              >
-                <FontAwesomeIcon icon={faFolderOpen} /> Set Directory
-              </CButton>
-            </div>
-          </CForm>
+          <p className="mb-4">
+            Backups are automatically saved to the Downloads/my-backups folder in your home directory.
+          </p>
 
           <CForm className="mb-4">
             <CFormLabel>Backup Time</CFormLabel>
@@ -240,7 +184,7 @@ const BackupManagerFrontend = () => {
                 className="ms-3"
                 disabled={isLoading}
               >
-                <FontAwesomeIcon icon={faClock} /> Set Schedule
+                {isLoading ? <CSpinner size="sm" /> : <FontAwesomeIcon icon={faClock} />} Set Schedule
               </CButton>
             </div>
             <small className="text-muted mt-2 d-block">
@@ -254,7 +198,7 @@ const BackupManagerFrontend = () => {
             disabled={isLoading}
             className="mt-3"
           >
-            <FontAwesomeIcon icon={faPlay} /> Trigger Backup Now
+            {isLoading ? <CSpinner size="sm" /> : <FontAwesomeIcon icon={faPlay} />} Trigger Backup Now
           </CButton>
         </CCardBody>
       </CCard>

@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import express from 'express';
 import dotenv from 'dotenv';
 import archiver from 'archiver'; // Make sure to install this: npm install archiver
@@ -9,18 +10,34 @@ import archiver from 'archiver'; // Make sure to install this: npm install archi
 dotenv.config();
 const router = express.Router();
 
-let backupDir = path.join(process.cwd(), "backups");
-let cronSchedule = '0 2 * * *';  // Default: Every day at 2 AM
+const getDownloadDirectory = () => {
+  const homeDir = os.homedir();  // Get the user's home directory
 
-// Create backups folder if it doesn't exist
+  if (process.platform === 'win32') {
+    // Windows: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  } else {
+    // Linux/macOS: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  }
+};
+
+const backupDir = getDownloadDirectory();
+
 if (!fs.existsSync(backupDir)) {
-  fs.mkdirSync(backupDir);
+  try {
+    fs.mkdirSync(backupDir, { recursive: true });
+    console.log(`Created backup directory at: ${backupDir}`);
+  } catch (error) {
+    console.error(`Failed to create backup directory: ${error.message}`);
+  }
 }
 
-// Load Config from File (Optional)
+let cronSchedule = '0 2 * * *';  // Default: Every day at 2 AM
+
+// Load Config from File (Only for schedule now)
 try {
   const config = JSON.parse(fs.readFileSync('backupConfig.json', 'utf-8'));
-  backupDir = config.backupDir || backupDir;
   cronSchedule = config.cronSchedule || cronSchedule;
 } catch (error) {
   console.log("No previous configuration found, using defaults.");
@@ -28,16 +45,19 @@ try {
 
 // Save Config to File
 const saveConfig = () => {
-  fs.writeFileSync('backupConfig.json', JSON.stringify({ backupDir, cronSchedule }, null, 2));
+  fs.writeFileSync('backupConfig.json', JSON.stringify({ cronSchedule }, null, 2));
 };
 
 const mongoUrl = process.env.MONGO_URL;
 const dbName = "adminis";
 
 // Helper function to normalize paths for different OS
-const normalizePath = (p) => path.normalize(p);
+const normalizePath = (filepath) => {
+  if (!filepath) return '';
+  return path.normalize(filepath).replace(/\\/g, '/');
+};
 
-// Updated Backup Function to match backupDatabase
+// Updated Backup Function
 const createBackup = async () => {
   const now = new Date();
   const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
@@ -115,12 +135,11 @@ let scheduledTask = cron.schedule(cronSchedule, async () => {
   }
 }, { scheduled: true });
 
-// NEW ROUTE: Get current backup configuration 
+// Get current backup configuration 
 router.get('/config', (req, res) => {
   try {
-    // Return the current configuration
+    // Return only the schedule, not the directory
     res.json({ 
-      backupDir, 
       cronSchedule 
     });
   } catch (error) {
@@ -134,23 +153,13 @@ router.post('/backup', async (req, res) => {
   try {
     const result = await createBackup();
     if (result.success) {
-      res.send(`Backup triggered successfully. Archive at: ${result.archivePath}`);
+      res.send(`Backup triggered successfully. Archive saved to Downloads/my-backups folder.`);
     } else {
       res.status(500).send(`Backup failed: ${result.error}`);
     }
   } catch (error) {
     res.status(500).send(`Backup failed: ${error.message}`);
   }
-});
-
-// Route to Update Backup Directory
-router.post('/update-directory', (req, res) => {
-  backupDir = req.body.backupDir;
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir);
-  }
-  saveConfig();
-  res.send(`Backup directory updated to: ${backupDir}`);
 });
 
 // Route to Update Cron Schedule
