@@ -2,8 +2,9 @@ import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
 import archiver from 'archiver';
-import extract from "extract-zip";
+import extract from 'extract-zip';
 import dotenv from 'dotenv';
+import os from 'os';
 
 
 
@@ -20,34 +21,38 @@ dotenv.config();
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+
+
 const mongoURL = process.env.MONGO_URL;
 const databaseName = process.env.DATABASE_NAME || 'adminis';
-const isWindows = process.platform === 'win32';
+
+const getDownloadDirectory = () => {
+  const homeDir = os.homedir();  // Get the user's home directory
+
+  if (process.platform === 'win32') {
+    // Windows: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  } else {
+    // Linux/macOS: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  }
+};
+
+const backupDir = getDownloadDirectory();
+
+if (!fs.existsSync(backupDir)) {
+  try {
+    fs.mkdirSync(backupDir, { recursive: true });
+    console.log(`Created backup directory at: ${backupDir}`);
+  } catch (error) {
+    console.error(`Failed to create backup directory: ${error.message}`);
+  }
+}
 
 const normalizePath = (filepath) => {
   if (!filepath) return '';
   return path.normalize(filepath).replace(/\\/g, '/');
 };
-
-const isWindowsAbsolutePath = (dirPath) => /^[a-zA-Z]:[\\\/]/.test(dirPath);
-
-const ensureAbsolutePath = (dirPath) => {
-  if (!dirPath) return '';
-  if (isWindowsAbsolutePath(dirPath)) return normalizePath(dirPath);
-  if (path.isAbsolute(dirPath)) return normalizePath(dirPath);
-  return normalizePath(path.resolve(process.cwd(), dirPath));
-};
-
-const backupDir = normalizePath('/server/backups');
-
-try {
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-    console.log(`Created backup directory at: ${backupDir}`);
-  }
-} catch (error) {
-  console.error(`Failed to create backup directory: ${error.message}`);
-}
 
 
 
@@ -124,8 +129,8 @@ export const backupDatabase = async (req, res) => {
     try {
       fs.mkdirSync(backupDir, { recursive: true });
     } catch (createError) {
-      return res.status(500).json({ 
-        message: `Failed to create backup directory: ${createError.message}` 
+      return res.status(500).json({
+        message: `Failed to create backup directory: ${createError.message}`,
       });
     }
   }
@@ -145,22 +150,24 @@ export const backupDatabase = async (req, res) => {
     }
 
     const mongoCommand = process.env.MONGODUMP_PATH || 'mongodump';
-    
-    // Fix the command format
+
     let command;
-    if (isWindows) {
+    if (process.platform === 'win32') {
       command = `${mongoCommand} --uri="${mongoURL}" --db=${databaseName} --out="${backupDirPath}"`;
     } else {
       command = `${mongoCommand} --uri='${mongoURL}' --db=${databaseName} --out='${backupDirPath}'`;
     }
-    
+
     console.log(`Executing command: ${command.replace(mongoURL, '***REDACTED***')}`);
 
     await new Promise((resolve, reject) => {
       exec(command, (error, stdout, stderr) => {
-        if (error) return reject(error);
-        if (stderr) console.log('Command stderr:', stderr);
-        console.log('Command stdout:', stdout);
+        if (error) {
+          console.error('Exec error:', error);
+          return reject(new Error(`mongodump failed: ${stderr || error.message}`));
+        }
+        if (stderr) console.warn('mongodump stderr:', stderr);
+        console.log('mongodump stdout:', stdout);
         resolve(stdout);
       });
     });
@@ -194,12 +201,12 @@ export const backupDatabase = async (req, res) => {
 export const listBackups = (req, res) => {
   try {
     if (!fs.existsSync(backupDir)) {
-      return res.status(400).json({ message: "Backup directory does not exist", backups: [] });
+      return res.status(400).json({ message: 'Backup directory does not exist', backups: [] });
     }
 
     const files = fs.readdirSync(backupDir);
     const backups = files
-      .filter(file => file.endsWith(".zip"))
+      .filter(file => file.endsWith('.zip'))
       .map(file => {
         const filePath = path.join(backupDir, file);
         const stats = fs.statSync(filePath);
@@ -207,14 +214,14 @@ export const listBackups = (req, res) => {
           name: file,
           path: normalizePath(filePath),
           created: stats.birthtime,
-          size: stats.size
+          size: stats.size,
         };
       })
       .sort((a, b) => b.created - a.created);
 
     res.status(200).json({ backups });
   } catch (error) {
-    res.status(500).json({ message: "Failed to list backups", error: error.message, backups: [] });
+    res.status(500).json({ message: 'Failed to list backups', error: error.message, backups: [] });
   }
 };
 
@@ -246,10 +253,10 @@ export const listCollections = async (req, res) => {
     }
 
     const dbContents = fs.readdirSync(dbPath);
-    const collections = dbContents.filter(file => file.endsWith(".bson"));
+    const collections = dbContents.filter(file => file.endsWith('.bson'));
     return res.status(200).json({ collections });
   } catch (error) {
-    res.status(500).json({ message: "Failed to list collections", error: error.message });
+    res.status(500).json({ message: 'Failed to list collections', error: error.message });
   } finally {
     setTimeout(() => {
       fs.rm(tempDir, { recursive: true, force: true }, () => {});
@@ -272,7 +279,6 @@ export const restoreDatabase = async (req, res) => {
       return res.status(400).json({ message: `Backup file not found: ${backupPath}` });
     }
 
-
     const tempDirName = `temp_restore_${Date.now()}`;
     tempDir = normalizePath(path.join(backupDir, tempDirName));
     fs.mkdirSync(tempDir, { recursive: true });
@@ -290,8 +296,8 @@ export const restoreDatabase = async (req, res) => {
     if (!mongoURL) throw new Error('MongoDB connection URL is not defined');
 
     const mongoCommand = process.env.MONGORESTORE_PATH || 'mongorestore';
-    const filePathQuoted = isWindows ? `"${filePath}"` : `'${filePath}'`;
-    const mongoUrlQuoted = isWindows ? `"${mongoURL}"` : `'${mongoURL}'`;
+    const filePathQuoted = process.platform === 'win32' ? `"${filePath}"` : `'${filePath}'`;
+    const mongoUrlQuoted = process.platform === 'win32' ? `"${mongoURL}"` : `'${mongoURL}'`;
     const command = `${mongoCommand} --uri=${mongoUrlQuoted} --nsInclude="${databaseName}.${collectionName}" --drop ${filePathQuoted}`;
 
     await new Promise((resolve, reject) => {
