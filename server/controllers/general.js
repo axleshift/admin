@@ -9,6 +9,7 @@ import Request from '../model/request.js'
 import crypto from 'crypto';
 import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
+import PasswordResetEvent from '../model/PasswordResetEvent.js';
 import mongoose from 'mongoose'
 dotenv.config();
 import notificationUtil from "../UTIL/notificationUtil.js";
@@ -276,6 +277,10 @@ export const resetPassword = async (req, res) => {
     
     if (!validation.valid) {
       console.log("Password validation failed:", validation.message);
+      
+      // Store password reset attempt with failed validation
+      await storePasswordResetEvent(user._id, passwordData, false, validation, req);
+      
       return res.status(400).json({ 
         Status: "Error", 
         Message: validation.message
@@ -298,6 +303,9 @@ export const resetPassword = async (req, res) => {
     
     await user.save();
     console.log("Password updated successfully");
+
+    // Store successful password reset event
+    await storePasswordResetEvent(user._id, passwordData, true, validation, req);
 
     // Create detailed notification using the enhanced utility
     try {
@@ -330,6 +338,44 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ Status: "Error", Message: "Token has expired" });
     }
     res.status(500).json({ Status: "Error", Message: "Internal Server Error", error: err.message });
+  }
+};
+
+// Helper function to store password reset events
+const storePasswordResetEvent = async (userId, passwordData, validationPassed, validation, req) => {
+  try {
+    const password = req.body.password; // Get the password from the request body
+    
+    await PasswordResetEvent.create({
+      userId: userId,
+      timestamp: new Date(),
+      passwordAnalysis: {
+        score: passwordData.score || 0,
+        strength: passwordData.strength || 'Weak',
+        feedback: passwordData.feedback || [],
+        explanation: passwordData.explanation || ''
+      },
+      validationPassed: validationPassed,
+      validationDetails: {
+        passed: validation.valid,
+        message: validation.message,
+        checks: {
+          hasLength: password?.length >= 8 || false,
+          hasUppercase: /[A-Z]/.test(password) || false,
+          hasLowercase: /[a-z]/.test(password) || false,
+          hasNumber: /[0-9]/.test(password) || false,
+          hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) || false,
+          meetsScoreThreshold: (passwordData.score || 0) >= 40
+        }
+      },
+      ipAddress: req.ip || req.connection?.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    
+    console.log("Password reset event stored successfully");
+  } catch (err) {
+    console.error("Failed to store password reset event:", err.message);
+    // Don't throw error, just log it - this shouldn't affect the main reset process
   }
 };
 
