@@ -35,7 +35,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { setupSocketEvents } from "./UTIL/socketHandlers.js";
-
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
@@ -59,23 +58,6 @@ const io = new Server(server, {
 // ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
 app.set("io", io);
 
-// FIX 1: Add middleware to set correct MIME types for all relevant file types
-app.use((req, res, next) => {
-  const path = req.path;
-  
-  if (path.endsWith('.js')) {
-    res.setHeader('Content-Type', 'application/javascript');
-  } else if (path.endsWith('.css')) {
-    res.setHeader('Content-Type', 'text/css');
-  } else if (path.endsWith('.json')) {
-    res.setHeader('Content-Type', 'application/json');
-  } else if (path.endsWith('.mjs')) {
-    res.setHeader('Content-Type', 'application/javascript');
-  }
-  
-  next();
-});
-
 // ✅ 5. Middleware
 app.use(express.json());
 app.use(cookieParser()); 
@@ -85,6 +67,17 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+//uncomment pa may problema
+// app.use(
+//     cors({
+//         origin: [
+//             'http://localhost:3000',
+//             process.env.CLIENT_URL,
+//         ],
+//         credentials: true,
+//         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     })
+// );
 
 app.use(
     cors({
@@ -139,46 +132,15 @@ app.use('/integ',integRoutes);
 // ✅ 9. Load AI service
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// FIX 2: Define the client build path properly and ensure it exists
+// Serve your React app's build folder if it exists
+// Modify this path to match your React app's build folder location
 const clientBuildPath = path.join(__dirname, '../client/build');
-
-// FIX 3: Serve static files from the React app build folder with proper caching
 if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath, {
-    maxAge: '1d', // Cache static assets for 1 day
-    etag: true,   // Enable ETag for caching
-    index: false  // Don't automatically serve index.html for directories
-  }));
+  app.use(express.static(clientBuildPath));
   
-  // FIX 4: Updated catch-all route with improved error handling
+  // Catch-all route for client-side routing
   app.get('*', (req, res) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/') || 
-        req.path.startsWith('/client/') || 
-        req.path.startsWith('/general/') ||
-        req.path.startsWith('/sales/') ||
-        req.path.startsWith('/admin/') ||
-        req.path.startsWith('/hr/') ||
-        req.path.startsWith('/core/') ||
-        req.path.startsWith('/logistics/') ||
-        req.path.startsWith('/finance/') ||
-        req.path.startsWith('/notifications/') ||
-        req.path.startsWith('/webhook/') ||
-        req.path.startsWith('/integ/') ||
-        req.path.startsWith('/security/') ||
-        req.path.startsWith('/management/') ||
-        req.path.startsWith('/uploads/')) {
-      return next();
-    }
-    
-    // For all other routes, serve the React app
-    const indexPath = path.join(clientBuildPath, 'index.html');
-    
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send('Application not properly deployed. Missing index.html');
-    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
 }
 
@@ -188,16 +150,13 @@ const PORT = process.env.PORT || 9000;
 mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
-        server.listen(PORT, () => {
-          console.log(`🚀 Server running on port: ${PORT}`);
-          console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
-          console.log(`Client URL: ${process.env.CLIENT_URL || 'not set'}`);
-        });
+        server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
        // startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 
 // ✅ 11. Handle WebSocket connections
+
 setupSocketEvents(io);
 io.on("connection", (socket) => {
     console.log(`✅ A user connected: ${socket.id}`);
