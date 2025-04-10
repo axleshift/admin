@@ -6,7 +6,7 @@ import { visualizer } from 'rollup-plugin-visualizer' // Add this import
 
 export default defineConfig(() => {
   return {
-    base: './',
+    base: '/.',
     build: {
       outDir: 'build',
       rollupOptions: {
