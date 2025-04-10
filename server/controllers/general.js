@@ -6,6 +6,7 @@ import bcryptjs from 'bcryptjs';
 import dotenv from "dotenv";
 import Transaction from "../model/transaction.js";
 import Request from '../model/request.js'
+import crypto from 'crypto';
 import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
 import mongoose from 'mongoose'
@@ -164,7 +165,7 @@ export const forgotPassword = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Reset your password",
-      text: `Reset link: ${baseUrl}resetpass/${user._id}/${token}`,
+            text: `Reset link: ${process.env.DEV_URL}resetpass/${user._id}/${token}`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -187,16 +188,33 @@ export const resetPassword = async (req, res) => {
   const { password, passwordAnalysis } = req.body;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    // Verify the JWT token first
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      console.log("Token verified successfully:", decoded);
+    } catch (tokenErr) {
+      console.error("Token verification failed:", tokenErr.message);
+      if (tokenErr.name === "JsonWebTokenError") {
+        return res.status(400).json({ Status: "Error", Message: "Invalid token" });
+      } else if (tokenErr.name === "TokenExpiredError") {
+        return res.status(400).json({ Status: "Error", Message: "Token has expired" });
+      }
+      return res.status(400).json({ Status: "Error", Message: "Token validation failed" });
+    }
     
     // Get full user details for notification
     const user = await User.findById(id);
-    if (!user) return res.status(404).json({ Status: "User not found" });
+    if (!user) {
+      console.log("User not found with ID:", id);
+      return res.status(404).json({ Status: "Error", Message: "User not found" });
+    }
+
+    console.log("Processing password reset for user:", user.email);
 
     // Enhanced password validation function
     const validatePasswordStrength = (password, analysis) => {
       // Always validate basic requirements regardless of AI analysis
-      if (password.length < 8) {
+      if (!password || password.length < 8) {
         return { valid: false, message: "Password must be at least 8 characters long" };
       }
       
@@ -214,11 +232,11 @@ export const resetPassword = async (req, res) => {
       }
       
       // Check AI analysis score if available
-      if (analysis) {
+      if (analysis && analysis.score !== undefined) {
         if (analysis.score < 40) {
           return { 
             valid: false, 
-            message: "Password does not meet minimum security requirements based on AI analysis" 
+            message: "Password does not meet minimum security requirements based on analysis" 
           };
         }
       }
@@ -227,50 +245,65 @@ export const resetPassword = async (req, res) => {
     };
 
     // Validate password strength
-    const validation = validatePasswordStrength(password, passwordAnalysis);
+    const passwordData = passwordAnalysis || { score: 40, strength: 'Moderate' };
+    const validation = validatePasswordStrength(password, passwordData);
+    
     if (!validation.valid) {
+      console.log("Password validation failed:", validation.message);
       return res.status(400).json({ 
         Status: "Error", 
         Message: validation.message
       });
     }
 
+    console.log("Password validation passed, updating password...");
+
     // Update password if validation passes
     const salt = await bcryptjs.genSalt(10);
     user.password = await bcryptjs.hash(password, salt);
     
+    // Update password metadata
     user.passwordMeta = {
       lastChanged: new Date(),
-      strength: passwordAnalysis?.strength || 'Unknown',
-      score: passwordAnalysis?.score || 0,
+      strength: passwordData.strength || 'Moderate',
+      score: passwordData.score || 40,
       validationPassed: true
     };
     
     await user.save();
+    console.log("Password updated successfully");
 
     // Create detailed notification using the enhanced utility
-    await notificationUtil.createUserActivityNotification({
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department
-      },
-      action: "has reset their password",
-      type: "system",
-      includeDetails: true // Include all user details in the message
-    });
+    try {
+      await notificationUtil.createUserActivityNotification({
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          department: user.department
+        },
+        action: "has reset their password",
+        type: "system",
+        includeDetails: true // Include all user details in the message
+      });
+      console.log("Password reset notification created");
+    } catch (notificationErr) {
+      console.error("Failed to create notification:", notificationErr.message);
+      // Continue anyway, as this is not critical
+    }
 
-    res.json({ Status: "Success" });
+    res.json({ Status: "Success", Message: "Password reset successful" });
   } catch (err) {
+    console.error("Password reset error:", err);
+    
     // Error handling...
     if (err.name === "JsonWebTokenError") {
-      return res.status(400).json({ Status: "Error with token" });
+      return res.status(400).json({ Status: "Error", Message: "Error with token" });
     } else if (err.name === "TokenExpiredError") {
-      return res.status(400).json({ Status: "Token has expired" });
+      return res.status(400).json({ Status: "Error", Message: "Token has expired" });
     }
-    res.status(500).json({ Status: "Internal Server Error", error: err.message });
+    res.status(500).json({ Status: "Error", Message: "Internal Server Error", error: err.message });
   }
 };
 

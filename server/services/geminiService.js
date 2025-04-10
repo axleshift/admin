@@ -35,6 +35,7 @@ const createDefaultResponse = (message) => {
   };
 };
 
+// Make sure to export the function with the exact name that's being imported
 export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL) => {
   try {
     // Direct retrieval of API key (more reliable than relying on dotenv alone)
@@ -168,4 +169,155 @@ export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL)
     }
     return createDefaultResponse(`AI analysis error: ${error.message || 'Unknown error'}`);
   }
+};
+
+// Export any other functions needed for the geminiService
+export const analyzePasswordWithAI = async (password, model = DEFAULT_MODEL) => {
+  try {
+    // Perform basic validation before sending to API
+    if (!password || password.length < 4) {
+      return createDefaultPasswordAnalysis(password);
+    }
+    
+    // Direct retrieval of API key
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY;
+    
+    // Define API URL inside the function
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    
+    // Check if API key is available
+    if (!GEMINI_API_KEY) {
+      console.error('Password analysis: Missing API key');
+      return createDefaultPasswordAnalysis(password);
+    }
+    
+    // Create a structured prompt for the AI to analyze
+    const prompt = `
+      You are a password security expert. Analyze this password (shown between triple quotes) to determine its strength:
+      
+      """${password}"""
+      
+      Provide:
+      1. A numeric score from 0-100 (with 100 being strongest)
+      2. A categorical strength assessment (Very Weak, Weak, Moderate, Strong, Very Strong)
+      3. Specific feedback on how to improve this password
+      4. A brief explanation of your assessment
+      
+      Format your response as JSON:
+      {
+        "score": number between 0-100,
+        "strength": "categorical assessment",
+        "feedback": ["suggestion1", "suggestion2", ...],
+        "explanation": "brief explanation of assessment"
+      }
+    `;
+    
+    const response = await axios.post(
+      `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            parts: [
+              { text: prompt }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 800
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000 // 5 seconds timeout - shorter for better UX
+      }
+    );
+    
+    // Extract and parse the JSON response from the AI
+    const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!rawText) {
+      return createDefaultPasswordAnalysis(password);
+    }
+    
+    // Improved JSON extraction - handle potential text before/after JSON
+    let parsedResponse;
+    try {
+      // First try to parse the entire response as JSON
+      parsedResponse = JSON.parse(rawText);
+    } catch (parseError) {
+      // If that fails, try to extract JSON from the text
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return createDefaultPasswordAnalysis(password);
+      }
+      
+      try {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+      } catch (nestedParseError) {
+        return createDefaultPasswordAnalysis(password);
+      }
+    }
+    
+    // Validate the parsed response has the required fields
+    if (!parsedResponse.score || !parsedResponse.strength || 
+        !Array.isArray(parsedResponse.feedback) || !parsedResponse.explanation) {
+      return createDefaultPasswordAnalysis(password);
+    }
+    
+    // Ensure score is a number between 0-100
+    parsedResponse.score = parseInt(parsedResponse.score);
+    if (isNaN(parsedResponse.score) || parsedResponse.score < 0 || parsedResponse.score > 100) {
+      parsedResponse.score = 50; // Default to middle if invalid
+    }
+    
+    return parsedResponse;
+  } catch (error) {
+    console.error('Password analysis error:', error.message || 'Unknown error');
+    return createDefaultPasswordAnalysis(password);
+  }
+};
+
+// Helper function to create a default password analysis
+const createDefaultPasswordAnalysis = (password) => {
+  // Basic strength calculation
+  let score = 0;
+  let strength = 'Very Weak';
+  let feedback = [];
+  
+  // Length check
+  if (password.length >= 8) {
+    score += 20;
+    feedback.push('Password length is acceptable.');
+  } else {
+    feedback.push('Password should be at least 8 characters long.');
+  }
+  
+  // Character diversity checks
+  if (/[A-Z]/.test(password)) score += 10;
+  else feedback.push('Add uppercase letters to strengthen your password.');
+  
+  if (/[a-z]/.test(password)) score += 10;
+  else feedback.push('Add lowercase letters to strengthen your password.');
+  
+  if (/[0-9]/.test(password)) score += 10;
+  else feedback.push('Add numbers to strengthen your password.');
+  
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 10;
+  else feedback.push('Add special characters to strengthen your password.');
+  
+  // Determine strength based on score
+  if (score >= 50) strength = 'Strong';
+  else if (score >= 30) strength = 'Moderate';
+  else if (score >= 20) strength = 'Weak';
+  
+  return {
+    score,
+    strength,
+    feedback,
+    explanation: 'This is a basic analysis generated locally. AI analysis was unavailable.',
+    isDefaultAnalysis: true
+  };
 };

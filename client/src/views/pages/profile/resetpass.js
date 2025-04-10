@@ -27,9 +27,11 @@ function ResetPass() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [passwordAnalysis, setPasswordAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { id, token } = useParams();
 
@@ -56,6 +58,13 @@ function ResetPass() {
         } catch (err) {
           console.error('Password analysis error:', err);
           setAiError('Could not analyze password strength');
+          // Set a fallback analysis
+          setPasswordAnalysis({
+            score: 0,
+            strength: 'Unknown',
+            feedback: ['Password analysis service is currently unavailable.'],
+            explanation: 'Using basic validation only.'
+          });
         } finally {
           setIsAnalyzing(false);
         }
@@ -74,36 +83,54 @@ function ResetPass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    setSuccess('');
+    
     // Validate password match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    // Prevent weak passwords
-    if (passwordAnalysis && passwordAnalysis.score < 40) {
-      setError('Please choose a stronger password');
+    // Basic password validation even if AI analysis failed
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
 
+    // Prepare analysis data - ensure we always have something to send
+    const analysisData = passwordAnalysis || {
+      score: 40, // Default to minimum acceptable
+      strength: 'Moderate'
+    };
+
+    setIsSubmitting(true);
+    
     try {
       const res = await axiosInstance.post(`/general/reset-password/${id}/${token}`, {
         password,
         passwordAnalysis: {
-          score: passwordAnalysis?.score,
-          strength: passwordAnalysis?.strength
+          score: analysisData.score,
+          strength: analysisData.strength
         }
       });
 
       if (res.data.Status === 'Success') {
-        navigate('/login');
+        setSuccess('Password reset successful! Redirecting to login...');
+        setTimeout(() => navigate('/login'), 2000);
       } else {
         setError(res.data.Message || 'Password reset failed');
       }
     } catch (err) {
       console.error('Error:', err);
-      setError(err.response?.data?.message || 'An error occurred');
+      if (err.response?.status === 400) {
+        setError(err.response?.data?.Message || 'Invalid password or expired token');
+      } else if (err.response?.status === 404) {
+        setError('User not found');
+      } else {
+        setError('An error occurred during password reset. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -132,6 +159,12 @@ function ResetPass() {
                   </CAlert>
                 )}
                 
+                {success && (
+                  <CAlert color="success" className="mb-3">
+                    {success}
+                  </CAlert>
+                )}
+                
                 <div className="mb-3">
                   <CFormInput 
                     type="password"
@@ -155,7 +188,7 @@ function ResetPass() {
                       <div className="d-flex justify-content-between align-items-center mb-1">
                         <span className="d-flex align-items-center">
                           <FontAwesomeIcon icon={faRobot} className="me-2 text-primary" />
-                          AI Password Analysis:
+                          Password Analysis:
                         </span>
                         {isAnalyzing ? (
                           <CSpinner size="sm" color="primary" />
@@ -174,7 +207,7 @@ function ResetPass() {
                           
                           {/* Password feedback from AI */}
                           <div className="password-feedback mt-2">
-                            {passwordAnalysis.feedback.map((tip, index) => (
+                            {passwordAnalysis.feedback && passwordAnalysis.feedback.map((tip, index) => (
                               <div key={index} className="small text-muted mb-1">
                                 <FontAwesomeIcon icon={faInfoCircle} className="me-1" />
                                 {tip}
@@ -218,9 +251,14 @@ function ResetPass() {
                   type="submit" 
                   color="primary" 
                   className="w-100"
-                  disabled={isAnalyzing || (passwordAnalysis && passwordAnalysis.score < 40)}
+                  disabled={isSubmitting || isAnalyzing || password.length < 8 || password !== confirmPassword}
                 >
-                  {isAnalyzing ? (
+                  {isSubmitting ? (
+                    <>
+                      <CSpinner size="sm" component="span" className="me-2" />
+                      Updating...
+                    </>
+                  ) : isAnalyzing ? (
                     <>
                       <CSpinner size="sm" component="span" className="me-2" />
                       Analyzing...
