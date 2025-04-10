@@ -1,3 +1,4 @@
+
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
@@ -5,6 +6,7 @@ import archiver from 'archiver';
 import extract from 'extract-zip';
 import dotenv from 'dotenv';
 import os from 'os';
+dotenv.config();
 
 
 
@@ -16,7 +18,7 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt  from 'jsonwebtoken'
 
 
-dotenv.config();
+
 
 
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -26,20 +28,44 @@ const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const mongoURL = process.env.MONGO_URL;
 const databaseName = process.env.DATABASE_NAME || 'adminis';
 
-const getDownloadDirectory = () => {
-  const homeDir = os.homedir();  // Get the user's home directory
-
+const getBackupDirectory = () => {
   if (process.platform === 'win32') {
-    // Windows: Use the Downloads folder in the user's home directory
-    return path.join(homeDir, 'Downloads', 'my-backups');
+    // Windows server environment
+    return 'C:\\persistent-storage\\mongodb-backups';
   } else {
-    // Linux/macOS: Use the Downloads folder in the user's home directory
-    return path.join(homeDir, 'Downloads', 'my-backups');
+    // Linux/Unix server environment - common persistent storage locations
+    const persistentDirs = [
+      '/mnt/data/backups',      // Common mount point for persistent storage
+      '/var/lib/backups',       // System-level persistent storage
+      '/opt/backups',           // Optional software directory (often persistent)
+      '/data/backups'           // Common Docker volume mount point
+    ];
+    
+    // Try to use the first existing directory or one we can create
+    for (const dir of persistentDirs) {
+      try {
+        if (fs.existsSync(dir)) {
+          return path.join(dir, 'mongodb-backups');
+        }
+        
+        // Try to create the directory
+        fs.mkdirSync(dir, { recursive: true });
+        return path.join(dir, 'mongodb-backups');
+      } catch (err) {
+        console.warn(`Could not use or create ${dir}: ${err.message}`);
+        // Continue to next option
+      }
+    }
+    
+    // Fallback - use a directory in the application root
+    // Note: This might not be persistent in all environments
+    return path.resolve(process.cwd(), 'mongodb-backups');
   }
 };
 
-const backupDir = getDownloadDirectory();
+const backupDir = getBackupDirectory();
 
+// Ensure the backup directory exists
 if (!fs.existsSync(backupDir)) {
   try {
     fs.mkdirSync(backupDir, { recursive: true });
@@ -48,6 +74,9 @@ if (!fs.existsSync(backupDir)) {
     console.error(`Failed to create backup directory: ${error.message}`);
   }
 }
+
+// Log the backup location on startup for visibility
+console.log(`Using backup directory for MongoDB: ${backupDir}`);
 
 const normalizePath = (filepath) => {
   if (!filepath) return '';
@@ -122,8 +151,9 @@ async function generateImage(prompt, username) {
 
 
 // Fix for setBackupDirectory function
+
 export const backupDatabase = async (req, res) => {
-  console.log(`Using backup directory: ${backupDir}`);
+  console.log(`Creating backup in: ${backupDir}`);
 
   if (!fs.existsSync(backupDir)) {
     try {
@@ -191,6 +221,8 @@ export const backupDatabase = async (req, res) => {
     res.status(200).json({
       message: 'Backup created and archived successfully',
       archivePath: backupFileName,
+      fullPath: archivePath,
+      backupDir: backupDir
     });
   } catch (error) {
     console.error('Backup error:', error);
@@ -219,7 +251,7 @@ export const listBackups = (req, res) => {
       })
       .sort((a, b) => b.created - a.created);
 
-    res.status(200).json({ backups });
+    res.status(200).json({ backups, backupDir });
   } catch (error) {
     res.status(500).json({ message: 'Failed to list backups', error: error.message, backups: [] });
   }
