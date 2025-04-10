@@ -41,7 +41,7 @@ const ForgotPass = () => {
     axiosInstance
       .post('/general/forgot-password', { email })
       .then((res) => {
-        if (res.data.message === 'If this email is registered, a reset link has been sent.') {
+        if (res.data.message === 'Reset link sent to your email') {
           setMessage('Reset link sent successfully! Check your email.')
           setMessageType('success')
           
