@@ -127,15 +127,18 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     try {
-        console.log("Received email:", email);
         const user = await User.findOne({ email });
 
+        // Always return generic message to avoid user enumeration
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(200).json({ message: "If this email is registered, a reset link has been sent." });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
-        console.log("Generated token:", token);
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: "1d" }
+        );
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
@@ -145,37 +148,25 @@ export const forgotPassword = async (req, res) => {
             },
         });
 
-        // Verify transporter configuration
-        await new Promise((resolve, reject) => {
-            transporter.verify((error, success) => {
-                if (error) {
-                    console.error("Email server configuration error:", error);
-                    reject(error);
-                } else {
-                    resolve(success);
-                }
-            });
-        });
+        const resetUrl = `${process.env.CLIENT_URL}resetpass/${user._id}/${token}`;
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Reset your password",
-            text: `Reset link: https://admin.axleshift.com/resetpass/${user._id}/${token}`,
+            text: `Reset your password using this link: ${resetUrl}`,
         };
 
         await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully");
-        
-        res.status(200).json({ 
-            message: "Reset link sent to your email",
-            userId: user._id
+
+        return res.status(200).json({ 
+            message: "If this email is registered, a reset link has been sent."
         });
+
     } catch (err) {
-        console.error("Server error:", err);
-        res.status(500).json({ 
+        return res.status(500).json({ 
             message: "Server error", 
-            error: err.message 
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 };
