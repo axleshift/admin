@@ -17,7 +17,6 @@ import {
     restoreDatabase, 
     listBackups, 
     listCollections,
-    deleteBackup
     
   
 } from "../controllers/admin.js";
@@ -31,7 +30,6 @@ const router = express.Router();
     // New routes for listing backups and collections
     router.get('/list-backups', listBackups);
     router.get('/list-collections/:backupName', listCollections);
-    router.delete('/delete-backup/:backupName', deleteBackup); 
 
 
 //router.get('getuser/:department',verifyTokenAndDepartment, getUsersBy)

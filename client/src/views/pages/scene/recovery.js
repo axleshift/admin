@@ -1,9 +1,10 @@
 import React, { useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { 
     CContainer, CButton, CRow, CCol, CForm, CFormLabel, CFormInput, 
     CListGroup, CListGroupItem, CCard, CCardBody, CCardHeader, 
-    CSpinner, CAlert, CFormSelect, CInputGroup, CInputGroupText
+    CSpinner, CAlert 
 } from '@coreui/react';
 import axiosInstance from '../../../utils/axiosInstance';
 import logActivity from './../../../utils/activityLogger';
@@ -20,19 +21,11 @@ const RecoveryPage = () => {
     const [backupInProgress, setBackupInProgress] = useState(false);
     const [error, setError] = useState('');
     const [directorySet, setDirectorySet] = useState(false);
-    const [serverInfo, setServerInfo] = useState({});
-    const [directoryType, setDirectoryType] = useState('custom'); // 'custom', 'relative', 'absolute'
     const navigate = useNavigate();
     const userRole = sessionStorage.getItem('role');
     const userDepartment = sessionStorage.getItem('department');
     const userId = sessionStorage.getItem('userId');
-    const userName = sessionStorage.getItem('name');
-    
-    // Predefined paths for CyberPanel environments
-    const predefinedPaths = {
-        relative: './storage/backups',
-        absolute: '/home/backup/mongodb'
-    };
+    const userName = sessionStorage.getItem('name'); 
     
     const getUserInfo = () => {
         return {
@@ -54,20 +47,6 @@ const RecoveryPage = () => {
                     // Save to localStorage for future visits
                     localStorage.setItem('backupDirectory', response.data.directory);
                     
-                    // Save server info if available
-                    if (response.data.serverInfo) {
-                        setServerInfo(response.data.serverInfo);
-                    }
-                    
-                    // Set directoryType based on path format
-                    if (response.data.directory.startsWith('./')) {
-                        setDirectoryType('relative');
-                    } else if (response.data.directory.startsWith('/')) {
-                        setDirectoryType('absolute');
-                    } else {
-                        setDirectoryType('custom');
-                    }
-                    
                     const userInfo = getUserInfo();
                     logActivity({
                         ...userInfo,
@@ -84,10 +63,6 @@ const RecoveryPage = () => {
                     if (savedDirectory) {
                         setDirectory(savedDirectory);
                         handleSetDirectory(savedDirectory);
-                    } else {
-                        // Default to relative path for CyberPanel
-                        setDirectoryType('relative');
-                        setDirectory(predefinedPaths.relative);
                     }
                 }
             })
@@ -98,10 +73,6 @@ const RecoveryPage = () => {
                 if (savedDirectory) {
                     setDirectory(savedDirectory);
                     handleSetDirectory(savedDirectory);
-                } else {
-                    // Default to relative path for CyberPanel
-                    setDirectoryType('relative');
-                    setDirectory(predefinedPaths.relative);
                 }
             })
             .finally(() => setLoading(false));
@@ -144,15 +115,6 @@ const RecoveryPage = () => {
         else setCollections([]);
     }, [selectedDatabase, selectedBackup]);
 
-    // Update directory when directoryType changes
-    useEffect(() => {
-        if (directoryType === 'relative') {
-            setDirectory(predefinedPaths.relative);
-        } else if (directoryType === 'absolute') {
-            setDirectory(predefinedPaths.absolute);
-        }
-    }, [directoryType]);
-
     const fetchBackups = async () => {
         setLoading(true);
         setError('');
@@ -168,7 +130,7 @@ const RecoveryPage = () => {
                 description: `Retrieved ${response.data.backups?.length || 0} backups from directory: ${directory}`
             });
         } catch (error) {
-            setError('Error fetching backups: ' + (error.response?.data?.message || error.message));
+            setError('Error fetching backups');
             setBackups([]);
         } finally {
             setLoading(false);
@@ -227,7 +189,7 @@ const RecoveryPage = () => {
                 description: `Retrieved ${response.data.collections?.length || 0} collections from database: ${database} in backup: ${backup.name}`
             });
         } catch (error) {
-            setError('Error fetching collections: ' + (error.response?.data?.message || error.message));
+            setError('Error fetching collections');
             setCollections([]);
         } finally {
             setLoading(false);
@@ -266,7 +228,7 @@ const RecoveryPage = () => {
                 description: `Set backup directory to: ${directoryToSet}`
             });
         } catch (error) {
-            setError('Error setting directory: ' + (error.response?.data?.message || error.message));
+            setError('Error setting directory');
             setDirectorySet(false);
         } finally {
             setLoading(false);
@@ -277,7 +239,7 @@ const RecoveryPage = () => {
         setBackupInProgress(true);
         setError('');
         try {
-            const response = await axiosInstance.post('/admin/backup');
+            await axiosInstance.post('/admin/backup');
             fetchBackups();
             
             const userInfo = getUserInfo();
@@ -288,7 +250,7 @@ const RecoveryPage = () => {
                 description: `Created new backup in directory: ${directory}`
             });
         } catch (error) {
-            setError('Error during backup: ' + (error.response?.data?.message || error.message));
+            setError('Error during backup');
         } finally {
             setBackupInProgress(false);
         }
@@ -324,40 +286,7 @@ const RecoveryPage = () => {
             
             alert('Restore successful!');
         } catch (error) {
-            setError('Restore failed: ' + (error.response?.data?.message || error.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-    const handleDeleteBackup = async (backup) => {
-        if (!window.confirm(`Are you sure you want to delete backup "${backup.name}"? This action cannot be undone.`)) {
-            return;
-        }
-        
-        setLoading(true);
-        setError('');
-        try {
-            await axiosInstance.delete(`/admin/delete-backup/${backup.name}`);
-            fetchBackups(); // Refresh the list
-            
-            if (selectedBackup?.name === backup.name) {
-                setSelectedBackup(null);
-                setDatabases([]);
-                setCollections([]);
-                setSelectedDatabase(null);
-                setSelectedCollection(null);
-            }
-            
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'DELETE_BACKUP',
-                description: `Deleted backup: ${backup.name}`
-            });
-        } catch (error) {
-            setError('Failed to delete backup: ' + (error.response?.data?.message || error.message));
+            setError('Restore failed.');
         } finally {
             setLoading(false);
         }
@@ -412,68 +341,37 @@ const RecoveryPage = () => {
                         </CCardHeader>
                         <CCardBody>
                             <CForm>
-                                <CRow className="mb-3">
-                                    <CCol md="3">
-                                        <CFormLabel>Directory Type</CFormLabel>
-                                        <CFormSelect 
-                                            value={directoryType}
-                                            onChange={(e) => setDirectoryType(e.target.value)}
-                                            disabled={loading}
-                                        >
-                                            <option value="relative">Application Relative (Recommended for CyberPanel)</option>
-                                            <option value="absolute">Server Absolute Path</option>
-                                            <option value="custom">Custom Path</option>
-                                        </CFormSelect>
-                                    </CCol>
-                                    <CCol md="9">
-                                        <CFormLabel>Backup Directory</CFormLabel>
-                                        <CInputGroup>
-                                            {directoryType === 'relative' && (
-                                                <CInputGroupText>
-                                                    {serverInfo.currentWorkingDir || 'app root'}/
-                                                </CInputGroupText>
-                                            )}
-                                            <CFormInput 
-                                                type="text" 
-                                                placeholder={directoryType === 'relative' ? './storage/backups' : '/path/to/backups'} 
-                                                value={directory} 
-                                                onChange={(e) => setDirectory(e.target.value)}
-                                                disabled={loading || directoryType !== 'custom'} 
-                                            />
-                                            <CButton 
-                                                onClick={() => handleSetDirectory()} 
-                                                disabled={loading}
-                                            >
-                                                {loading ? <CSpinner size="sm" /> : 'Set Directory'}
-                                            </CButton>
-                                        </CInputGroup>
-                                        {directorySet && (
-                                            <small className="text-muted mt-1">
-                                                Using directory: {directory}
-                                            </small>
-                                        )}
-                                    </CCol>
-                                </CRow>
-                                
-                                {Object.keys(serverInfo).length > 0 && (
-                                    <CAlert color="info" className="mt-3 small">
-                                        <strong>Server Information:</strong><br/>
-                                        Running as user: {serverInfo.processUser}<br/>
-                                        Platform: {serverInfo.serverPlatform}<br/>
-                                        Node version: {serverInfo.nodeVersion}<br/>
-                                        Working directory: {serverInfo.currentWorkingDir}
-                                    </CAlert>
+                                <CFormLabel>Backup Directory</CFormLabel>
+                                <div className="d-flex">
+                                    <CFormInput 
+                                        type="text" 
+                                        placeholder="Enter directory path" 
+                                        value={directory} 
+                                        onChange={(e) => setDirectory(e.target.value)}
+                                        disabled={loading} 
+                                    />
+                                    <CButton 
+                                        className="ms-2" 
+                                        onClick={() => handleSetDirectory()} 
+                                        disabled={loading}
+                                    >
+                                        {loading ? <CSpinner size="sm" /> : 'Set Directory'}
+                                    </CButton>
+                                </div>
+                                {directorySet && (
+                                    <small className="text-muted mt-1">
+                                        Using directory: {directory}
+                                    </small>
                                 )}
-                                
-                                <CButton 
-                                    color="primary" 
-                                    className="mt-3" 
-                                    onClick={handleBackup} 
-                                    disabled={!directorySet || backupInProgress}
-                                >
-                                    {backupInProgress ? <><CSpinner size="sm" /> Creating Backup...</> : 'Create New Backup'}
-                                </CButton>
                             </CForm>
+                            <CButton 
+                                color="primary" 
+                                className="mt-3" 
+                                onClick={handleBackup} 
+                                disabled={!directorySet || backupInProgress}
+                            >
+                                {backupInProgress ? <><CSpinner size="sm" /> Creating Backup...</> : 'Create New Backup'}
+                            </CButton>
                         </CCardBody>
                     </CCard>
                 </CCol>
@@ -495,27 +393,14 @@ const RecoveryPage = () => {
                                             {backups.map((backup) => (
                                                 <CListGroupItem 
                                                     key={backup.name} 
-                                                    active={selectedBackup?.name === backup.name}
-                                                    className="d-flex justify-content-between align-items-center"
+                                                    active={selectedBackup?.name === backup.name} 
+                                                    onClick={() => setSelectedBackup(backup)} 
                                                     style={{ cursor: 'pointer' }}
                                                 >
-                                                    <div onClick={() => setSelectedBackup(backup)} className="flex-grow-1">
-                                                        {backup.name}
-                                                        <small className="d-block text-muted">
-                                                            {new Date(backup.created).toLocaleString()} - {Math.round(backup.size/1024/1024)}MB
-                                                        </small>
-                                                    </div>
-                                                    <CButton 
-                                                        color="danger" 
-                                                        size="sm" 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeleteBackup(backup);
-                                                        }}
-                                                        disabled={loading}
-                                                    >
-                                                        Delete
-                                                    </CButton>
+                                                    {backup.name}
+                                                    <small className="d-block text-muted">
+                                                        {new Date(backup.created).toLocaleString()} - {Math.round(backup.size/1024/1024)}MB
+                                                    </small>
                                                 </CListGroupItem>
                                             ))}
                                         </CListGroup>
@@ -548,101 +433,99 @@ const RecoveryPage = () => {
                                                     active={selectedDatabase === db}
                                                     onClick={() => setSelectedDatabase(db)} 
                                                     style={{ cursor: 'pointer' }}
-                                                >
-                                                    {db}
-                                                </CListGroupItem>
-                                            ))}
-                                        </CListGroup>
-                                    )}
-                                </>
-                            )}
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-
-                <CCol md="4">
-                    <CCard>
-                        <CCardHeader>Select Collection</CCardHeader>
-                        <CCardBody>
-                            {loading ? <CSpinner /> : (
-                                <>
-                                    {!selectedDatabase ? (
-                                        <div className="text-center p-3">
-                                            Select a database first
-                                        </div>
-                                    ) : collections.length === 0 ? (
-                                        <div className="text-center p-3">
-                                            No collections found in this database
-                                        </div>
-                                    ) : selectedCollection ? (
-                                        <div className="p-3">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <strong>{selectedCollection}</strong>
-                                                <CButton 
-                                                    color="link" 
-                                                    onClick={handleChangeCollection}
-                                                    size="sm"
-                                                >
-                                                    Change
-                                                </CButton>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <CListGroup>
-                                            {collections.map((collection) => (
-                                                <CListGroupItem 
-                                                    key={collection} 
-                                                    onClick={() => handleSelectCollection(collection)} 
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    {collection}
-                                                </CListGroupItem>
-                                            ))}
-                                        </CListGroup>
-                                    )}
-                                </>
-                            )}
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
-
-            <CRow className="mt-4">
-                <CCol>
-                    <CCard>
-                        <CCardHeader>Restore Options</CCardHeader>
-                        <CCardBody>
-                            <div className="mb-3">
-                                {selectedBackup && (
-                                    <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
-                                )}
-                                {selectedDatabase && (
-                                    <div><strong>Selected Database:</strong> {selectedDatabase}</div>
-                                )}
-                                {selectedCollection && (
-                                    <div><strong>Selected Collection:</strong> {selectedCollection}</div>
-                                )}
-                            </div>
-
-                            {selectedBackup && selectedDatabase && selectedCollection ? (
-                                <CButton 
-                                    color="warning" 
-                                    onClick={handleRestore}
-                                    disabled={loading}
-                                >
-                                    {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
-                                </CButton>
-                            ) : (
-                                <div className="text-muted">
-                                    Please select a backup, database, and collection to restore
-                                </div>
-                            )}
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
-        </CContainer>
-    );
-};
-
-export default RecoveryPage;
+                                                    >
+                                                        {db}
+                                                    </CListGroupItem>
+                                                                                                ))}
+                                                                                            </CListGroup>
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
+                                                                            </CCardBody>
+                                                                        </CCard>
+                                                                    </CCol>
+                                                    
+                                                                    <CCol md="4">
+                                                                        <CCard>
+                                                                            <CCardHeader>Select Collection</CCardHeader>
+                                                                            <CCardBody>
+                                                                                {loading ? <CSpinner /> : (
+                                                                                    <>
+                                                                                        {!selectedDatabase ? (
+                                                                                            <div className="text-center p-3">
+                                                                                                Select a database first
+                                                                                            </div>
+                                                                                        ) : collections.length === 0 ? (
+                                                                                            <div className="text-center p-3">
+                                                                                                No collections found in this database
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <CListGroup>
+                                                                                                {collections.map((collection) => (
+                                                                                                    <CListGroupItem 
+                                                                                                        key={collection} 
+                                                                                                        active={selectedCollection === collection}
+                                                                                                        onClick={() => handleSelectCollection(collection)} 
+                                                                                                        style={{ cursor: 'pointer' }}
+                                                                                                    >
+                                                                                                        {collection}
+                                                                                                    </CListGroupItem>
+                                                                                                ))}
+                                                                                            </CListGroup>
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
+                                                                            </CCardBody>
+                                                                        </CCard>
+                                                                    </CCol>
+                                                                </CRow>
+                                                    
+                                                                <CRow className="mt-4">
+                                                                    <CCol>
+                                                                        <CCard>
+                                                                            <CCardHeader>Restore Options</CCardHeader>
+                                                                            <CCardBody>
+                                                                                <div className="mb-3">
+                                                                                    {selectedBackup && (
+                                                                                        <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
+                                                                                    )}
+                                                                                    {selectedDatabase && (
+                                                                                        <div><strong>Selected Database:</strong> {selectedDatabase}</div>
+                                                                                    )}
+                                                                                    {selectedCollection && (
+                                                                                        <div><strong>Selected Collection:</strong> {selectedCollection}</div>
+                                                                                    )}
+                                                                                </div>
+                                                    
+                                                                                {selectedBackup && selectedDatabase && selectedCollection ? (
+                                                                                    <CButton 
+                                                                                        color="warning" 
+                                                                                        onClick={handleRestore}
+                                                                                        disabled={loading}
+                                                                                    >
+                                                                                        {loading ? <><CSpinner size="sm" /> Restoring...</> : 'Restore Collection'}
+                                                                                    </CButton>
+                                                                                ) : (
+                                                                                    <div className="text-muted">
+                                                                                        Please select a backup, database, and collection to restore
+                                                                                    </div>
+                                                                                )}
+                                                    
+                                                                                {selectedCollection && (
+                                                                                    <CButton 
+                                                                                        color="link" 
+                                                                                        className="ms-3" 
+                                                                                        onClick={handleChangeCollection}
+                                                                                    >
+                                                                                        Change Selection
+                                                                                    </CButton>
+                                                                                )}
+                                                                            </CCardBody>
+                                                                        </CCard>
+                                                                    </CCol>
+                                                                </CRow>
+                                                            </CContainer>
+                                                        );
+                                                    };
+                                                    
+                                                    export default RecoveryPage;
