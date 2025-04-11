@@ -26,7 +26,7 @@ const ChangePass = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const email = sessionStorage.getItem('email')
+    const email = localStorage.getItem('email')
 
     // Basic validation
     if (newPassword !== confirmPassword) {

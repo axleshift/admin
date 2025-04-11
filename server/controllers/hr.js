@@ -416,7 +416,7 @@ export const deleteUser = async (req, res) => {
   
   export const getpayroll = async (req, res) => {
     try {
-      const response = await fetch(`${HR3}/api/payroll`);
+      const response = await fetch(`${HR3}/api/payrolls`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -458,105 +458,72 @@ export const deleteUser = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch payroll data' });
     }
   };
-  export const getUserById = async (req, res) => {
-    const userId = req.params.id;
-    
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
-    
-    try {
-      const response = await fetch(`${HR3}/api/users/${userId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Create notification for successful user data fetch
-      await notificationUtil.createNotification({
-        title: "User Data Retrieved",
-        message: `User data has been successfully fetched from HR3 system for ID: ${userId}`,
-        type: "system",
-        metadata: {
-          source: "HR3",
-          endpoint: `users/${userId}`,
-          userId: userId
-        }
-      });
-      
-      return res.json(data);
-    } catch (error) {
-      console.error(`Failed to fetch user with ID ${userId}:`, error);
-      
-      // Create notification for fetch error
-      await notificationUtil.createNotification({
-        title: "User Data Fetch Failed",
-        message: `Failed to fetch user data for ID ${userId}: ${error.message || "Unknown error"}`,
-        type: "system",
-        metadata: {
-          source: "HR3",
-          endpoint: `users/${userId}`,
-          userId: userId,
-          error: error.message || "Unknown error"
-        }
-      });
-      
-      return res.status(500).json({ error: `Failed to fetch user data for ID: ${userId}` });
-    }
-  };
+ 
  // Controller function remains the same
-export const updatePayroll = async (req, res) => {
+ export const updatePayrollStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, remarks } = req.body;
+  
   try {
-    const payrollId = req.params.id;
-    
-    // Validate payroll ID
-    if (!payrollId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payroll ID is required'
-      });
+    // Validate input
+    if (!id) {
+      return res.status(400).json({ error: 'Payroll ID is required' });
     }
-
-    // Make request to the external payroll API
-    const response = await axios.get(`https://hr3.axleshift.com/api/payroll/${payrollId}`, {
+    
+    if (!status || !['approved', 'rejected'].includes(status.toLowerCase())) {
+      return res.status(400).json({ error: 'Valid status (approved or rejected) is required' });
+    }
+    
+    // Call the HR3 API to update the payroll status
+    const response = await fetch(`${HR3}/api/payrolls/${id}`, {
+      method: 'PUT',
       headers: {
-        'Authorization': req.headers.authorization,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        payroll_status: status.toLowerCase(),
+        status_remarks: remarks || '' 
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const updatedPayroll = await response.json();
+    
+    // Create notification for successful payroll status update
+    await notificationUtil.createNotification({
+      title: `Payroll ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      message: `Payroll for ${updatedPayroll.name} has been ${status.toLowerCase()}.`,
+      type: "system",
+      metadata: {
+        source: "HR3",
+        endpoint: "payroll",
+        payrollId: id,
+        status: status.toLowerCase(),
+        employeeName: updatedPayroll.name
       }
     });
-
-    // Return the payroll data
-    return res.status(200).json({
-      success: true,
-      data: response.data
+    
+    return res.json(updatedPayroll);
+  } catch (error) {
+    console.error(`Failed to update payroll status:`, error);
+    
+    // Create notification for update error
+    await notificationUtil.createNotification({
+      title: "Payroll Status Update Failed",
+      message: `Failed to update payroll status: ${error.message || "Unknown error"}`,
+      type: "system",
+      metadata: {
+        source: "HR3",
+        endpoint: "payroll",
+        payrollId: id,
+        error: error.message || "Unknown error"
+      }
     });
     
-  } catch (error) {
-    // Handle different error types
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      return res.status(error.response.status).json({
-        success: false,
-        message: error.response.data.message || 'Error retrieving payroll information',
-        error: error.response.data
-      });
-    } else if (error.request) {
-      // The request was made but no response was received
-      return res.status(503).json({
-        success: false,
-        message: 'Payroll service unavailable'
-      });
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      return res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: error.message
-      });
-    }
+    return res.status(500).json({ error: 'Failed to update payroll status' });
   }
 };
 

@@ -64,21 +64,38 @@ export const addnotif = async (req, res) => {
     }
   };
 
-export const markAsRead = async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    const updatedNotification = await Notification.findByIdAndUpdate(
-      notificationId,
-      { read: true },
-      { new: true }
-    );
-    
-    if (!updatedNotification) {
-      return res.status(404).json({ success: false, message: "Notification not found" });
+  export const markAsRead = async (req, res) => {
+    try {
+      const { notificationId } = req.params;
+      
+      // Validate ID format
+      if (!notificationId.match(/^[0-9a-fA-F]{24}$/)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid notification ID format" 
+        });
+      }
+      
+      const updatedNotification = await Notification.findByIdAndUpdate(
+        notificationId,
+        { read: true },
+        { new: true }
+      );
+      
+      if (!updatedNotification) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Notification not found" 
+        });
+      }
+      
+      res.status(200).json({ success: true, data: updatedNotification });
+    } catch (error) {
+      console.error(`Error marking notification as read: ${error.message}`);
+      res.status(500).json({ 
+        success: false, 
+        message: "Server Error",
+        error: error.message 
+      });
     }
-    
-    res.status(200).json({ success: true, data: updatedNotification });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-};
+  };

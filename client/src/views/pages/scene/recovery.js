@@ -21,10 +21,10 @@ const RecoveryPage = () => {
     const [backupInProgress, setBackupInProgress] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    const userRole = sessionStorage.getItem('role');
-    const userDepartment = sessionStorage.getItem('department');
-    const userId = sessionStorage.getItem('userId');
-    const userName = sessionStorage.getItem('name'); 
+    const userRole = localStorage.getItem('role');
+    const userDepartment = localStorage.getItem('department');
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('name'); 
 
     const getUserInfo = () => {
         return {

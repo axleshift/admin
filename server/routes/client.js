@@ -7,7 +7,8 @@ import {
     changePassword, 
     generateOTP, 
     verifyOTP,
-    saveUser
+    saveUser,
+    refreshToken
 } from "../controllers/client.js";
 import detectAnomaly from "../middleware/detectAnomaly.js";
 import detectRapidLogin from "../middleware/detectRapidLogin.js";
@@ -20,7 +21,7 @@ router.get('/customers', getCustomers);
 
 // Login
 router.post("/login",detectRapidLogin,detectAnomaly,loginUser,loginActivityLogger);
-
+router.post('/refresh-token', refreshToken);
 // Add this to your routes file
 router.get("/check-anomalies", async (req, res) => {
     try {

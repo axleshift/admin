@@ -23,13 +23,13 @@ import {
 
 const _nav = () => {
   
-  const userRole = sessionStorage.getItem('role');
-  const userName = sessionStorage.getItem('name')
-  const userDepartment = sessionStorage.getItem('department');
-  const userUsername = sessionStorage.getItem('username'); 
-  const userId = sessionStorage.getItem('userId');
-  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
-  const userEmail = sessionStorage.getItem('email');
+  const userRole = localStorage.getItem('role');
+  const userName = localStorage.getItem('name')
+  const userDepartment = localStorage.getItem('department');
+  const userUsername = localStorage.getItem('username'); 
+  const userId = localStorage.getItem('userId');
+  const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
+  const userEmail = localStorage.getItem('email');
 
   
 
@@ -39,7 +39,7 @@ const _nav = () => {
   
   useEffect(() => {
     if (!userId) {
-      console.error('❌ No userId found in sessionStorage');
+      console.error('❌ No userId found in localStorage');
       return;
     }
 

@@ -15,7 +15,7 @@ import {
     leave, 
     updateLeaveRequest,
     getpayroll,
-    getUserById
+    updatePayrollStatus
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -44,7 +44,7 @@ router.post('/revoke-access',revokeAccess);
 router.get('/leaveRequest',leave)
 router.put('/leaveRequest/:id', updateLeaveRequest);
 router.get('/payroll', getpayroll);
-router.get('/payroll/:id', getUserById);
+router.put('/payroll/:id/status',updatePayrollStatus)
 
 // Route to save payroll data to MongoDB
 

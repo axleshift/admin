@@ -568,6 +568,7 @@ export const loginUser = async (req, res) => {
       });
     }
   };
+
   
   // Helper function for the delay
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -590,7 +591,45 @@ const getFailedAttemptsCount = async (userId) => {
   }
 };
 
-
+export const refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+  
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const { id, username } = decoded;
+    
+    // Find user
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Generate new access token
+    const accessToken = generateAccessToken({ 
+      id: user._id, 
+      username: user.username,
+      role: user.role 
+    });
+    
+    // Optional: generate new refresh token for enhanced security
+    // const newRefreshToken = generateRefreshToken({ id: user._id, username: user.username });
+    
+    res.status(200).json({
+      accessToken,
+      // refreshToken: newRefreshToken // Uncomment if you want to rotate refresh tokens
+    });
+    
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
+  }
+};
 // Helper function to count failed attempts
 
   export const verifyCaptcha = async (req, res, next) => {

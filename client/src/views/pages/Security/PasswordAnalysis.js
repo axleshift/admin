@@ -32,7 +32,9 @@ import {
   CPagination,
   CPaginationItem,
   CFormSelect,
-  CFormInput
+  CFormInput,
+  CCollapse,
+  CBadge
 } from '@coreui/react';
 
 // FontAwesome imports
@@ -49,7 +51,11 @@ import {
   faShieldAlt,
   faEye,
   faSort,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faHistory,
+  faChevronDown,
+  faChevronUp,
+  faMapMarkerAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 function PasswordResetAnalysisPage() {
@@ -67,6 +73,7 @@ function PasswordResetAnalysisPage() {
   });
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showHistoryCollapse, setShowHistoryCollapse] = useState({});
   const navigate = useNavigate();
 
   // Fetch password reset events
@@ -90,6 +97,16 @@ function PasswordResetAnalysisPage() {
       
       setPasswordResetEvents(response.data.data || []);
       setTotalPages(response.data.totalPages || 1);
+      
+      // Initialize history collapse state for new events
+      const newShowHistoryCollapse = {};
+      response.data.data.forEach(event => {
+        if (event._id) {
+          newShowHistoryCollapse[event._id] = false;
+        }
+      });
+      setShowHistoryCollapse(prev => ({...prev, ...newShowHistoryCollapse}));
+      
     } catch (err) {
       console.error('Error fetching password reset events:', err);
       setError(err.response?.data?.Message || 'Failed to load password reset analysis data');
@@ -144,6 +161,14 @@ function PasswordResetAnalysisPage() {
       searchTerm: ''
     });
     setCurrentPage(1);
+  };
+
+  // Toggle history collapse
+  const toggleHistoryCollapse = (eventId) => {
+    setShowHistoryCollapse(prev => ({
+      ...prev,
+      [eventId]: !prev[eventId]
+    }));
   };
 
   return (
@@ -300,55 +325,138 @@ function PasswordResetAnalysisPage() {
                 </CTableHead>
                 <CTableBody>
                   {passwordResetEvents.map((event, index) => (
-                    <CTableRow key={event?._id || index}>
-                      <CTableDataCell>
-                        {(currentPage - 1) * pageSize + index + 1}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="d-flex flex-column">
-                          <span className="fw-bold">{event?.user?.name || 'Unknown'}</span>
-                          <span className="small text-muted">{event?.user?.email || 'No email'}</span>
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        {formatDate(event?.timestamp)}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="d-flex flex-column">
-                          <div className="d-flex justify-content-between mb-1">
-                            <span>{event?.passwordAnalysis?.strength || 'N/A'}</span>
-                            <span className="fw-bold">{event?.passwordAnalysis?.score || 0}/100</span>
+                    <React.Fragment key={event?._id || index}>
+                      <CTableRow>
+                        <CTableDataCell>
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div className="d-flex flex-column">
+                            <span className="fw-bold">{event?.user?.name || 'Unknown'}</span>
+                            <span className="small text-muted">{event?.user?.email || 'No email'}</span>
+                            {event?.previousResets && event.previousResets.length > 0 && (
+                              <div className="mt-1">
+                                <CButton 
+                                  color="link" 
+                                  size="sm" 
+                                  className="p-0"
+                                  onClick={() => toggleHistoryCollapse(event._id)}
+                                >
+                                  <FontAwesomeIcon icon={faHistory} className="me-1" />
+                                  {showHistoryCollapse[event._id] ? 'Hide' : 'Show'} History 
+                                  <FontAwesomeIcon 
+                                    icon={showHistoryCollapse[event._id] ? faChevronUp : faChevronDown} 
+                                    className="ms-1" 
+                                    size="xs" 
+                                  />
+                                  <CBadge color="light" shape="rounded-pill" className="ms-2">
+                                    {event.previousResets.length}
+                                  </CBadge>
+                                </CButton>
+                              </div>
+                            )}
                           </div>
-                          <CProgress 
-                            thin 
-                            value={event?.passwordAnalysis?.score || 0} 
-                            color={getProgressColor(event?.passwordAnalysis?.score || 0)}
-                          />
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        {event?.validationPassed ? (
-                          <CButton color="success" variant="outline" size="sm" className="px-3" disabled>
-                            Success
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {formatDate(event?.timestamp)}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div className="d-flex flex-column">
+                            <div className="d-flex justify-content-between mb-1">
+                              <span>{event?.passwordAnalysis?.strength || 'N/A'}</span>
+                              <span className="fw-bold">{event?.passwordAnalysis?.score || 0}/100</span>
+                            </div>
+                            <CProgress 
+                              thin 
+                              value={event?.passwordAnalysis?.score || 0} 
+                              color={getProgressColor(event?.passwordAnalysis?.score || 0)}
+                            />
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {event?.validationPassed ? (
+                            <CButton color="success" variant="outline" size="sm" className="px-3" disabled>
+                              Success
+                            </CButton>
+                          ) : (
+                            <CButton color="danger" variant="outline" size="sm" className="px-3" disabled>
+                              Failed
+                            </CButton>
+                          )}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <CButton 
+                            color="primary" 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleShowDetails(event)}
+                          >
+                            <FontAwesomeIcon icon={faEye} className="me-1" />
+                            Details
                           </CButton>
-                        ) : (
-                          <CButton color="danger" variant="outline" size="sm" className="px-3" disabled>
-                            Failed
-                          </CButton>
-                        )}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <CButton 
-                          color="primary" 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleShowDetails(event)}
-                        >
-                          <FontAwesomeIcon icon={faEye} className="me-1" />
-                          Details
-                        </CButton>
-                      </CTableDataCell>
-                    </CTableRow>
+                        </CTableDataCell>
+                      </CTableRow>
+                      
+                      {/* History Collapse Section */}
+                      {event?.previousResets && event.previousResets.length > 0 && (
+                        <CTableRow>
+                          <CTableDataCell colSpan="6" className="p-0 border-0">
+                            <CCollapse visible={showHistoryCollapse[event._id]}>
+                              <div className="bg-light p-3">
+                                <h6 className="mb-3">
+                                  <FontAwesomeIcon icon={faHistory} className="me-2 text-primary" />
+                                  Password Reset History
+                                </h6>
+                                <CTable small hover responsive className="mb-0">
+                                  <CTableHead>
+                                    <CTableRow className="bg-white">
+                                      <CTableHeaderCell>Date</CTableHeaderCell>
+                                      <CTableHeaderCell>Strength</CTableHeaderCell>
+                                      <CTableHeaderCell>Status</CTableHeaderCell>
+                                      <CTableHeaderCell>IP Address</CTableHeaderCell>
+                                    </CTableRow>
+                                  </CTableHead>
+                                  <CTableBody>
+                                    {event.previousResets.map((reset, i) => (
+                                      <CTableRow key={i}>
+                                        <CTableDataCell>
+                                          {formatDate(reset.timestamp)}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          <div className="d-flex align-items-center">
+                                            <div style={{ width: '80px' }}>
+                                              <CProgress 
+                                                thin 
+                                                value={reset?.passwordAnalysis?.score || 0} 
+                                                color={getProgressColor(reset?.passwordAnalysis?.score || 0)}
+                                              />
+                                            </div>
+                                            <span className="ms-2 small">
+                                              {reset?.passwordAnalysis?.score || 0}/100
+                                            </span>
+                                          </div>
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          {reset?.validationPassed ? (
+                                            <CBadge color="success" shape="rounded-pill">Success</CBadge>
+                                          ) : (
+                                            <CBadge color="danger" shape="rounded-pill">Failed</CBadge>
+                                          )}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          <FontAwesomeIcon icon={faMapMarkerAlt} className="me-1 text-muted" />
+                                          {reset?.ipAddress || 'N/A'}
+                                        </CTableDataCell>
+                                      </CTableRow>
+                                    ))}
+                                  </CTableBody>
+                                </CTable>
+                              </div>
+                            </CCollapse>
+                          </CTableDataCell>
+                        </CTableRow>
+                      )}
+                    </React.Fragment>
                   ))}
                 </CTableBody>
               </CTable>
@@ -534,6 +642,61 @@ function PasswordResetAnalysisPage() {
                           </ul>
                         </div>
                       )}
+                    </CCardBody>
+                  </CCard>
+                </div>
+              )}
+
+              {selectedEvent.previousResets && selectedEvent.previousResets.length > 0 && (
+                <div className="mb-3">
+                  <h5 className="mb-3">
+                    <FontAwesomeIcon icon={faHistory} className="me-2" />
+                    Password Reset History
+                  </h5>
+                  <CCard className="border">
+                    <CCardBody>
+                      <CTable responsive small hover className="mb-0">
+                        <CTableHead>
+                          <CTableRow className="bg-light">
+                            <CTableHeaderCell>Date</CTableHeaderCell>
+                            <CTableHeaderCell>Password Strength</CTableHeaderCell>
+                            <CTableHeaderCell>Status</CTableHeaderCell>
+                            <CTableHeaderCell>IP Address</CTableHeaderCell>
+                          </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                          {selectedEvent.previousResets.map((reset, index) => (
+                            <CTableRow key={reset._id || index}>
+                              <CTableDataCell>{formatDate(reset.timestamp)}</CTableDataCell>
+                              <CTableDataCell>
+                                <div className="d-flex align-items-center">
+                                  <div style={{ width: '100px' }}>
+                                    <CProgress 
+                                      thin 
+                                      value={reset?.passwordAnalysis?.score || 0} 
+                                      color={getProgressColor(reset?.passwordAnalysis?.score || 0)}
+                                    />
+                                  </div>
+                                  <span className="ms-2">
+                                    {reset?.passwordAnalysis?.strength || 'N/A'} 
+                                    ({reset?.passwordAnalysis?.score || 0}/100)
+                                  </span>
+                                </div>
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                {reset?.validationPassed ? (
+                                  <span className="text-success">Success</span>
+                                ) : (
+                                  <span className="text-danger">Failed</span>
+                                )}
+                              </CTableDataCell>
+                              <CTableDataCell>
+                                {reset?.ipAddress || 'N/A'}
+                              </CTableDataCell>
+                            </CTableRow>
+                          ))}
+                        </CTableBody>
+                      </CTable>
                     </CCardBody>
                   </CCard>
                 </div>

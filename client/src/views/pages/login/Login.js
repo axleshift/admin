@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLoginUserMutation } from "../../../state/adminApi";
 import {
@@ -23,20 +23,17 @@ const Login = () => {
   
   const [data, setData] = useState({ identifier: "", password: "" });
   const [errorMessage, setErrorMessage] = useState(null);
-  
-  
   const [accountLocked, setAccountLocked] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [lockExpiration, setLockExpiration] = useState(null);
   const [securityNotice, setSecurityNotice] = useState(null);
+  const [showOtpOption, setShowOtpOption] = useState(false);
   
   const navigate = useNavigate();
-
-  
   const [loginUser, { isLoading }] = useLoginUserMutation();
 
-  
-  React.useEffect(() => {
+  // Timer for locked accounts
+  useEffect(() => {
     let interval = null;
     
     if (accountLocked && remainingTime > 0) {
@@ -61,10 +58,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    
     setErrorMessage(null);
     setSecurityNotice(null);
-    
     
     if (!data.identifier || !data.password) {
       setErrorMessage("Both username/email and password are required.");
@@ -75,17 +70,14 @@ const Login = () => {
       const response = await loginUser(data).unwrap(); 
       console.log("Login Success:", response);
       
-      
+      // Store tokens in localStorage instead of sessionStorage for cross-tab persistence
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       
-      
       const { id, name, username, role, email, department } = response.user;
-      
       
       let permissions = [];
       if (response.user.permissions) {
-        
         if (Array.isArray(response.user.permissions)) {
           permissions = response.user.permissions;
           console.log("✅ User permissions array:", permissions);
@@ -109,10 +101,8 @@ const Login = () => {
         console.warn("⚠️ No permissions found in user data");
       }
       
-      
       if (permissions.length === 0 && role && department) {
         try {
-          
           const permissionsConfig = await import('../../../components/permissionConfig');
           
           if (permissionsConfig.accessPermissions[role]?.[department]) {
@@ -124,17 +114,16 @@ const Login = () => {
         }
       }
       
+      // Store user data in localStorage instead of sessionStorage
+      localStorage.setItem("userId", id);
+      localStorage.setItem("username", username || "");
+      localStorage.setItem("name", name || "");
+      localStorage.setItem("email", email || "");
+      localStorage.setItem("role", role || "");
+      localStorage.setItem("department", department || "");
+      localStorage.setItem("permissions", JSON.stringify(permissions));
       
-      sessionStorage.setItem("userId", id);
-      sessionStorage.setItem("username", username || "");
-      sessionStorage.setItem("name", name || "");
-      sessionStorage.setItem("email", email || "");
-      sessionStorage.setItem("role", role || "");
-      sessionStorage.setItem("department", department || "");
-      sessionStorage.setItem("permissions", JSON.stringify(permissions));
-      
-      
-      console.log("📦 Session Storage after login:", {
+      console.log("📦 Local Storage after login:", {
         userId: id,
         username: username || "",
         name: name || "",
@@ -144,11 +133,9 @@ const Login = () => {
         permissions: permissions
       });
       
-      
       if (response.securityAlert) {
         setSecurityNotice(response.securityAlert.message || "Unusual activity detected on your account.");
       }
-      
       
       switch (department?.toLowerCase()) {
         case "administrative":
@@ -173,7 +160,6 @@ const Login = () => {
     } catch (err) {
       console.error("Login Failed:", err);
     
-      
       if (err.status === 429) {
         setAccountLocked(true);
     
@@ -192,11 +178,8 @@ const Login = () => {
         }
     
         setErrorMessage(err.data?.message || "Too many failed login attempts. This account is temporarily locked.");
-        
-        
         setShowOtpOption(true);
       } else {
-        
         const remainingAttempts = err.data?.remainingAttempts;
         if (remainingAttempts !== undefined) {
           setErrorMessage(`Invalid credentials. You have ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining.`);
@@ -205,16 +188,14 @@ const Login = () => {
         }
       }
     }
-};
+  };
 
-  
   const formatRemainingTime = () => {
     const minutes = Math.floor(remainingTime / 60);
     const seconds = remainingTime % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  
   const isCurrentAccountLocked = accountLocked && data.identifier !== "";
 
   return (
@@ -264,7 +245,6 @@ const Login = () => {
                         autoComplete="email"
                         value={data.identifier}
                         onChange={(e) => {
-                          
                           if (e.target.value !== data.identifier) {
                             setAccountLocked(false);
                             setErrorMessage(null);

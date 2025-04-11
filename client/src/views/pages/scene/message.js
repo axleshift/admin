@@ -4,8 +4,8 @@ import { CCard, CCardBody, CButton, CSpinner } from "@coreui/react";
 import "./../../../scss/message.scss";
 
 const Message = () => {
-  const department = sessionStorage.getItem("department");
-  const role = sessionStorage.getItem("role");
+  const department = localStorage.getItem("department");
+  const role = localStorage.getItem("role");
 
   const { data, error, isLoading, refetch } = useGetDepartmentMessagesQuery({ department, role });
   const [updateMessageStatus] = useUpdateMessageStatusMutation();
@@ -20,7 +20,7 @@ const Message = () => {
 
   const handleMessageAction = async (messageId, status) => {
     try {
-      const responderUsername = sessionStorage.getItem("username");
+      const responderUsername = localStorage.getItem("username");
       console.log("Updating message:", { messageId, status, responderUsername });
 
       await updateMessageStatus({ id: messageId, status, responderUsername }).unwrap();

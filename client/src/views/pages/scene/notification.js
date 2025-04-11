@@ -40,7 +40,8 @@ const NotificationToast = ({ userId }) => {
     
     return (
       <CToast 
-        autohide={true} 
+        autohide={true}
+        delay={3000 + Math.random() * 2000} // Stagger toasts closing
         visible={true} 
         key={notification._id}
         onClose={() => markNotificationAsRead(notification._id)}
@@ -69,12 +70,22 @@ const NotificationToast = ({ userId }) => {
   
   const markNotificationAsRead = async (notificationId) => {
     try {
-      await axios.patch(
+      const response = await axios.patch(
         `${import.meta.env.VITE_APP_BASE_URL}/notifications/read/${notificationId}`,
         {},
         { withCredentials: true }
       );
+      
+      // Log success
+      if (response.status === 200) {
+        console.log(`Notification ${notificationId} marked as read`);
+      }
     } catch (error) {
+      // Don't keep retrying if the notification wasn't found
+      if (error.response && error.response.status === 404) {
+        console.log(`Notification ${notificationId} no longer exists`);
+        return;
+      }
       console.error("Error marking notification as read:", error);
     }
   };

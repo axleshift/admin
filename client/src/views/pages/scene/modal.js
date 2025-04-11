@@ -9,7 +9,7 @@ import {
 
 const GrantAccessModal = ({ visible, onClose, userId }) => {
   const [selectedPermissions, setSelectedPermissions] = useState([]);
-  const name = sessionStorage.getItem('name');
+  const name = localStorage.getItem('name');
 
   
   const allPermissions = [
