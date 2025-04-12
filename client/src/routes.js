@@ -56,6 +56,7 @@ const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
 const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/index'));
 const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
 const Vehicles = React.lazy (()=> import('./views/pages/integrate/logistic1/vehicles'))
+const Procurement = React.lazy (()=> import ('./views/pages/integrate/logistic1/procurement'))
 
 const Button = React.lazy(()=> import ("./views/pages/scene/button"))
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
@@ -114,7 +115,8 @@ const routes = [
   { path: '/invoice', name:'FreightAudit', element: <ProtectedRoute><Invoice /></ProtectedRoute> },
 
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
-  
+  { path: '/procurement', name:'Procurement', element: <ProtectedRoute><Procurement/></ProtectedRoute>},
+
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
   { path: '/insight', name: 'Insight', element: <ProtectedRoute><Insight/></ProtectedRoute>},
   { path: '/insShipment', name: 'Insight', element: <ProtectedRoute><Shipment_insight/></ProtectedRoute>},

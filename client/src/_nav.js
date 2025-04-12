@@ -469,6 +469,12 @@ const _nav = () => {
           name: 'Vehicles',
           icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
           to: '/vehicles'
+        },
+        {
+          component: CNavItem,
+          name: 'Procurement',
+          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          to: '/procurement'
         }
       );
     }
