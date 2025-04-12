@@ -475,6 +475,12 @@ const _nav = () => {
           name: 'Procurement',
           icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
           to: '/procurement'
+        },
+        {
+          component: CNavItem,
+          name: 'Inventory',
+          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          to: '/inventory'
         }
       );
     }

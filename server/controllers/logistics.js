@@ -58,3 +58,16 @@ export const log2procurement = async (req, res) => {
         })
     }
 }
+export const log2inventory = async (req, res) => {
+  try {
+      const response = await axios.get(`${LOG2_BASE_URL}/api/v1/inventory`);
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching inventory:', error);
+    res.status(error.response?.status || 500).json({
+      message: 'Error fetching inventory data',
+      error: error.message
+    });
+  }
+}
