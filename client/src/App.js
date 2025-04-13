@@ -35,6 +35,14 @@ const AppContent = () => {
     }
   }, [isColorModeSet, setColorMode, storedTheme]);
 
+  const userLog = ()  =>{
+    const keys = ['accesstoken', 'refresh', 'userid', 'username', 'userrole', 'department'];
+  return keys.every(key => localStorage.getItem(key) !== null);
+};
+
+  
+
+
   return (
     <Suspense
       fallback={
@@ -44,7 +52,7 @@ const AppContent = () => {
       }
     >
       <Routes>
-        <Route path="/login" element={<Login />} />
+      <Route path="/login" element={!userLog() && <Login />} />
         <Route path="/OTP" element={<OTP />} />
         <Route path="/systemlogin" element={<SystemLogin />} />
         <Route path="/logout" element={<Logout />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useGetNewUserQuery } from '../../../state/hrApi';
+import axiosInstance from '../../../utils/axiosInstance';
 import { useSaveUserMutation } from '../../../state/adminApi';
 import {
   CCard,
@@ -27,11 +27,15 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const HRUsersPage = () => {
-  // Redux RTK Query hooks
-  const { data: users, isLoading, isError, refetch } = useGetNewUserQuery();
+  // Keep the saveUser mutation from RTK Query
   const [saveUser, { isLoading: isSaving }] = useSaveUserMutation();
-
-  // State management
+  
+  // State for fetched users (replacing useGetNewUserQuery)
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  
+  // Original state management
   const [selectedUsers, setSelectedUsers] = useState({});
   const [errors, setErrors] = useState({});
   const [saveStatus, setSaveStatus] = useState({});
@@ -46,6 +50,32 @@ const HRUsersPage = () => {
     'Core': ['Admin', 'Manager', 'Employee', 'Contractor'],
     'Logistics': ['Admin', 'Manager', 'Employee', 'Contractor']
   };
+
+  // Fetch users from the API
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setIsError(false);
+    
+    try {
+      const response = await axiosInstance.get('/hr/newUsers');
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to replace the refetch from RTK Query
+  const refetch = () => {
+    fetchUsers();
+  };
+
+  // Load users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Validation helpers
   const validateUserSelection = (userId) => {
@@ -101,8 +131,29 @@ const HRUsersPage = () => {
     }));
   };
 
+  // Remove user from local state after successful save
+  const removeUserFromList = (userId) => {
+    setUsers(currentUsers => currentUsers.filter(user => 
+      (user._id || user.id) !== userId
+    ));
+    
+    // Also clean up related state
+    const newSelectedUsers = { ...selectedUsers };
+    const newErrors = { ...errors };
+    const newSaveStatus = { ...saveStatus };
+    
+    delete newSelectedUsers[userId];
+    delete newErrors[userId];
+    delete newSaveStatus[userId];
+    
+    setSelectedUsers(newSelectedUsers);
+    setErrors(newErrors);
+    setSaveStatus(newSaveStatus);
+  };
+
+  // Modified handleSaveUser function with user removal
   const handleSaveUser = async (user) => {
-    const userId = user.id;
+    const userId = user._id || user.id;
     
     // Validate user selection
     const isValid = validateUserSelection(userId);
@@ -111,8 +162,8 @@ const HRUsersPage = () => {
     // Prepare user data
     const userData = {
       id: userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName || user.name?.split(' ')[0] || '',
+      lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || '',
       email: user.email,
       department: selectedUsers[userId].department,
       role: selectedUsers[userId].role
@@ -138,8 +189,18 @@ const HRUsersPage = () => {
         }
       }));
 
-      // Refetch users to update the list
-      refetch();
+      // Remove the user from the list
+      removeUserFromList(userId);
+      
+      // Display temporary success message (optional)
+      setTimeout(() => {
+        setSaveStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[userId];
+          return newStatus;
+        });
+      }, 3000); // Remove success status after 3 seconds
+      
     } catch (error) {
       // Error handling
       setSaveStatus(prev => ({
@@ -163,6 +224,17 @@ const HRUsersPage = () => {
             <h4><FontAwesomeIcon icon={faUserPlus} className="me-2" />New Users Registration</h4>
           </CCardHeader>
           <CCardBody>
+            <div className="d-flex justify-content-end mb-3">
+              <CButton 
+                color="info" 
+                onClick={fetchUsers}
+                disabled={isLoading}
+              >
+                <FontAwesomeIcon icon={faSync} className="me-2" />
+                Refresh
+              </CButton>
+            </div>
+            
             <CTable hover responsive>
               <CTableHead>
                 <CTableRow>
@@ -175,15 +247,19 @@ const HRUsersPage = () => {
               </CTableHead>
               <CTableBody>
                 {users?.map((user) => {
-                  const userId = user.id;
+                  const userId = user._id || user.id;
                   const userSelection = selectedUsers[userId] || {};
                   const userErrors = errors[userId] || {};
                   const saveStatusForUser = saveStatus[userId] || {};
+                  
+                  // Handle different user data formats (MongoDB vs original)
+                  const firstName = user.firstName || user.name?.split(' ')[0] || '';
+                  const lastName = user.lastName || user.name?.split(' ').slice(1).join(' ') || '';
 
                   return (
                     <CTableRow key={userId}>
                       <CTableDataCell>
-                        {user.firstName} {user.lastName}
+                        {firstName} {lastName}
                       </CTableDataCell>
                       <CTableDataCell>{user.email}</CTableDataCell>
                       <CTableDataCell>

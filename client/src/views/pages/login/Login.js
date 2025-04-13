@@ -32,6 +32,41 @@ const Login = () => {
   const navigate = useNavigate();
   const [loginUser, { isLoading }] = useLoginUserMutation();
 
+  // Check for existing login session and auto-navigate
+  useEffect(() => {
+    const checkExistingSession = () => {
+      const accessToken = localStorage.getItem("accessToken");
+      const department = localStorage.getItem("department");
+      
+      if (accessToken) {
+        console.log("Found existing session, navigating to dashboard...");
+        
+        // Navigate based on department
+        switch (department?.toLowerCase()) {
+          case "administrative":
+            navigate("/employeedash");
+            break;
+          case "hr":
+            navigate("/hrdash");
+            break;
+          case "core":
+            navigate("/coredash");
+            break;
+          case "finance":
+            navigate("/financedash");
+            break;
+          case "logistics":
+            navigate("/logisticdash");
+            break;
+          default:
+            navigate("/dashboard"); 
+        }
+      }
+    };
+    
+    checkExistingSession();
+  }, [navigate]);
+
   // Timer for locked accounts
   useEffect(() => {
     let interval = null;

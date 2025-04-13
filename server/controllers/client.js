@@ -107,7 +107,7 @@ export const saveUser = async (req, res) => {
       const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
       
       // Normalize and validate department and role
-      const normalizedDepartment = capitalizeFirstLetter(department.trim());
+      const normalizedDepartment = normalizeString(department.trim());
       const normalizedRole = role.toLowerCase().trim();
       
       // Prepare user data
@@ -201,13 +201,17 @@ export const saveUser = async (req, res) => {
     }
   };
 
-// Utility function to capitalize first letter
-function capitalizeFirstLetter(string) {
+function normalizeString(string) {
   if (!string) return '';
+  
+  // Check if the string is an acronym (all uppercase)
+  if (string === string.toUpperCase() && string.length <= 3) {
+    return string; // Keep acronyms as is
+  }
+  
+  // Otherwise capitalize normally
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
-
-
 
   
 export const loginUser = async (req, res) => {

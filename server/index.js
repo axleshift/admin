@@ -38,6 +38,9 @@ import { setupSocketEvents } from "./UTIL/socketHandlers.js";
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
+import NewUser from "./model/newUser.js";
+import {newuser} from './data/index.js'
+
 // Create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -152,6 +155,7 @@ mongoose
     .then(() => {
         server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
        // startAutoSync();
+    
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 

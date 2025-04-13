@@ -5,7 +5,6 @@ import {
     changeUserRole, 
     deleteUser, 
     getJobPostings, 
-    getJobPostingById,
     getHrDashStats, 
     access,
     getUserPermissions,
@@ -15,7 +14,7 @@ import {
     leave, 
     updateLeaveRequest,
     getpayroll,
-    updatePayrollStatus
+    getAllUsers 
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -31,8 +30,6 @@ router.delete("/worker/:id", deleteUser);
 
 
 
-router.get("/job-postings/:id", getJobPostingById);
-
 
 
 router.get('/hrdash', getHrDashStats)
@@ -41,13 +38,18 @@ router.post('/grant-access', access);
 router.get('/permissions/:userId', getUserPermissions);
 router.post('/revoke-access',revokeAccess);
 
-router.get('/leaveRequest',leave)
-router.put('/leaveRequest/:id', updateLeaveRequest);
-router.get('/payroll', getpayroll);
-router.put('/payroll/:id/status',updatePayrollStatus)
+
 
 // Route to save payroll data to MongoDB
 
+//hr1
+router.get('/newUsers', getAllUsers);
+
 //hr2
 router.get('/job-posting',getJobPostings)
+
+//hr3
+router.get('/leaveRequest',leave)
+router.put('/leaveRequest/:id', updateLeaveRequest);
+router.get('/payroll', getpayroll);
 export default router;

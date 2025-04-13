@@ -4,12 +4,11 @@ import {generateOAuthToken }from '../UTIL/jwt.js'
 import JobPosting from "../model/h2.js";
 import {io}  from '../index.js'
 import axios from 'axios';
-import newuser from '../model/newuserhr.js';
 import dotenv from 'dotenv';
 import notificationUtil from "../UTIL/notificationUtil.js";
+import NewUser from "../model/newUser.js";
 dotenv.config();
 
-const EXTERNAL_HR_API = process.env.EXTERNAL_HR;
 
 const formatUserName = (userData) => {
   if (!userData.name) {
@@ -147,24 +146,11 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-//hr2
+
+
+
 
   
-  export const getJobPostingById = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const jobPosting = await JobPosting.findById(id);
-  
-      if (!jobPosting) {
-        return res.status(404).json({ message: "Job posting not found" });
-      }
-  
-      res.status(200).json(jobPosting); // Send job posting including applications
-    } catch (error) {
-      console.error("Error fetching job posting by ID:", error);
-      res.status(500).json({ message: "Failed to fetch job posting" });
-    }
-  };
 
 
   export const getHrDashStats = async (req,res)=>{
@@ -307,6 +293,97 @@ export const deleteUser = async (req, res) => {
   };
   
 
+
+//hr1
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await NewUser.find().select('-password');
+    res.status(200).json(users);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({
+      message: 'Error fetching users',
+      error: err.message || JSON.stringify(err) || 'Unknown error'
+    });
+  }
+};
+
+
+//hr2
+  const HR2 = process.env.EXTERNAL_Hr2;
+  const Api_Key = process.env.Hr2_api_key;
+  
+  export const getJobPostings = async (req, res) => {
+    try {
+      if (!HR2) {
+        console.error("Error: EXTERNAL_Hr2 is not defined in the environment variables.");
+        
+        // Create notification for configuration error
+        await notificationUtil.createNotification({
+          title: "HR2 Configuration Error",
+          message: "Server configuration error: Missing HR2 API URL",
+          type: "system"
+        });
+        
+        return res.status(500).json({ error: "Server configuration error: Missing HR2 API URL" });
+      }
+  
+      if (!Api_Key) {
+        console.error("Error: Hr2_api_key is not defined in the environment variables.");
+        
+        // Create notification for configuration error
+        await notificationUtil.createNotification({
+          title: "HR2 Configuration Error",
+          message: "Server configuration error: Missing HR2 API key",
+          type: "system"
+        });
+        
+        return res.status(500).json({ error: "Server configuration error: Missing HR2 API key" });
+      }
+  
+      console.log("Fetching data from External HR2 API...");
+  
+      const response = await axios.get(`${HR2}request/jobposting/all`, {
+        headers: {
+          'x-api-key': Api_Key
+        }
+      });
+      
+      
+      // Extract job postings data for notification
+      const jobPostings = response.data.jobPostings || [];
+      const count = Array.isArray(jobPostings) ? jobPostings.length : 0;
+      
+      // Create notification for successful job postings fetch
+      await notificationUtil.createNotification({
+        title: "Job Postings Updated",
+        message: `${count} job postings have been fetched from HR2 system.`,
+        type: "info",
+        metadata: {
+          source: "HR2",
+          endpoint: "jobposting/all",
+          count: count
+        }
+      });
+      
+      // Return the complete response data
+      return res.status(200).json(response.data);
+    } catch (error) {
+      console.error("Error fetching job postings:", error.message);
+      
+      // Create notification for fetch error
+      await notificationUtil.createNotification({
+        title: "Job Postings Fetch Failed",
+        message: `Failed to fetch job postings: ${error.message || "Unknown error"}`,
+        type: "error"
+      });
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch job postings", 
+        details: error.response?.data || error.message 
+      });
+    }
+  };
    // Ensure environment variables are loaded
   
   const HR3 = process.env.EXTERNAL_Hr3;
@@ -460,148 +537,8 @@ export const deleteUser = async (req, res) => {
   };
  
  // Controller function remains the same
- export const updatePayrollStatus = async (req, res) => {
-  const { id } = req.params;
-  const { status, remarks } = req.body;
-  
-  try {
-    // Validate input
-    if (!id) {
-      return res.status(400).json({ error: 'Payroll ID is required' });
-    }
-    
-    if (!status || !['approved', 'rejected'].includes(status.toLowerCase())) {
-      return res.status(400).json({ error: 'Valid status (approved or rejected) is required' });
-    }
-    
-    // Call the HR3 API to update the payroll status
-    const response = await fetch(`${HR3}/api/payrolls/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        payroll_status: status.toLowerCase(),
-        status_remarks: remarks || '' 
-      }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    const updatedPayroll = await response.json();
-    
-    // Create notification for successful payroll status update
-    await notificationUtil.createNotification({
-      title: `Payroll ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-      message: `Payroll for ${updatedPayroll.name} has been ${status.toLowerCase()}.`,
-      type: "system",
-      metadata: {
-        source: "HR3",
-        endpoint: "payroll",
-        payrollId: id,
-        status: status.toLowerCase(),
-        employeeName: updatedPayroll.name
-      }
-    });
-    
-    return res.json(updatedPayroll);
-  } catch (error) {
-    console.error(`Failed to update payroll status:`, error);
-    
-    // Create notification for update error
-    await notificationUtil.createNotification({
-      title: "Payroll Status Update Failed",
-      message: `Failed to update payroll status: ${error.message || "Unknown error"}`,
-      type: "system",
-      metadata: {
-        source: "HR3",
-        endpoint: "payroll",
-        payrollId: id,
-        error: error.message || "Unknown error"
-      }
-    });
-    
-    return res.status(500).json({ error: 'Failed to update payroll status' });
-  }
-};
 
 
 
   
 
-  const HR2 = process.env.EXTERNAL_Hr2;
-  const Api_Key = process.env.Hr2_api_key;
-  
-  export const getJobPostings = async (req, res) => {
-    try {
-      if (!HR2) {
-        console.error("Error: EXTERNAL_Hr2 is not defined in the environment variables.");
-        
-        // Create notification for configuration error
-        await notificationUtil.createNotification({
-          title: "HR2 Configuration Error",
-          message: "Server configuration error: Missing HR2 API URL",
-          type: "system"
-        });
-        
-        return res.status(500).json({ error: "Server configuration error: Missing HR2 API URL" });
-      }
-  
-      if (!Api_Key) {
-        console.error("Error: Hr2_api_key is not defined in the environment variables.");
-        
-        // Create notification for configuration error
-        await notificationUtil.createNotification({
-          title: "HR2 Configuration Error",
-          message: "Server configuration error: Missing HR2 API key",
-          type: "system"
-        });
-        
-        return res.status(500).json({ error: "Server configuration error: Missing HR2 API key" });
-      }
-  
-      console.log("Fetching data from External HR2 API...");
-  
-      const response = await axios.get(`${HR2}request/jobposting/all`, {
-        headers: {
-          'x-api-key': Api_Key
-        }
-      });
-      
-      
-      // Extract job postings data for notification
-      const jobPostings = response.data.jobPostings || [];
-      const count = Array.isArray(jobPostings) ? jobPostings.length : 0;
-      
-      // Create notification for successful job postings fetch
-      await notificationUtil.createNotification({
-        title: "Job Postings Updated",
-        message: `${count} job postings have been fetched from HR2 system.`,
-        type: "info",
-        metadata: {
-          source: "HR2",
-          endpoint: "jobposting/all",
-          count: count
-        }
-      });
-      
-      // Return the complete response data
-      return res.status(200).json(response.data);
-    } catch (error) {
-      console.error("Error fetching job postings:", error.message);
-      
-      // Create notification for fetch error
-      await notificationUtil.createNotification({
-        title: "Job Postings Fetch Failed",
-        message: `Failed to fetch job postings: ${error.message || "Unknown error"}`,
-        type: "error"
-      });
-      
-      return res.status(500).json({ 
-        error: "Failed to fetch job postings", 
-        details: error.response?.data || error.message 
-      });
-    }
-  };

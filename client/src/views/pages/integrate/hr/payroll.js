@@ -20,13 +20,7 @@ import {
   CInputGroupText,
   CBadge,
   CPagination,
-  CPaginationItem,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CFormTextarea
+  CPaginationItem
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -37,10 +31,7 @@ import {
   faSortUp, 
   faSortDown, 
   faEye,
-  faSync,
-  faCheckCircle,
-  faTimesCircle,
-  faSpinner
+  faSync
 } from '@fortawesome/free-solid-svg-icons';
 import CIcon from '@coreui/icons-react';
 
@@ -53,14 +44,6 @@ const PayrollPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
-  // State for approval/rejection modal
-  const [statusModal, setStatusModal] = useState(false);
-  const [selectedPayroll, setSelectedPayroll] = useState(null);
-  const [statusAction, setStatusAction] = useState('');
-  const [statusRemarks, setStatusRemarks] = useState('');
-  const [processingStatus, setProcessingStatus] = useState(false);
-  const [statusError, setStatusError] = useState(null);
-
   useEffect(() => {
     fetchPayrollData();
   }, []);
@@ -200,52 +183,6 @@ const PayrollPage = () => {
     }
   };
 
-  // Handle opening the status modal
-  const openStatusModal = (payroll, action) => {
-    setSelectedPayroll(payroll);
-    setStatusAction(action);
-    setStatusRemarks('');
-    setStatusError(null);
-    setStatusModal(true);
-  };
-
-  // Handle approving or rejecting a payroll
-  const handleStatusUpdate = async () => {
-    if (!selectedPayroll || !statusAction) return;
-    
-    setProcessingStatus(true);
-    setStatusError(null);
-    
-    try {
-      const response = await axiosInstance.put(`/hr/payroll/${selectedPayroll.id}/status`, {
-        status: statusAction,
-        remarks: statusRemarks
-      });
-      
-      // Update the payroll data in the state
-      setPayrollData(prevData => 
-        prevData.map(item => 
-          item.id === selectedPayroll.id 
-            ? { ...item, status: statusAction.charAt(0).toUpperCase() + statusAction.slice(1), payroll_status: statusAction } 
-            : item
-        )
-      );
-      
-      // Close the modal and reset
-      setStatusModal(false);
-      setSelectedPayroll(null);
-      setStatusAction('');
-      setStatusRemarks('');
-      
-      // Show success message (you could add a toast notification here)
-    } catch (err) {
-      console.error(`Failed to ${statusAction} payroll:`, err);
-      setStatusError(`Failed to ${statusAction} payroll. ${err.response?.data?.error || 'Please try again later.'}`);
-    } finally {
-      setProcessingStatus(false);
-    }
-  };
-
   return (
     <div className="mb-4">
       <CRow>
@@ -257,10 +194,7 @@ const PayrollPage = () => {
                 <CButton color="light" className="me-2" onClick={fetchPayrollData}>
                   <FontAwesomeIcon icon={faSync} className="me-1" /> Refresh
                 </CButton>
-                <CButton color="primary">
-                  <FontAwesomeIcon icon={faFileInvoice} className="me-1" /> 
-                  Generate Report
-                </CButton>
+              
               </div>
             </CCardHeader>
             <CCardBody>
@@ -370,9 +304,6 @@ const PayrollPage = () => {
                           >
                             Status {getSortIcon('status')}
                           </CTableHeaderCell>
-                          <CTableHeaderCell className="text-center">
-                            Actions
-                          </CTableHeaderCell>
                         </CTableRow>
                       </CTableHead>
                       <CTableBody>
@@ -393,39 +324,6 @@ const PayrollPage = () => {
                                 <CBadge color={getStatusColor(item.status)}>
                                   {item.status || 'Pending'}
                                 </CBadge>
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center">
-                                {item.status?.toLowerCase() === 'pending' && (
-                                  <>
-                                    <CButton 
-                                      color="success" 
-                                      size="sm" 
-                                      className="me-1"
-                                      onClick={() => openStatusModal(item, 'approved')}
-                                    >
-                                      <FontAwesomeIcon icon={faCheckCircle} className="me-1" />
-                                      Approve
-                                    </CButton>
-                                    <CButton 
-                                      color="danger" 
-                                      size="sm"
-                                      onClick={() => openStatusModal(item, 'rejected')}
-                                    >
-                                      <FontAwesomeIcon icon={faTimesCircle} className="me-1" />
-                                      Reject
-                                    </CButton>
-                                  </>
-                                )}
-                                {item.status?.toLowerCase() !== 'pending' && (
-                                  <CButton 
-                                    color="secondary" 
-                                    size="sm"
-                                    disabled
-                                  >
-                                    <FontAwesomeIcon icon={faEye} className="me-1" />
-                                    View Details
-                                  </CButton>
-                                )}
                               </CTableDataCell>
                             </CTableRow>
                           ))
@@ -474,65 +372,6 @@ const PayrollPage = () => {
           </CCard>
         </CCol>
       </CRow>
-      
-      {/* Approval/Rejection Modal */}
-      <CModal visible={statusModal} onClose={() => setStatusModal(false)}>
-        <CModalHeader onClose={() => setStatusModal(false)}>
-          <CModalTitle>
-            {statusAction === 'approved' ? 'Approve Payroll' : 'Reject Payroll'}
-          </CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          {selectedPayroll && (
-            <>
-              <p>
-                <strong>Employee:</strong> {selectedPayroll.name}<br />
-                <strong>Amount:</strong> {formatCurrency(selectedPayroll.net_salary)}<br />
-                <strong>Period:</strong> {getMonthName(selectedPayroll.month)}, {selectedPayroll.year}
-              </p>
-              <p>
-                Are you sure you want to {statusAction === 'approved' ? 'approve' : 'reject'} this payroll?
-              </p>
-              <CFormTextarea
-                id="statusRemarks"
-                label="Remarks (Optional)"
-                placeholder="Enter any remarks about this decision..."
-                rows={3}
-                value={statusRemarks}
-                onChange={(e) => setStatusRemarks(e.target.value)}
-              />
-              
-              {statusError && (
-                <CAlert color="danger" className="mt-3">
-                  {statusError}
-                </CAlert>
-              )}
-            </>
-          )}
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setStatusModal(false)}>
-            Cancel
-          </CButton>
-          <CButton 
-            color={statusAction === 'approved' ? 'success' : 'danger'} 
-            onClick={handleStatusUpdate}
-            disabled={processingStatus}
-          >
-            {processingStatus ? (
-              <>
-                <FontAwesomeIcon icon={faSpinner} spin className="me-1" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={statusAction === 'approved' ? faCheckCircle : faTimesCircle} className="me-1" />
-                {statusAction === 'approved' ? 'Approve' : 'Reject'}
-              </>
-            )}
-          </CButton>
-        </CModalFooter>
-      </CModal>
     </div>
   );
 };
