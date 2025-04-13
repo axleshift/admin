@@ -15,14 +15,9 @@ import {
 } from '@coreui/react';
 import { usePostForgotPasswordMutation } from '../../../../state/adminApi';
 import { 
-  usePostToHrMutation, 
-  usePostToFinanceMutation, 
-  usePostToCoreMutation, 
-  usePostToLogisticsMutation,
   useGetWorkersQuery, 
   useChangeRoleMutation, 
-  useFireUserMutation,
-  usePostgenerateMutation 
+  useFireUserMutation
 } from '../../../../state/hrApi';
 import CustomHeader from '../../../../components/header/customhead';
 import Papa from 'papaparse';
@@ -31,20 +26,17 @@ import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import GrantAccessModal from '../../scene/modal.js';
 import axios from 'axios';
 
-
 import logActivity from './../../../../utils/activityLogger';
 
 const Works = () => {
   const { data, isLoading, error } = useGetWorkersQuery();
   const [changeRole] = useChangeRoleMutation();
   const [fireUser] = useFireUserMutation();
-  const [postGenerate] = usePostgenerateMutation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
-  const [oauthToken, setOauthToken] = useState(null);
   const [downloadAllClicked, setDownloadAllClicked] = useState(false);
   const [roleChangeTracked, setRoleChangeTracked] = useState({ userId: null, userName: null, newRole: null });
   const [deleteTracked, setDeleteTracked] = useState({ userId: null, userName: null });
@@ -52,16 +44,12 @@ const Works = () => {
   const [accessButtonClicked, setAccessButtonClicked] = useState(false);
   const [forgotPasswordMutation] = usePostForgotPasswordMutation();
 
-  
-  const userRole = sessionStorage.getItem('role');
-  const userDepartment = sessionStorage.getItem('department');
-  const userName = sessionStorage.getItem('name');
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userName = localStorage.getItem('name');
 
-  
-  const [postToHr] = usePostToHrMutation();
-  const [postToFinance] = usePostToFinanceMutation();
-  const [postToCore] = usePostToCoreMutation();
-  const [postToLogistics] = usePostToLogisticsMutation();
+  // Check if user is superadmin and from Administrative department
+  const isSuperAdminAndAdministrative = userRole === 'superadmin' && userDepartment === 'Administrative';
 
   useEffect(() => {
     if (selectedEmployeeId) {
@@ -71,7 +59,6 @@ const Works = () => {
   }, [selectedEmployeeId]); 
 
   useEffect(() => {
-    
     logActivity({
       name: userName,
       role: userRole,
@@ -88,7 +75,6 @@ const Works = () => {
   const handleEmployeeClick = (id) => {
     setSelectedEmployeeId((prevId) => (prevId === id ? null : id));
     
-    
     if (id && !selectedEmployeeId) {
       const employee = data.find(user => user._id === id);
       logActivity({
@@ -101,7 +87,6 @@ const Works = () => {
       });
     }
   };
-  
   
   const stopPropagation = (e) => {
     e.stopPropagation();
@@ -117,10 +102,8 @@ const Works = () => {
       await changeRole({ userId, newRole });
       alert('Role updated successfully!');
 
-      
       const user = data.find((user) => user._id === userId);
       const userName = user ? user.name : 'Unknown User';
-      
       
       logActivity({
         name: userName,
@@ -133,7 +116,6 @@ const Works = () => {
 
     } catch (err) {
       alert('Error updating role');
-      
       
       logActivity({
         name: userName,
@@ -149,14 +131,12 @@ const Works = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        
         const user = data.find((user) => user._id === userId);
         const targetUserName = user ? user.name : 'Unknown User';
         
         await fireUser({ userId });
         alert('User deleted successfully!');
 
-        
         logActivity({
           name: userName,
           role: userRole,
@@ -169,7 +149,6 @@ const Works = () => {
       } catch (err) {
         alert('Error deleting user');
         
-        
         logActivity({
           name: userName,
           role: userRole,
@@ -181,8 +160,6 @@ const Works = () => {
       }
     }
   };
-
-
 
   const handleDownloadAll = () => {
     const columns = ['Username', 'Name', 'Email', 'Phone Number', 'Country', 'Occupation', 'Role', 'Department'];
@@ -219,7 +196,6 @@ const Works = () => {
     });
   };
   
-
   const filteredData = data.filter((item) => {
     const username = item.username || ""; 
     const email = item.email || ""; 
@@ -235,96 +211,6 @@ const Works = () => {
     return matchesSearch && matchesDepartment && matchesRole;
   });
   
-  const handleGenerateAndSend = async (userId, department) => {
-    try {
-      const tokenResponse = await postGenerate(userId).unwrap();
-      const { token, message } = tokenResponse;
-      setOauthToken(token);
-      alert(message);
-  
-      const userData = data.find((user) => user._id === userId);
-      const payload = {
-        ...userData,
-        oauthToken: token,
-        department: department.toUpperCase(),
-      };
-  
-      let response;
-      switch (department.toLowerCase()) {
-        case 'hr':
-          response = await postToHr({ payload }).unwrap();
-          break;
-        case 'finance':
-          response = await postToFinance({ payload }).unwrap();
-          break;
-        case 'core':
-          response = await postToCore({ payload }).unwrap();
-          break;
-        case 'logistics':
-          response = await postToLogistics({ payload }).unwrap();
-          break;
-        default:
-          throw new Error('Invalid department');
-      }
-  
-      console.log(`Response from ${department}:`, response);
-      alert(response.message);
-      
-      
-      logActivity({
-        name: userName,
-        role: userRole,
-        department: userDepartment,
-        route: '/employees',
-        action: 'Send to Department',
-        description: `Sent user ${userData?.name || 'Unknown'} data to ${department} department`
-      });
-      
-    } catch (error) {
-      console.error('Error during generation and sending:', error);
-      alert('Failed to generate token or send data.');
-      
-      
-      logActivity({
-        name: userName,
-        role: userRole,
-        department: userDepartment,
-        route: '/employees',
-        action: 'Send to Department Failed',
-        description: `Failed to send user data to ${department} department`
-      });
-    }
-  };
-
-  const handleDepartmentGenerateToken = () => {
-    if (selectedDepartment === 'all') {
-      alert('Please select a department to generate token.');
-      return;
-    }
-    
-    
-    const departmentEmployees = filteredData.filter(employee => employee.department === selectedDepartment);
-    
-    if (departmentEmployees.length === 0) {
-      alert(`No employees found in ${selectedDepartment} department.`);
-      return;
-    }
-    
-    departmentEmployees.forEach(employee => {
-      handleGenerateAndSend(employee._id, selectedDepartment);
-    });
-    
-    
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/employees',
-      action: 'Bulk Send to Department',
-      description: `Sent ${departmentEmployees.length} employees' data to ${selectedDepartment} department`
-    });
-  };
-   
   const handleResetPassword = async (userId) => {
     try {
       const user = data.find(user => user._id === userId);
@@ -336,9 +222,7 @@ const Works = () => {
 
       const response = await forgotPasswordMutation(user.email).unwrap();
       
-      
       alert(response.message || 'Reset password link sent successfully');
-      
       
       logActivity({
         name: userName,
@@ -350,10 +234,8 @@ const Works = () => {
       });
       
     } catch (err) {
-      
       console.error('Error resetting password:', err);
       alert(err.message || 'Failed to send reset password link');
-      
       
       logActivity({
         name: userName,
@@ -378,7 +260,6 @@ const Works = () => {
             onChange={(e) => {
               setSearchTerm(e.target.value);
               
-              
               if (e.target.value && e.target.value.length >= 3) {
                 logActivity({
                   name: userName,
@@ -399,7 +280,6 @@ const Works = () => {
               value={selectedDepartment}
               onChange={(e) => {
                 setSelectedDepartment(e.target.value);
-                
                 
                 if (e.target.value !== 'all') {
                   logActivity({
@@ -430,7 +310,6 @@ const Works = () => {
               onChange={(e) => {
                 setSelectedRoleFilter(e.target.value);
                 
-                
                 if (e.target.value !== 'all') {
                   logActivity({
                     name: userName,
@@ -455,21 +334,16 @@ const Works = () => {
 
           <CCol xs="4" className="d-flex justify-content-end">
             <div className="d-flex align-items-center">
-              <CButton 
-                color="info" 
-                onClick={handleDownloadAll} 
-                size="sm" 
-                className="me-2"
-              >
-                <FontAwesomeIcon icon={faDownload} /> Download All
-              </CButton>
-              <CButton 
-                color="success" 
-                onClick={handleDepartmentGenerateToken} 
-                size="sm"
-              >
-                Send to {selectedDepartment} Department
-              </CButton>
+              {isSuperAdminAndAdministrative && (
+                <CButton 
+                  color="info" 
+                  onClick={handleDownloadAll} 
+                  size="sm" 
+                  className="me-2"
+                >
+                  <FontAwesomeIcon icon={faDownload} /> Download All
+                </CButton>
+              )}
             </div>
           </CCol>
         </CRow>
@@ -480,10 +354,8 @@ const Works = () => {
             className="mb-3"
             style={{ cursor: 'pointer' }}
             onClick={(e) => {
-              
               if (!e.target.closest('button')) {
                 console.log("🟢 Card Clicked ID:", item._id);
-                
                 
                 if (selectedEmployeeId !== item._id) {
                   logActivity({
@@ -505,41 +377,41 @@ const Works = () => {
               <h4>
                 {item.username} - {item.name}
               </h4>
-              <CButton
-                color="primary"
-                onClick={(e) => {
-                  e.stopPropagation(); 
-                  console.log("✅ Button Clicked ID:", item._id);
-                  
-                  
-                  logActivity({
-                    name: userName,
-                    role: userRole,
-                    department: userDepartment,
-                    route: '/employees',
-                    action: 'Access Management',
-                    description: `Opened access management for: ${item.name}`
-                  });
-                  
-                  setSelectedEmployeeId(item._id); 
-                  setAccessButtonClicked(true); 
-                  
-                  setTimeout(() => {
-                    setShowModal(true); 
-                  }, 100);
-                }}
-              >
-                Access
-              </CButton>
+              {isSuperAdminAndAdministrative && (
+                <CButton
+                  color="primary"
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    console.log("✅ Button Clicked ID:", item._id);
+                    
+                    logActivity({
+                      name: userName,
+                      role: userRole,
+                      department: userDepartment,
+                      route: '/employees',
+                      action: 'Access Management',
+                      description: `Opened access management for: ${item.name}`
+                    });
+                    
+                    setSelectedEmployeeId(item._id); 
+                    setAccessButtonClicked(true); 
+                    
+                    setTimeout(() => {
+                      setShowModal(true); 
+                    }, 100);
+                  }}
+                >
+                  Access
+                </CButton>
+              )}
             </CCardHeader>
           
             {/* Grant Access Modal */}
-            {selectedEmployeeId && accessButtonClicked && (
+            {selectedEmployeeId && accessButtonClicked && isSuperAdminAndAdministrative && (
               <GrantAccessModal
                 visible={showModal}
                 onClose={() => {
                   setShowModal(false);
-                  
                   
                   logActivity({
                     name: userName,
@@ -566,86 +438,75 @@ const Works = () => {
                   <CListGroupItem>Occupation: {item.occupation}</CListGroupItem>
                   <CListGroupItem>Role: {item.role}</CListGroupItem>
                   <CListGroupItem>Department: {item.department}</CListGroupItem>
-                  <CListGroupItem>
-                    <CFormSelect
-                      value={selectedRole[item._id] || ''}
-                      onClick={(e) => e.stopPropagation()} 
-                      onChange={(e) => {
-                        const newRole = e.target.value;
-                        setSelectedRole({
-                          ...selectedRole,
-                          [item._id]: newRole,
-                        });
-                        
-                        
-                        if (newRole) {
-                          logActivity({
-                            name: userName,
-                            role: userRole,
-                            department: userDepartment,
-                            route: '/employees',
-                            action: 'Select Role',
-                            description: `Selected role ${newRole} for ${item.name}`
-                          });
-                        }
-                      }}
-                    >
-                      <option value="">Select Role</option>
-                      <option value="superadmin">Super Admin</option>
-                      <option value="admin">Admin</option>
-                      <option value="manager">Manager</option>
-                      <option value="employee">Employee</option>
-                    </CFormSelect>
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    <CButton
-                      color="primary"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRoleChange(item._id);
-                      }}
-                    >
-                      Change Role
-                    </CButton>
-                    <CButton
-                      color="danger"
-                      size="sm"
-                      className="ms-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteUser(item._id);
-                      }}
-                    >
-                      Fire User
-                    </CButton>
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    {item.department !== 'Administrative' && (
-                      <CButton
-                        color="info"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGenerateAndSend(item._id, item.department);
-                        }}
-                      >
-                        Send to {item.department}
-                      </CButton>
-                    )}
-                  </CListGroupItem>
-                  <CListGroupItem>
-                    <CButton
-                      color="info"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleResetPassword(item._id);
-                      }}
-                    >
-                      Send link to reset password
-                    </CButton>
-                  </CListGroupItem>
+                  {isSuperAdminAndAdministrative && (
+                    <>
+                      <CListGroupItem>
+                        <CFormSelect
+                          value={selectedRole[item._id] || ''}
+                          onClick={(e) => e.stopPropagation()} 
+                          onChange={(e) => {
+                            const newRole = e.target.value;
+                            setSelectedRole({
+                              ...selectedRole,
+                              [item._id]: newRole,
+                            });
+                            
+                            if (newRole) {
+                              logActivity({
+                                name: userName,
+                                role: userRole,
+                                department: userDepartment,
+                                route: '/employees',
+                                action: 'Select Role',
+                                description: `Selected role ${newRole} for ${item.name}`
+                              });
+                            }
+                          }}
+                        >
+                          <option value="">Select Role</option>
+                          <option value="superadmin">Super Admin</option>
+                          <option value="admin">Admin</option>
+                          <option value="manager">Manager</option>
+                          <option value="employee">Employee</option>
+                        </CFormSelect>
+                      </CListGroupItem>
+                      <CListGroupItem>
+                        <CButton
+                          color="primary"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRoleChange(item._id);
+                          }}
+                        >
+                          Change Role
+                        </CButton>
+                        <CButton
+                          color="danger"
+                          size="sm"
+                          className="ms-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(item._id);
+                          }}
+                        >
+                          Fire User
+                        </CButton>
+                      </CListGroupItem>
+                      <CListGroupItem>
+                        <CButton
+                          color="info"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetPassword(item._id);
+                          }}
+                        >
+                          Send link to reset password
+                        </CButton>
+                      </CListGroupItem>
+                    </>
+                  )}
                 </CListGroup>
               </CCardBody>
             )}
