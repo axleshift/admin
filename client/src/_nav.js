@@ -91,7 +91,6 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
-        '/announce',
         '/restore',
         '/recovery',
         '/Toasts',
@@ -101,7 +100,6 @@ const _nav = () => {
         '/Request',
         './usermanagement',
         '/button',
-        '/announce'
       ],
       HR: [
         '/employeedash',
@@ -119,7 +117,6 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
-        '/announce',
         '/restore',
         '/button',
         '/recovery',
@@ -143,7 +140,6 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
-        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -166,7 +162,6 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
-        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -189,7 +184,6 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
-        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -329,12 +323,7 @@ const _nav = () => {
           to: '/registernew'
         },
       
-        {
-          component: CNavItem,
-          name:'Announce',
-          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
-          to:'/announce'
-        },
+      
       
        
       );
@@ -505,12 +494,7 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
-        {
-          component: CNavItem,
-          name:'Password Analysis',
-          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
-          to:'/passwordanalysis'
-        },
+        
        
       )
     }

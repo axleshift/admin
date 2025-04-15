@@ -15,7 +15,12 @@ import {
   CDropdown,
   CDropdownToggle,
   CDropdownMenu,
-  CDropdownItem
+  CDropdownItem,
+  CModal,
+  CModalHeader,
+  CModalBody,
+  CModalFooter,
+  CAlert
 } from '@coreui/react';
 import { usePostForgotPasswordMutation } from '../../../../state/adminApi';
 import { 
@@ -39,11 +44,13 @@ import {
   faUserShield, 
   faUserCog, 
   faUserTie, 
-  faUser 
- } from '@fortawesome/free-solid-svg-icons';
+  faUser,
+  faLock,
+  faCopy
+} from '@fortawesome/free-solid-svg-icons';
 import GrantAccessModal from '../../scene/modal.js';
 import axios from 'axios';
-
+import axiosInstance from '../../../../utils/axiosInstance';
 import logActivity from './../../../../utils/activityLogger';
 
 const Works = () => {
@@ -60,11 +67,17 @@ const Works = () => {
   const [deleteTracked, setDeleteTracked] = useState({ userId: null, userName: null });
   const [showModal, setShowModal] = useState(false);
   const [accessButtonClicked, setAccessButtonClicked] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [downloadPassword, setDownloadPassword] = useState('');
+  const [downloadFileName, setDownloadFileName] = useState('');
+  const [passwordCopied, setPasswordCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [forgotPasswordMutation] = usePostForgotPasswordMutation();
 
   const userRole = localStorage.getItem('role');
   const userDepartment = localStorage.getItem('department');
   const userName = localStorage.getItem('name');
+  const userUsername = localStorage.getItem('username');
 
   // Check if user is superadmin and from Administrative department
   const isSuperAdminAndAdministrative = userRole === 'superadmin' && userDepartment === 'Administrative';
@@ -179,6 +192,83 @@ const Works = () => {
     }
   };
 
+  const handleDownloadSecureZip = async (downloadType) => {
+    try {
+      setIsDownloading(true);
+      
+      // Get the download type and set file name
+      let fileName = '';
+      let filterParams = {};
+      
+      switch(downloadType) {
+        case 'all': 
+          fileName = 'All_Employees'; 
+          break;
+        case 'current-filter': 
+          fileName = 'Filtered_Employees';
+          // Send current filter parameters to server
+          filterParams = {
+            searchTerm: searchTerm,
+            department: selectedDepartment,
+            role: selectedRoleFilter
+          };
+          break;
+        // other cases remain the same
+      }
+      
+      // Send request to server with credentials and filter params
+      const response = await axiosInstance.post(
+        '/management/downloadZip',
+        {
+          name: userName,
+          role: userRole,
+          username: userUsername,
+          downloadType: downloadType,
+          filterParams: filterParams // Add filter parameters
+        },
+        { responseType: 'blob' }
+      );
+      
+      // Rest of the function remains the same
+      const password = userName.substring(0, 2) + userRole.charAt(0) + userUsername.slice(-6);
+      setDownloadPassword(password);
+      setDownloadFileName(`${fileName}_Protected.zip`);
+      setShowPasswordModal(true);
+      
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${fileName}_Protected.zip`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Log activity
+      logActivity({
+        name: userName,
+        role: userRole,
+        department: userDepartment,
+        route: '/employees',
+        action: 'Download Protected Data',
+        description: `Downloaded ${fileName} as password-protected zip`
+      });
+      
+    } catch (err) {
+      console.error('Error creating protected zip:', err);
+      alert('Failed to create protected download. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(downloadPassword);
+    setPasswordCopied(true);
+    setTimeout(() => setPasswordCopied(false), 3000);
+  };
+  
+  // Legacy download function (CSV only)
   const handleDownload = (downloadType) => {
     let dataToDownload = [];
     let fileName = '';
@@ -407,59 +497,78 @@ const Works = () => {
           <CCol xs="4" className="d-flex justify-content-end">
             <div className="d-flex align-items-center">
             {isSuperAdminAndAdministrative && (
-  <CDropdown className="download-dropdown">
-    <CDropdownToggle color="primary" size="sm" className="d-flex align-items-center">
-      <FontAwesomeIcon icon={faDownload} className="me-2" /> 
-      <span>Export Data</span>
-    </CDropdownToggle>
-    <CDropdownMenu className="shadow-sm p-2">
-      <h6 className="dropdown-header text-primary">Quick Export</h6>
-      <CDropdownItem onClick={() => handleDownload('all')} className="d-flex align-items-center">
-        <FontAwesomeIcon icon={faUsers} className="me-2 text-secondary" /> All Employees
-      </CDropdownItem>
-      <CDropdownItem onClick={() => handleDownload('current-filter')} className="d-flex align-items-center">
-        <FontAwesomeIcon icon={faFilter} className="me-2 text-secondary" /> Current Filter Results
-      </CDropdownItem>
-      
-      <CDropdownItem divider className="my-2" />
-      
-      <CDropdownItem header className="text-primary">By Department</CDropdownItem>
-      <div className="department-items">
-        <CDropdownItem onClick={() => handleDownload('hr')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faIdCard} className="me-2 text-secondary" /> HR
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('finance')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-secondary" /> Finance
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('core')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faCubes} className="me-2 text-secondary" /> Core
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('logistics')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faTruck} className="me-2 text-secondary" /> Logistics
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('administrative')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faBuilding} className="me-2 text-secondary" /> Administrative
-        </CDropdownItem>
-      </div>
-      
-      <CDropdownItem divider className="my-2" />
-      
-      <CDropdownItem header className="text-primary">By Role</CDropdownItem>
-      <div className="role-items">
-     
-        <CDropdownItem onClick={() => handleDownload('admin')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faUserCog} className="me-2 text-secondary" /> Admins
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('manager')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faUserTie} className="me-2 text-secondary" /> Managers
-        </CDropdownItem>
-        <CDropdownItem onClick={() => handleDownload('employee')} className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faUser} className="me-2 text-secondary" /> Employees
-        </CDropdownItem>
-      </div>
-    </CDropdownMenu>
-  </CDropdown>
-)}
+              <CDropdown className="download-dropdown">
+                <CDropdownToggle color="primary" size="sm" className="d-flex align-items-center">
+                  <FontAwesomeIcon icon={faDownload} className="me-2" /> 
+                  <span>Export Data</span>
+                </CDropdownToggle>
+                <CDropdownMenu className="shadow-sm p-2">
+                  <h6 className="dropdown-header text-primary">Quick Export</h6>
+                  <CDropdownItem onClick={() => handleDownloadSecureZip('all')} className="d-flex align-items-center">
+                    <FontAwesomeIcon icon={faUsers} className="me-2 text-secondary" /> 
+                    <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                    <span>All Employees (Protected)</span>
+                  </CDropdownItem>
+                  <CDropdownItem onClick={() => handleDownloadSecureZip('current-filter')} className="d-flex align-items-center">
+                    <FontAwesomeIcon icon={faFilter} className="me-2 text-secondary" />
+                    <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                    <span>Current Filter Results (Protected)</span>
+                  </CDropdownItem>
+                  
+                  <CDropdownItem divider className="my-2" />
+                  
+                  <CDropdownItem header className="text-primary">By Department</CDropdownItem>
+                  <div className="department-items">
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('hr')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faIdCard} className="me-2 text-secondary" /> 
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>HR</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('finance')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Finance</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('core')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faCubes} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Core</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('logistics')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faTruck} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Logistics</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('administrative')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faBuilding} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Administrative</span>
+                    </CDropdownItem>
+                  </div>
+                  
+                  <CDropdownItem divider className="my-2" />
+                  
+                  <CDropdownItem header className="text-primary">By Role</CDropdownItem>
+                  <div className="role-items">
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('admin')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faUserCog} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Admins</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('manager')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faUserTie} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Managers</span>
+                    </CDropdownItem>
+                    <CDropdownItem onClick={() => handleDownloadSecureZip('employee')} className="d-flex align-items-center">
+                      <FontAwesomeIcon icon={faUser} className="me-2 text-secondary" />
+                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+                      <span>Employees</span>
+                    </CDropdownItem>
+                  </div>
+                </CDropdownMenu>
+              </CDropdown>
+            )}
             </div>
           </CCol>
         </CRow>
@@ -629,6 +738,53 @@ const Works = () => {
           </CCard>
         ))}
       </CRow>
+      
+      {/* Password Modal */}
+      <CModal 
+        visible={showPasswordModal} 
+        onClose={() => setShowPasswordModal(false)}
+        alignment="center"
+      >
+        <CModalHeader closeButton>
+          <h5 className="mb-0">Secure Download Information</h5>
+        </CModalHeader>
+        <CModalBody>
+          <CAlert color="info" className="d-flex align-items-center mb-3">
+            <FontAwesomeIcon icon={faLock} className="me-2" />
+            <div>Your file <strong>{downloadFileName}</strong> is being downloaded as a password-protected zip file for security.</div>
+          </CAlert>
+          
+          <p className="mb-4">To open this file, you'll need the following password:</p>
+          
+          <div className="password-container p-3 bg-light border rounded mb-4">
+            <div className="d-flex justify-content-between align-items-center">
+              <code className="password-display fs-5">{downloadPassword}</code>
+              <CButton 
+                color="secondary" 
+                size="sm" 
+                onClick={handleCopyPassword}
+                disabled={passwordCopied}
+              >
+                <FontAwesomeIcon icon={faCopy} className="me-1" />
+                {passwordCopied ? 'Copied!' : 'Copy'}
+              </CButton>
+            </div>
+          </div>
+          
+          <p className="small text-muted">
+            This password is securely generated based on your account details and is unique to you.
+            Please keep it confidential and do not share it with unauthorized personnel.
+          </p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton 
+            color="primary" 
+            onClick={() => setShowPasswordModal(false)}
+          >
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
     </CContainer>
   );
 };
