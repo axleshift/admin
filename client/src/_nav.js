@@ -274,7 +274,6 @@ const _nav = () => {
           name: 'Dashboard',
           to: 'employeedash',
           icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
-          badge: { color: 'info', text: 'NEW' },
         }
       );
     }

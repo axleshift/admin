@@ -12,6 +12,10 @@ import {
   CFormInput,
   CFormSelect,
   CBadge,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem
 } from '@coreui/react';
 import { usePostForgotPasswordMutation } from '../../../../state/adminApi';
 import { 
@@ -19,10 +23,24 @@ import {
   useChangeRoleMutation, 
   useFireUserMutation
 } from '../../../../state/hrApi';
+
 import CustomHeader from '../../../../components/header/customhead';
 import Papa from 'papaparse';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import {  
+  faDownload, 
+  faUsers, 
+  faFilter, 
+  faIdCard, 
+  faMoneyBillWave, 
+  faCubes, 
+  faTruck, 
+  faBuilding,
+  faUserShield, 
+  faUserCog, 
+  faUserTie, 
+  faUser 
+ } from '@fortawesome/free-solid-svg-icons';
 import GrantAccessModal from '../../scene/modal.js';
 import axios from 'axios';
 
@@ -161,27 +179,81 @@ const Works = () => {
     }
   };
 
-  const handleDownloadAll = () => {
+  const handleDownload = (downloadType) => {
+    let dataToDownload = [];
+    let fileName = '';
+    
+    // Filter the data based on downloadType
+    switch(downloadType) {
+      case 'all':
+        dataToDownload = filteredData;
+        fileName = 'All_Employees';
+        break;
+      case 'current-filter':
+        dataToDownload = filteredData;
+        fileName = 'Filtered_Employees';
+        break;
+      case 'hr':
+        dataToDownload = data.filter(item => item.department === 'HR');
+        fileName = 'HR_Employees';
+        break;
+      case 'finance':
+        dataToDownload = data.filter(item => item.department === 'Finance');
+        fileName = 'Finance_Employees';
+        break;
+      case 'core':
+        dataToDownload = data.filter(item => item.department === 'Core');
+        fileName = 'Core_Employees';
+        break;
+      case 'logistics':
+        dataToDownload = data.filter(item => item.department === 'Logistics');
+        fileName = 'Logistics_Employees';
+        break;
+      case 'administrative':
+        dataToDownload = data.filter(item => item.department === 'Administrative');
+        fileName = 'Administrative_Employees';
+        break;
+      case 'superadmin':
+        dataToDownload = data.filter(item => item.role === 'superadmin');
+        fileName = 'SuperAdmin_Employees';
+        break;
+      case 'admin':
+        dataToDownload = data.filter(item => item.role === 'admin');
+        fileName = 'Admin_Employees';
+        break;
+      case 'manager':
+        dataToDownload = data.filter(item => item.role === 'manager');
+        fileName = 'Manager_Employees';
+        break;
+      case 'employee':
+        dataToDownload = data.filter(item => item.role === 'employee');
+        fileName = 'Regular_Employees';
+        break;
+      default:
+        dataToDownload = filteredData;
+        fileName = 'Employees';
+    }
+    
     const columns = ['Username', 'Name', 'Email', 'Phone Number', 'Country', 'Occupation', 'Role', 'Department'];
-    const data = filteredData.map(item => [
+    const rows = dataToDownload.map(item => [
       item.username,
       item.name,
       item.email,
-      item.phoneNumber,
+      item.phoneNumber || 'N/A',
       item.country,
       item.occupation,
       item.role,
       item.department
     ]);
   
-    const csvContent = Papa.unparse([columns, ...data]);
+    const csvContent = Papa.unparse([columns, ...rows]);
   
     // Trigger download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'All_Employees.csv';
+    a.download = `${fileName}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   
@@ -192,7 +264,7 @@ const Works = () => {
       department: userDepartment,
       route: '/employees',
       action: 'Download Data',
-      description: `Downloaded employee data (${filteredData.length} records)`
+      description: `Downloaded ${fileName} data (${dataToDownload.length} records)`
     });
   };
   
@@ -334,16 +406,60 @@ const Works = () => {
 
           <CCol xs="4" className="d-flex justify-content-end">
             <div className="d-flex align-items-center">
-              {isSuperAdminAndAdministrative && (
-                <CButton 
-                  color="info" 
-                  onClick={handleDownloadAll} 
-                  size="sm" 
-                  className="me-2"
-                >
-                  <FontAwesomeIcon icon={faDownload} /> Download All
-                </CButton>
-              )}
+            {isSuperAdminAndAdministrative && (
+  <CDropdown className="download-dropdown">
+    <CDropdownToggle color="primary" size="sm" className="d-flex align-items-center">
+      <FontAwesomeIcon icon={faDownload} className="me-2" /> 
+      <span>Export Data</span>
+    </CDropdownToggle>
+    <CDropdownMenu className="shadow-sm p-2">
+      <h6 className="dropdown-header text-primary">Quick Export</h6>
+      <CDropdownItem onClick={() => handleDownload('all')} className="d-flex align-items-center">
+        <FontAwesomeIcon icon={faUsers} className="me-2 text-secondary" /> All Employees
+      </CDropdownItem>
+      <CDropdownItem onClick={() => handleDownload('current-filter')} className="d-flex align-items-center">
+        <FontAwesomeIcon icon={faFilter} className="me-2 text-secondary" /> Current Filter Results
+      </CDropdownItem>
+      
+      <CDropdownItem divider className="my-2" />
+      
+      <CDropdownItem header className="text-primary">By Department</CDropdownItem>
+      <div className="department-items">
+        <CDropdownItem onClick={() => handleDownload('hr')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faIdCard} className="me-2 text-secondary" /> HR
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('finance')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-secondary" /> Finance
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('core')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faCubes} className="me-2 text-secondary" /> Core
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('logistics')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faTruck} className="me-2 text-secondary" /> Logistics
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('administrative')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faBuilding} className="me-2 text-secondary" /> Administrative
+        </CDropdownItem>
+      </div>
+      
+      <CDropdownItem divider className="my-2" />
+      
+      <CDropdownItem header className="text-primary">By Role</CDropdownItem>
+      <div className="role-items">
+     
+        <CDropdownItem onClick={() => handleDownload('admin')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faUserCog} className="me-2 text-secondary" /> Admins
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('manager')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faUserTie} className="me-2 text-secondary" /> Managers
+        </CDropdownItem>
+        <CDropdownItem onClick={() => handleDownload('employee')} className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faUser} className="me-2 text-secondary" /> Employees
+        </CDropdownItem>
+      </div>
+    </CDropdownMenu>
+  </CDropdown>
+)}
             </div>
           </CCol>
         </CRow>

@@ -24,7 +24,6 @@ import {
   CSpinner
 } from "@coreui/react";
 import { useGethrdashQuery, useGetJobPostingsQuery } from "../../state/hrApi";
-import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import axiosInstance from '../../utils/axiosInstance';
 
 const Hrdash = () => {
@@ -57,14 +56,69 @@ const Hrdash = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Format currency
-  const formatCurrency = (amount) => {
+  // Auto-detect and format currency
+  const autoDetectAndFormatCurrency = (amount) => {
     if (amount === undefined || amount === null) return 'N/A';
     
+    // Convert to string if it's a number
+    const amountStr = typeof amount === 'number' ? amount.toString() : amount;
+    
+    // Remove whitespace and common separators to help with detection
+    const sanitized = amountStr.replace(/[\s,]/g, '');
+    
+    // Currency symbol detection patterns
+    const currencyPatterns = {
+      '$': 'USD',
+      '₱': 'PHP',
+      '€': 'EUR',
+      '£': 'GBP',
+      '¥': 'JPY',
+      '₩': 'KRW',
+      '₹': 'INR',
+      'R$': 'BRL',
+      'A$': 'AUD',
+      'C$': 'CAD',
+      '฿': 'THB',
+      '₽': 'RUB',
+      'kr': 'SEK', // Used for multiple Nordic currencies
+      'CHF': 'CHF',
+      'zł': 'PLN'
+    };
+    
+    // Check for currency codes at start or end
+    const currencyCodes = ['USD', 'PHP', 'EUR', 'GBP', 'JPY', 'KRW', 'INR', 'BRL', 'AUD', 'CAD', 'THB', 'RUB', 'SEK', 'CHF', 'PLN'];
+    let detectedCurrency = 'USD'; // Default currency
+    
+    // First, check for symbols
+    for (const [symbol, currency] of Object.entries(currencyPatterns)) {
+      if (sanitized.includes(symbol)) {
+        detectedCurrency = currency;
+        break;
+      }
+    }
+    
+    // Then check for currency codes
+    for (const code of currencyCodes) {
+      if (sanitized.includes(code)) {
+        detectedCurrency = code;
+        break;
+      }
+    }
+    
+    // Extract the numeric value
+    let numericValue = sanitized.replace(/[^\d.-]/g, '');
+    
+    // Parse to float
+    const value = parseFloat(numericValue);
+    
+    // If we couldn't parse a valid number, return the original input
+    if (isNaN(value)) return amount;
+    
+    // Format with the detected currency
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+      currency: detectedCurrency
+    }).format(value);
   };
 
   // Get status badge color
@@ -96,7 +150,6 @@ const Hrdash = () => {
       <CRow>
         <CCol xs={12}>
           <CustomHeader title="HR Dashboard" subtitle="Welcome to the HR Dashboard" />
-          <AnnouncementList />
         </CCol>
       </CRow>
 
@@ -213,8 +266,8 @@ const Hrdash = () => {
                         <CTableRow key={item.id || index}>
                           <CTableDataCell>{item.employee_id || '—'}</CTableDataCell>
                           <CTableDataCell>{item.name || '—'}</CTableDataCell>
-                          <CTableDataCell className="text-end">{formatCurrency(item.gross_salary)}</CTableDataCell>
-                          <CTableDataCell className="text-end">{formatCurrency(item.net_salary)}</CTableDataCell>
+                          <CTableDataCell className="text-end">{autoDetectAndFormatCurrency(item.gross_salary)}</CTableDataCell>
+                          <CTableDataCell className="text-end">{autoDetectAndFormatCurrency(item.net_salary)}</CTableDataCell>
                          
                         </CTableRow>
                       ))}

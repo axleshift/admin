@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import StatBox from '../pages/scene/statbox';
 import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol, CCard } from '@coreui/react';
-import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import Monthly from '../pages/sales/monthly';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
@@ -96,7 +95,6 @@ const FinanceDash = () => {
       <CRow>
         <CCol>
           <CustomHeader title="Finance Dashboard" subtitle="Welcome to the Finance Dashboard" />
-          <AnnouncementList />
         </CCol>
       </CRow>
       
