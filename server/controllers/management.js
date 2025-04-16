@@ -5,6 +5,12 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import User from '../model/User.js'
 
+//log1
+import axios from 'axios';
+import ExcelJS from 'exceljs';
+import PDFDocument from 'pdfkit';
+
+
 // Import and register the plugin properly
 import archiverZipEncrypted from 'archiver-zip-encrypted';
 archiver.registerFormat('zip-encrypted', archiverZipEncrypted);
@@ -142,5 +148,154 @@ export const downloadzip = async (req, res) => {
     } catch (err) {
       console.error('ZIP creation error:', err);
       res.status(500).send('ZIP creation failed');
+    }
+  };
+
+  const LOG1_API = process.env.EXTERNAL_LOG1;
+  const LOG1_APIKEY = process.env.LOG1_API_KEY;
+  
+  export const downloadVehicleZip = async (req, res) => {
+    const { name, role, username, downloadType } = req.body;
+  
+    try {
+      // Create the password
+      const password = name.substring(0, 2) + role.charAt(0) + username.slice(-6);
+      
+      // Ensure directories exist
+      const tempDir = path.join(__dirname, '../temp');
+      await fs.ensureDir(tempDir);
+      
+      // Create a filename based on download type
+      let fileName = 'Vehicles';
+      
+      // Fetch vehicle data from LOG1 API
+      console.log(`Attempting to call API at: ${LOG1_API}/api/v1/vehicle/all`);
+      
+      const response = await axios.get(`${LOG1_API}/api/v1/vehicle/all`, {
+        headers: {
+          'x-api-key': LOG1_APIKEY,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('API response status:', response.status);
+      
+      if (!response.data) {
+        throw new Error('No data received from API');
+      }
+      
+      if (!response.data.success) {
+        console.error('API error response:', JSON.stringify(response.data));
+        throw new Error(`Failed to fetch vehicle data from API: ${response.data.message || 'Unknown error'}`);
+      }
+      
+      // Get vehicles directly from response.data.data
+      let vehicles = response.data.data;
+      
+      // Filter data based on downloadType
+      switch(downloadType) {
+        case 'all': 
+          fileName = 'All_Vehicles'; 
+          break;
+        case 'available': 
+          fileName = 'Available_Vehicles'; 
+          vehicles = vehicles.filter(v => v.status === 'available');
+          break;
+        case 'in_use': 
+          fileName = 'InUse_Vehicles';
+          vehicles = vehicles.filter(v => v.status === 'in_use');
+          break;
+        case 'maintenance': 
+          fileName = 'Maintenance_Vehicles';
+          vehicles = vehicles.filter(v => v.status === 'maintenance');
+          break;
+        case 'forRegistration': 
+          fileName = 'ForRegistration_Vehicles';
+          vehicles = vehicles.filter(v => v.status === 'forRegistration');
+          break;
+        default:
+          fileName = 'Vehicles';
+      }
+      
+      // Create CSV data
+      const columns = ['Registration Number', 'Brand', 'Model', 'Year', 'Type', 'Capacity', 'Fuel Type', 
+                      'Current Mileage', 'Driver', 'Status', 'Registration Expiry'];
+      
+      let csvContent = columns.join(',') + '\n';
+      
+      vehicles.forEach(item => {
+        if (item.deleted) return; // Skip deleted vehicles
+        
+        const row = [
+          item.regisNumber || '',
+          item.brand || '',
+          item.model || '',
+          item.year || '',
+          item.type || '',
+          item.capacity || '',
+          item.fuelType || '',
+          item.currentMileage || '',
+          item.assignedDriver ? item.assignedDriver : 'Not Assigned', // Updated to use assignedDriver property
+          item.status || '',
+          item.regisExprationDate ? new Date(item.regisExprationDate).toLocaleDateString() : 'N/A'
+        ].map(field => `"${field.toString().replace(/"/g, '""')}"`); // Escape quotes in CSV
+        
+        csvContent += row.join(',') + '\n';
+      });
+      
+      // Create temp CSV file
+      const csvFilePath = path.join(tempDir, `${fileName}.csv`);
+      await fs.writeFile(csvFilePath, csvContent);
+      
+      // Create output path for ZIP
+      const outputZipPath = path.join(tempDir, `${fileName}_Protected.zip`);
+      
+      // Create a writable stream
+      const output = fs.createWriteStream(outputZipPath);
+      
+      // Create the archive with encryption
+      const archive = archiver('zip-encrypted', {
+        zlib: { level: 9 },
+        encryptionMethod: 'aes256',
+        password: password
+      });
+      
+      // Pipe the archive to the output file
+      archive.pipe(output);
+      
+      // Add the CSV file to the archive
+      archive.file(csvFilePath, { name: `${fileName}.csv` });
+      
+      // Set up event handlers
+      output.on('close', () => {
+        console.log('Archive created successfully:', outputZipPath);
+        
+        res.download(outputZipPath, `${fileName}_Protected.zip`, (err) => {
+          if (err) {
+            console.error('Download error:', err);
+          }
+          // Clean up the temp files after download completes
+          fs.remove(csvFilePath).catch(err => console.error('Failed to clean up CSV:', err));
+          fs.remove(outputZipPath).catch(err => console.error('Failed to clean up ZIP:', err));
+        });
+      });
+      
+      archive.on('error', (err) => {
+        console.error('Archive error:', err);
+        res.status(500).send('ZIP creation failed');
+      });
+      
+      // Finalize the archive
+      await archive.finalize();
+      
+    } catch (err) {
+      console.error('ZIP creation error details:', err.message);
+      if (err.response) {
+        console.error('API response error:', {
+          status: err.response.status,
+          data: err.response.data
+        });
+      }
+      res.status(500).send('ZIP creation failed: ' + err.message);
     }
   };
