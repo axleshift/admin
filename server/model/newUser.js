@@ -1,54 +1,94 @@
-import mongoose from 'mongoose';
-import bcryptjs from 'bcryptjs';
+import mongoose from "mongoose";
 
 const newUserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please provide a name'],
-    trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters']
+    required: [true, "Full name is required"],
+    trim: true
+  },
+  firstName: {
+    type: String,
+    required: [true, "First name is required"],
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: [true, "Last name is required"],
+    trim: true
   },
   email: {
     type: String,
-    required: [true, 'Please provide an email'],
-    match: [
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-      'Please provide a valid email'
-    ],
-    unique: true
-  },
-  password: {
-    type: String,
-    minlength: 6,
-    select: false,
-    required: false  // ⬅️ make password optional
+    required: [true, "Email is required"],
+    unique: true,
+    trim: true,
+    lowercase: true
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    required: [true, "Role is required"],
+    trim: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  department: {
+    type: String,
+    required: [true, "Department is required"],
+    trim: true
+  },
+  phone: {
+    type: String,
+    default: ""
+  },
+  address: {
+    type: String,
+    default: ""
+  },
+  image: {
+    type: String,
+    default: ""
+  },
+  registered: {
+    type: Boolean,
+    default: false
+  },
+  registrationDate: {
+    type: Date
+  },
+  registrationError: {
+    type: String
+  },
+  generatedPassword: {
+    type: String
   }
+}, {
+  timestamps: true
 });
 
-// Hash password before saving to database
-newUserSchema.pre('save', async function(next) {
-  if (!this.isModified('password') || !this.password) {
-    return next();
+// Pre-save middleware to handle full name
+newUserSchema.pre("validate", function(next) {
+  // If we have a name but no firstName/lastName, split the name
+  if (this.name && (!this.firstName || !this.lastName)) {
+    const nameParts = this.name.trim().split(/\s+/);
+    
+    if (nameParts.length >= 2) {
+      // First part becomes firstName
+      this.firstName = nameParts[0];
+      
+      // The rest becomes lastName
+      this.lastName = nameParts.slice(1).join(" ");
+    } else if (nameParts.length === 1) {
+      // If only one word is provided, set it as firstName
+      this.firstName = nameParts[0];
+      this.lastName = ""; // You might want to handle this differently
+    }
   }
-  const salt = await bcryptjs.genSalt(10);
-  this.password = await bcryptjs.hash(this.password, salt);
+  
+  // If we have firstName and lastName but no name, create a name
+  if (!this.name && this.firstName && this.lastName) {
+    this.name = `${this.firstName} ${this.lastName}`.trim();
+  }
+  
   next();
 });
 
-// Method to compare entered password with stored hashed password
-newUserSchema.methods.comparePassword = async function(enteredPassword) {
-  return await bcryptjs.compare(enteredPassword, this.password);
-};
-
-const NewUser = mongoose.model('NewUser', newUserSchema);
+const NewUser = mongoose.model("NewUser", newUserSchema);
 
 export default NewUser;

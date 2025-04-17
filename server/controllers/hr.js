@@ -1,7 +1,5 @@
 import User from "../model/User.js";
 import { generateUsername } from "../UTIL/generateCode.js";
-import {generateOAuthToken }from '../UTIL/jwt.js'
-import JobPosting from "../model/h2.js";
 import {io}  from '../index.js'
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -10,74 +8,6 @@ import NewUser from "../model/newUser.js";
 dotenv.config();
 
 
-const formatUserName = (userData) => {
-  if (!userData.name) {
-    if (userData.firstName && userData.lastName) {
-      return `${userData.firstName} ${userData.lastName}`;
-    }
-    return userData.firstName || userData.lastName || 'Unknown';
-  }
-  return userData.name;
-};
-
-export const fetchAndStoreUsers = async () => {
-  try {
-    const response = await axios.get(EXTERNAL_HR_API);
-    const users = response.data;
-
-    for (const userData of users) {
-      await newuser.findOneAndUpdate(
-        { externalId: userData.id },
-        { 
-          name: formatUserName(userData), 
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          email: userData.email 
-        },
-        { upsert: true, new: true }
-      );
-    }
-    console.log('Users synchronized successfully');
-  } catch (error) {
-    console.error('Error fetching users', error);
-  }
-};
-
-export const handleWebhook = async (req, res) => {
-  try {
-    console.log('Webhook received:', req.body);
-    const { event, user } = req.body;
-    
-    if (event === 'user_created' || event === 'user_updated') {
-      await newuser.findOneAndUpdate(
-        { externalId: user.id },
-        { 
-          name: formatUserName(user),
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email 
-        },
-        { upsert: true, new: true }
-      );
-    } else if (event === 'user_deleted') {
-      await newuser.findOneAndDelete({ externalId: user.id });
-    }
-
-    res.json({ message: 'Webhook processed successfully' });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ message: 'Error processing webhook', error });
-  }
-};
-
-export const ExternalHR = async (req, res) => {
-  try {
-    const users = await newuser.find();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching users', error });
-  }
-};
 
 
 export const getWorker = async (req, res) => {

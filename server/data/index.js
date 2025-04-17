@@ -265,58 +265,69 @@ export const users = [
     },
 ];
 
-export const newuser =[
+export const newuser = [
     {
       name: "Aarav Mehta",
       email: "aarav.mehta@example.com",
-      role: "user"
+      role: "manager",
+      department: "Logistics"
     },
     {
       name: "Fatima Zahra",
       email: "fatima.zahra@example.com",
-      role: "admin"
+      role: "admin",
+      department: "Finance"
     },
     {
       name: "Mohammed Al-Mansoori",
       email: "mohammed.mansoori@example.com",
-      role: "user"
+      role: "manager",
+      department: "HR"
     },
     {
       name: "Sneha Reddy",
       email: "sneha.reddy@example.com",
-      role: "user"
+      role: "manager",
+      department: "Core"
     },
     {
       name: "Omar Khaleel",
       email: "omar.khaleel@example.com",
-      role: "user"
+      role: "manager",
+      department: "Logistics"
     },
     {
       name: "Zainab Qureshi",
       email: "zainab.qureshi@example.com",
-      role: "admin"
+      role: "admin",
+      department: "Finance"
     },
     {
       name: "Imran Shaikh",
       email: "imran.shaikh@example.com",
-      role: "user"
+      role: "manager",
+      department: "HR"
     },
     {
       name: "Aisha Noor",
       email: "aisha.noor@example.com",
-      role: "user"
+      role: "manager",
+      department: "Core"
     },
     {
       name: "Rohan Malhotra",
       email: "rohan.malhotra@example.com",
-      role: "user"
+      role: "superadmin",
+      department: "Administrative"
     },
     {
       name: "Nadia Hussein",
       email: "nadia.hussein@example.com",
-      role: "user"
+      role: "superadmin",
+      department: "Administrative"
     }
-  ]
+  ];
+  
   
 
 export const mockLogisticsData = [
