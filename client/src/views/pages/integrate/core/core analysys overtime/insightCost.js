@@ -197,7 +197,7 @@ const InsightCost = () => {
                             </div>
                             <div>
                               <div className="text-medium-emphasis small">Total Cost</div>
-                              <div className="fs-3 fw-bold">${totalCosts.toFixed(2)}</div>
+                              <div className="fs-3 fw-bold">₱{totalCosts.toFixed(2)}</div>
                             </div>
                           </div>
                         </CCallout>
@@ -212,7 +212,7 @@ const InsightCost = () => {
                             <div>
                               <div className="text-medium-emphasis small">Average Monthly Cost</div>
                               <div className="fs-3 fw-bold">
-                                ${chartData.data.length > 0 ? (totalCosts / chartData.data.length).toFixed(2) : "0.00"}
+                              ₱{chartData.data.length > 0 ? (totalCosts / chartData.data.length).toFixed(2) : "0.00"}
                               </div>
                             </div>
                           </div>
@@ -321,7 +321,7 @@ const InsightCost = () => {
                               <CTableHead className="bg-light">
                                 <CTableRow>
                                   <CTableHeaderCell>Month</CTableHeaderCell>
-                                  <CTableHeaderCell className="text-end">Cost ($)</CTableHeaderCell>
+                                  <CTableHeaderCell className="text-end">Cost (₱)</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">% of Total</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">Change</CTableHeaderCell>
                                 </CTableRow>
@@ -337,7 +337,7 @@ const InsightCost = () => {
                                         <span className="fw-medium">{month}</span>
                                       </div>
                                     </CTableDataCell>
-                                    <CTableDataCell className="text-end fw-bold">${chartData.data[index].toFixed(2)}</CTableDataCell>
+                                    <CTableDataCell className="text-end fw-bold">₱{chartData.data[index].toFixed(2)}</CTableDataCell>
                                     <CTableDataCell className="text-end">
                                       <div className="d-flex align-items-center justify-content-end">
                                         <span className="me-2">
@@ -375,7 +375,7 @@ const InsightCost = () => {
                               <CTableFoot className="bg-light">
                                 <CTableRow>
                                   <CTableDataCell className="fw-bold">Total</CTableDataCell>
-                                  <CTableDataCell className="fw-bold text-end">${totalCosts.toFixed(2)}</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-end">₱{totalCosts.toFixed(2)}</CTableDataCell>
                                   <CTableDataCell className="fw-bold text-end">100%</CTableDataCell>
                                   <CTableDataCell className="text-end">
                                     {chartData.data.length >= 2 && (

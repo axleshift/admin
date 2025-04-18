@@ -394,19 +394,6 @@ const _nav = () => {
           name: 'Freight Audit', 
           icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
           to: '/freightaudit' 
-        }
-      );
-    }
-
-    
-    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
-      navItems.push(
-        { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'Customer', 
-          icon: <FontAwesomeIcon icon={faUserGroup} style={{ marginRight: '8px' }} />, 
-          to: '/customer' 
         },
         { 
           component: CNavItem, 
@@ -414,6 +401,14 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px' }} />, 
           to: '/monthly' 
         },
+      );
+    }
+
+    
+    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
+      navItems.push(
+        { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
+        
         { 
           component: CNavItem, 
           name: 'Daily', 

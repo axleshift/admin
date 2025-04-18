@@ -30,7 +30,9 @@ import {
   CAccordion,
   CAccordionItem,
   CAccordionHeader,
-  CAccordionBody
+  CAccordionBody,
+  CPagination,
+  CPaginationItem
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -61,6 +63,11 @@ const ActivityTracker = () => {
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [showAIModal, setShowAIModal] = useState(false);
     
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [activitiesPerPage] = useState(20);
+    const [totalPages, setTotalPages] = useState(1);
+    
     // Get current theme from Redux store
     const currentTheme = useSelector((state) => state.changeState.theme);
     
@@ -76,6 +83,7 @@ const ActivityTracker = () => {
         axiosInstance.get('/general/log')
             .then(response => {
                 setActivities(response.data);
+                setTotalPages(Math.ceil(response.data.length / activitiesPerPage));
                 setLoading(false);
             })
             .catch(error => {
@@ -89,6 +97,7 @@ const ActivityTracker = () => {
         axiosInstance.get('/general/log')
             .then(response => {
                 setActivities(response.data);
+                setTotalPages(Math.ceil(response.data.length / activitiesPerPage));
                 setRefreshing(false);
             })
             .catch(error => {
@@ -107,57 +116,124 @@ const ActivityTracker = () => {
         setShowAIModal(true);
     };
 
+    // Get current activities for pagination
+    const indexOfLastActivity = currentPage * activitiesPerPage;
+    const indexOfFirstActivity = indexOfLastActivity - activitiesPerPage;
+    const currentActivities = activities.slice(indexOfFirstActivity, indexOfLastActivity);
+
+    // Change page
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    // Function to generate pagination items
+    const generatePaginationItems = () => {
+        const items = [];
+        const maxPagesToShow = 5; // Show 5 page numbers at a time
+        
+        // Always show first page
+        items.push(
+            <CPaginationItem 
+                key="first" 
+                active={currentPage === 1}
+                onClick={() => paginate(1)}
+            >
+                1
+            </CPaginationItem>
+        );
+        
+        let startPage = Math.max(2, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages - 1, startPage + maxPagesToShow - 2);
+        
+        // Adjust if we're near the end
+        if (endPage - startPage < maxPagesToShow - 2) {
+            startPage = Math.max(2, endPage - (maxPagesToShow - 2));
+        }
+        
+        // Add ellipsis after first page if needed
+        if (startPage > 2) {
+            items.push(<CPaginationItem key="ellipsis1" disabled>...</CPaginationItem>);
+        }
+        
+        // Add middle pages
+        for (let i = startPage; i <= endPage; i++) {
+            items.push(
+                <CPaginationItem 
+                    key={i} 
+                    active={currentPage === i}
+                    onClick={() => paginate(i)}
+                >
+                    {i}
+                </CPaginationItem>
+            );
+        }
+        
+        // Add ellipsis before last page if needed
+        if (endPage < totalPages - 1) {
+            items.push(<CPaginationItem key="ellipsis2" disabled>...</CPaginationItem>);
+        }
+        
+        // Always show last page if there's more than one page
+        if (totalPages > 1) {
+            items.push(
+                <CPaginationItem 
+                    key="last" 
+                    active={currentPage === totalPages}
+                    onClick={() => paginate(totalPages)}
+                >
+                    {totalPages}
+                </CPaginationItem>
+            );
+        }
+        
+        return items;
+    };
+
     // Parse AI analysis into sections (Category, Patterns, Risk)
- // Updated function to handle both string and structured object formats
-// In ActivityTracker.jsx, modify the parseAIAnalysis function:
+    const parseAIAnalysis = (analysis) => {
+        // If it's already an object with the right properties, use it directly
+        if (typeof analysis === 'object' && analysis !== null) {
+          if (analysis.category && analysis.patterns && analysis.riskLevel) {
+            return { 
+              category: analysis.category, 
+              patterns: analysis.patterns, 
+              risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel // Convert UNKNOWN to MEDIUM
+            };
+          }
+        }
+        
+        // If it's a string or doesn't have the right properties, try to parse it
+        const analysisText = typeof analysis === 'string' ? analysis : JSON.stringify(analysis);
+        
+        if (!analysisText) return { category: 'Not available', patterns: 'Not available', risk: 'MEDIUM' }; // Changed from UNKNOWN to MEDIUM
+        
+        // Extract risk level
+        let riskLevel = 'MEDIUM'; // Default to MEDIUM instead of UNKNOWN
+        const riskMatch = analysisText.match(/risk(?:\s*level|\s*assessment)?:?\s*(low|medium|high)/i);
+        if (riskMatch) riskLevel = riskMatch[1].toUpperCase();
+        
+        // Try to extract category section
+        let category = '';
+        const categoryMatch = analysisText.match(/categor(?:y|ization):?\s*([^.]+)/i);
+        if (categoryMatch) category = categoryMatch[1].trim();
+        else category = 'General activity';
+        
+        // Try to extract patterns section
+        let patterns = '';
+        const patternsMatch = analysisText.match(/patterns:?\s*([^.]+)/i) || 
+                              analysisText.match(/unusual patterns:?\s*([^.]+)/i);
+        if (patternsMatch) patterns = patternsMatch[1].trim();
+        else patterns = 'No unusual patterns detected';
+        
+        return { category, patterns, risk: riskLevel };
+    };
 
-// Updated function to handle both string and structured object formats
-const parseAIAnalysis = (analysis) => {
-    // If it's already an object with the right properties, use it directly
-    if (typeof analysis === 'object' && analysis !== null) {
-      if (analysis.category && analysis.patterns && analysis.riskLevel) {
-        return { 
-          category: analysis.category, 
-          patterns: analysis.patterns, 
-          risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel // Convert UNKNOWN to MEDIUM
-        };
-      }
-    }
-    
-    // If it's a string or doesn't have the right properties, try to parse it
-    const analysisText = typeof analysis === 'string' ? analysis : JSON.stringify(analysis);
-    
-    if (!analysisText) return { category: 'Not available', patterns: 'Not available', risk: 'MEDIUM' }; // Changed from UNKNOWN to MEDIUM
-    
-    // Extract risk level
-    let riskLevel = 'MEDIUM'; // Default to MEDIUM instead of UNKNOWN
-    const riskMatch = analysisText.match(/risk(?:\s*level|\s*assessment)?:?\s*(low|medium|high)/i);
-    if (riskMatch) riskLevel = riskMatch[1].toUpperCase();
-    
-    // Try to extract category section
-    let category = '';
-    const categoryMatch = analysisText.match(/categor(?:y|ization):?\s*([^.]+)/i);
-    if (categoryMatch) category = categoryMatch[1].trim();
-    else category = 'General activity';
-    
-    // Try to extract patterns section
-    let patterns = '';
-    const patternsMatch = analysisText.match(/patterns:?\s*([^.]+)/i) || 
-                          analysisText.match(/unusual patterns:?\s*([^.]+)/i);
-    if (patternsMatch) patterns = patternsMatch[1].trim();
-    else patterns = 'No unusual patterns detected';
-    
-    return { category, patterns, risk: riskLevel };
-  };
-
-// Fix the getRiskBadgeColor function to handle the UNKNOWN case properly
-const getRiskBadgeColor = (risk) => {
-    if (!risk || risk.toLowerCase() === 'unknown') return 'warning'; // Handle UNKNOWN as warning (yellow)
-    if (risk.toLowerCase() === 'high') return 'danger';
-    if (risk.toLowerCase() === 'medium') return 'warning';
-    if (risk.toLowerCase() === 'low') return 'success';
-    return isDarkMode ? 'light' : 'secondary';
-};
+    // Fix the getRiskBadgeColor function to handle the UNKNOWN case properly
+    const getRiskBadgeColor = (risk) => {
+        if (!risk || risk.toLowerCase() === 'unknown') return 'warning'; // Handle UNKNOWN as warning (yellow)
+        if (risk.toLowerCase() === 'high') return 'danger';
+        if (risk.toLowerCase() === 'medium') return 'warning';
+        if (risk.toLowerCase() === 'low') return 'success';
+        return isDarkMode ? 'light' : 'secondary';
+    };
 
     // Style for the title in dark mode
     const titleStyle = isDarkMode ? { color: '#FFFFFF' } : {}; // Bright purple in dark mode
@@ -260,131 +336,158 @@ const getRiskBadgeColor = (risk) => {
                             <p className={`mt-2 ${isDarkMode ? 'text-light' : 'text-muted'}`}>Loading activity data...</p>
                         </div>
                     ) : (
-                        <div className="table-responsive">
-                            <CTable hover striped responsive className={`border ${isDarkMode ? 'table-dark' : ''}`}>
-                                <CTableHead className={isDarkMode ? "bg-dark text-white border-secondary" : "bg-light"}>
-                                    <CTableRow>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faUser} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            User
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faUserTag} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Role
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faBuilding} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Department
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faRoute} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Route
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faRunning} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Action
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faInfoCircle} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Description
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faClock} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            Time
-                                        </CTableHeaderCell>
-                                        <CTableHeaderCell className="text-nowrap">
-                                            <FontAwesomeIcon icon={faRobot} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
-                                            AI Analysis
-                                        </CTableHeaderCell>
-                                    </CTableRow>
-                                </CTableHead>
-                                <CTableBody>
-                                    {activities.length === 0 ? (
+                        <>
+                            <div className="table-responsive">
+                                <CTable hover striped responsive className={`border ${isDarkMode ? 'table-dark' : ''}`}>
+                                    <CTableHead className={isDarkMode ? "bg-dark text-white border-secondary" : "bg-light"}>
                                         <CTableRow>
-                                            <CTableDataCell colSpan={8} className={`text-center p-5 ${isDarkMode ? 'text-white' : 'text-muted'}`}>
-                                                No activity records found
-                                            </CTableDataCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faUser} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                User
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faUserTag} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Role
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faBuilding} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Department
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faRoute} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Route
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faRunning} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Action
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faInfoCircle} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Description
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faClock} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                Time
+                                            </CTableHeaderCell>
+                                            <CTableHeaderCell className="text-nowrap">
+                                                <FontAwesomeIcon icon={faRobot} className={`me-2 ${isDarkMode ? 'text-white' : 'text-muted'}`} />
+                                                AI Analysis
+                                            </CTableHeaderCell>
                                         </CTableRow>
-                                    ) : (
-                                        activities.map(activity => {
-                                            // Parse AI analysis for risk level to show in table
-                                            const { risk } = parseAIAnalysis(activity.aiAnalysis);
-                                            
-                                            return (
-                                                <CTableRow key={activity._id} className="align-middle">
-                                                    <CTableDataCell className="font-weight-bold">
-                                                        {activity.name || 'Unknown'}
-                                                    </CTableDataCell>
-                                                    <CTableDataCell>
-                                                        <CBadge color={isDarkMode ? "light" : "dark"} shape="rounded-pill" className={`px-2 py-1 ${isDarkMode ? 'text-dark' : ''}`}>
-                                                            {activity.role || 'Unknown'}
-                                                        </CBadge>
-                                                    </CTableDataCell>
-                                                    <CTableDataCell>
-                                                        {activity.department || 'Unknown'}
-                                                    </CTableDataCell>
-                                                    <CTableDataCell className={isDarkMode ? "text-info" : "text-primary"}>
-                                                        {activity.route}
-                                                    </CTableDataCell>
-                                                    <CTableDataCell>
-                                                        <CBadge 
-                                                            color={getBadgeColor(activity.action)} 
-                                                            shape="rounded-pill"
-                                                            className={getBadgeColor(activity.action) === 'light' ? 'text-dark' : ''}
-                                                        >
-                                                            {activity.action}
-                                                        </CBadge>
-                                                    </CTableDataCell>
-                                                    <CTableDataCell>
-                                                        <CTooltip content={activity.description} placement="bottom">
-                                                            <div className="text-truncate" style={{ maxWidth: '200px' }}>
-                                                                {activity.description}
-                                                            </div>
-                                                        </CTooltip>
-                                                    </CTableDataCell>
-                                                    <CTableDataCell className="text-nowrap">
-                                                        <CTooltip content={new Date(activity.timestamp).toLocaleString()}>
-                                                            <span>
-                                                                {getRelativeTime(activity.timestamp)}
-                                                            </span>
-                                                        </CTooltip>
-                                                    </CTableDataCell>
-                                                    <CTableDataCell>
-                                                        {activity.aiAnalysis ? (
-                                                            <div className="d-flex align-items-center">
-                                                                <CBadge 
-                                                                    color={getRiskBadgeColor(risk)} 
-                                                                    shape="rounded-pill"
-                                                                    className="me-2"
-                                                                >
-                                                                    {risk}
-                                                                </CBadge>
-                                                                <CButton 
-                                                                    color="light" 
-                                                                    size="sm"
-                                                                    onClick={() => viewAIAnalysis(activity)}
-                                                                >
-                                                                    <FontAwesomeIcon icon={faEye} className="me-1" />
-                                                                    View
-                                                                </CButton>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted">Not available</span>
-                                                        )}
-                                                    </CTableDataCell>
-                                                </CTableRow>
-                                            );
-                                        })
-                                    )}
-                                </CTableBody>
-                            </CTable>
-                        </div>
+                                    </CTableHead>
+                                    <CTableBody>
+                                        {currentActivities.length === 0 ? (
+                                            <CTableRow>
+                                                <CTableDataCell colSpan={8} className={`text-center p-5 ${isDarkMode ? 'text-white' : 'text-muted'}`}>
+                                                    No activity records found
+                                                </CTableDataCell>
+                                            </CTableRow>
+                                        ) : (
+                                            currentActivities.map(activity => {
+                                                // Parse AI analysis for risk level to show in table
+                                                const { risk } = parseAIAnalysis(activity.aiAnalysis);
+                                                
+                                                return (
+                                                    <CTableRow key={activity._id} className="align-middle">
+                                                        <CTableDataCell className="font-weight-bold">
+                                                            {activity.name || 'Unknown'}
+                                                        </CTableDataCell>
+                                                        <CTableDataCell>
+                                                            <CBadge color={isDarkMode ? "light" : "dark"} shape="rounded-pill" className={`px-2 py-1 ${isDarkMode ? 'text-dark' : ''}`}>
+                                                                {activity.role || 'Unknown'}
+                                                            </CBadge>
+                                                        </CTableDataCell>
+                                                        <CTableDataCell>
+                                                            {activity.department || 'Unknown'}
+                                                        </CTableDataCell>
+                                                        <CTableDataCell className={isDarkMode ? "text-info" : "text-primary"}>
+                                                            {activity.route}
+                                                        </CTableDataCell>
+                                                        <CTableDataCell>
+                                                            <CBadge 
+                                                                color={getBadgeColor(activity.action)} 
+                                                                shape="rounded-pill"
+                                                                className={getBadgeColor(activity.action) === 'light' ? 'text-dark' : ''}
+                                                            >
+                                                                {activity.action}
+                                                            </CBadge>
+                                                        </CTableDataCell>
+                                                        <CTableDataCell>
+                                                            <CTooltip content={activity.description} placement="bottom">
+                                                                <div className="text-truncate" style={{ maxWidth: '200px' }}>
+                                                                    {activity.description}
+                                                                </div>
+                                                            </CTooltip>
+                                                        </CTableDataCell>
+                                                        <CTableDataCell className="text-nowrap">
+                                                            <CTooltip content={new Date(activity.timestamp).toLocaleString()}>
+                                                                <span>
+                                                                    {getRelativeTime(activity.timestamp)}
+                                                                </span>
+                                                            </CTooltip>
+                                                        </CTableDataCell>
+                                                        <CTableDataCell>
+                                                            {activity.aiAnalysis ? (
+                                                                <div className="d-flex align-items-center">
+                                                                    <CBadge 
+                                                                        color={getRiskBadgeColor(risk)} 
+                                                                        shape="rounded-pill"
+                                                                        className="me-2"
+                                                                    >
+                                                                        {risk}
+                                                                    </CBadge>
+                                                                    <CButton 
+                                                                        color="light" 
+                                                                        size="sm"
+                                                                        onClick={() => viewAIAnalysis(activity)}
+                                                                    >
+                                                                        <FontAwesomeIcon icon={faEye} className="me-1" />
+                                                                        View
+                                                                    </CButton>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-muted">Not available</span>
+                                                            )}
+                                                        </CTableDataCell>
+                                                    </CTableRow>
+                                                );
+                                            })
+                                        )}
+                                    </CTableBody>
+                                </CTable>
+                            </div>
+                            
+                            {/* Pagination */}
+                            {activities.length > 0 && (
+                                <div className="d-flex justify-content-center mt-4">
+                                    <CPagination aria-label="Activity pagination" className={isDarkMode ? "pagination-dark" : ""}>
+                                        <CPaginationItem 
+                                            aria-label="Previous" 
+                                            disabled={currentPage === 1}
+                                            onClick={() => paginate(currentPage - 1)}
+                                        >
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </CPaginationItem>
+                                        
+                                        {generatePaginationItems()}
+                                        
+                                        <CPaginationItem 
+                                            aria-label="Next" 
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => paginate(currentPage + 1)}
+                                        >
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </CPaginationItem>
+                                    </CPagination>
+                                </div>
+                            )}
+                        </>
                     )}
                 </CCardBody>
                 <CCardFooter className={`${isDarkMode ? 'bg-dark text-white border-secondary' : 'bg-light text-muted'}`}>
                     <CRow>
                         <CCol>
-                            <small>Showing {activities.length} activities</small>
+                            <small>Showing {indexOfFirstActivity + 1}-{Math.min(indexOfLastActivity, activities.length)} of {activities.length} activities</small>
                         </CCol>
                         <CCol className="text-end">
                             <small>Last updated: {new Date().toLocaleString()}</small>
@@ -427,106 +530,96 @@ const getRiskBadgeColor = (risk) => {
                                 <p className="mb-1"><strong>Description:</strong> {selectedActivity.description}</p>
                             </div>
 
-                        
-                           
+                            <div className="mb-3 mt-4">
+                                <h5>
+                                    <FontAwesomeIcon icon={faChartLine} className="me-2 text-info" />
+                                    AI Analysis Results
+                                </h5>
                                 
-                                {selectedActivity && (
-  
-   
-
-    <div className="mb-3 mt-4">
-      <h5>
-        <FontAwesomeIcon icon={faChartLine} className="me-2 text-info" />
-        AI Analysis Results
-      </h5>
-      
-      {selectedActivity.aiAnalysis ? (
-        <>
-          <CAccordion activeItemKey={1} className="mt-3">
-            <CAccordionItem itemKey={1}>
-              <CAccordionHeader>Full Analysis</CAccordionHeader>
-              <CAccordionBody>
-                <div 
-                  className={`p-3 ${isDarkMode ? 'bg-secondary bg-opacity-10' : 'bg-light'}`} 
-                  style={{whiteSpace: 'pre-line', borderRadius: '0.25rem'}}
-                >
-                  {/* Use the fullAnalysis property directly if available, otherwise use the string */}
-                  {typeof selectedActivity.aiAnalysis === 'object' && selectedActivity.aiAnalysis.fullAnalysis 
-                    ? selectedActivity.aiAnalysis.fullAnalysis 
-                    : selectedActivity.aiAnalysis}
-                </div>
-              </CAccordionBody>
-            </CAccordionItem>
-          </CAccordion>
-          
-          <CRow className="mt-4">
-            <CCol md="4">
-              <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                <CCardHeader className="bg-info text-white">
-                  <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                  Category
-                </CCardHeader>
-                <CCardBody>
-                  {/* Get the category */}
-                  {selectedActivity.aiStructuredAnalysis
-                    ? selectedActivity.aiStructuredAnalysis.category
-                    : parseAIAnalysis(selectedActivity.aiAnalysis).category}
-                </CCardBody>
-              </CCard>
-            </CCol>
-            <CCol md="4">
-              <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                <CCardHeader className="bg-primary text-white">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-                  Patterns
-                </CCardHeader>
-                <CCardBody>
-                  {/* Get the patterns */}
-                  {selectedActivity.aiStructuredAnalysis
-                    ? selectedActivity.aiStructuredAnalysis.patterns
-                    : parseAIAnalysis(selectedActivity.aiAnalysis).patterns}
-                </CCardBody>
-              </CCard>
-            </CCol>
-            <CCol md="4">
-              <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                {/* Get the risk level */}
-                {(() => {
-                  const riskLevel = selectedActivity.aiStructuredAnalysis
-                    ? selectedActivity.aiStructuredAnalysis.riskLevel
-                    : parseAIAnalysis(selectedActivity.aiAnalysis).risk;
-                  return (
-                    <>
-                      <CCardHeader className={`bg-${getRiskBadgeColor(riskLevel)} text-white`}>
-                        <FontAwesomeIcon icon={faShieldAlt} className="me-2" />
-                        Risk Level
-                      </CCardHeader>
-                      <CCardBody className="d-flex justify-content-center align-items-center">
-                        <CBadge 
-                          color={getRiskBadgeColor(riskLevel)} 
-                          size="lg"
-                          shape="rounded-pill"
-                          className="px-4 py-2"
-                        >
-                          {riskLevel}
-                        </CBadge>
-                      </CCardBody>
-                    </>
-                  );
-                })()}
-              </CCard>
-            </CCol>
-          </CRow>
-        </>
-      ) : (
-        <div className="text-center p-4">
-          <p className="text-muted">AI analysis not available for this activity.</p>
-        </div>
-      )}
-    </div>
-  
-)}
-                            
+                                {selectedActivity.aiAnalysis ? (
+                                    <>
+                                        <CAccordion activeItemKey={1} className="mt-3">
+                                            <CAccordionItem itemKey={1}>
+                                                <CAccordionHeader>Full Analysis</CAccordionHeader>
+                                                <CAccordionBody>
+                                                    <div 
+                                                        className={`p-3 ${isDarkMode ? 'bg-secondary bg-opacity-10' : 'bg-light'}`} 
+                                                        style={{whiteSpace: 'pre-line', borderRadius: '0.25rem'}}
+                                                    >
+                                                        {/* Use the fullAnalysis property directly if available, otherwise use the string */}
+                                                        {typeof selectedActivity.aiAnalysis === 'object' && selectedActivity.aiAnalysis.fullAnalysis 
+                                                            ? selectedActivity.aiAnalysis.fullAnalysis 
+                                                            : selectedActivity.aiAnalysis}
+                                                    </div>
+                                                </CAccordionBody>
+                                            </CAccordionItem>
+                                        </CAccordion>
+                                        
+                                        <CRow className="mt-4">
+                                            <CCol md="4">
+                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                    <CCardHeader className="bg-info text-white">
+                                                        <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
+                                                        Category
+                                                    </CCardHeader>
+                                                    <CCardBody>
+                                                        {/* Get the category */}
+                                                        {selectedActivity.aiStructuredAnalysis
+                                                            ? selectedActivity.aiStructuredAnalysis.category
+                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).category}
+                                                    </CCardBody>
+                                                </CCard>
+                                            </CCol>
+                                            <CCol md="4">
+                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                    <CCardHeader className="bg-primary text-white">
+                                                        <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                                                        Patterns
+                                                    </CCardHeader>
+                                                    <CCardBody>
+                                                        {/* Get the patterns */}
+                                                        {selectedActivity.aiStructuredAnalysis
+                                                            ? selectedActivity.aiStructuredAnalysis.patterns
+                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).patterns}
+                                                    </CCardBody>
+                                                </CCard>
+                                            </CCol>
+                                            <CCol md="4">
+                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                    {/* Get the risk level */}
+                                                    {(() => {
+                                                        const riskLevel = selectedActivity.aiStructuredAnalysis
+                                                            ? selectedActivity.aiStructuredAnalysis.riskLevel
+                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).risk;
+                                                        return (
+                                                            <>
+                                                                <CCardHeader className={`bg-${getRiskBadgeColor(riskLevel)} text-white`}>
+                                                                    <FontAwesomeIcon icon={faShieldAlt} className="me-2" />
+                                                                    Risk Level
+                                                                </CCardHeader>
+                                                                <CCardBody className="d-flex justify-content-center align-items-center">
+                                                                    <CBadge 
+                                                                        color={getRiskBadgeColor(riskLevel)} 
+                                                                        size="lg"
+                                                                        shape="rounded-pill"
+                                                                        className="px-4 py-2"
+                                                                    >
+                                                                        {riskLevel}
+                                                                    </CBadge>
+                                                                </CCardBody>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </CCard>
+                                            </CCol>
+                                        </CRow>
+                                    </>
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <p className="text-muted">AI analysis not available for this activity.</p>
+                                    </div>
+                                )}
+                            </div>
                         </>
                     )}
                 </CModalBody>
