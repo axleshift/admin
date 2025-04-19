@@ -188,15 +188,16 @@ const ActivityTracker = () => {
     };
 
     // Parse AI analysis into sections (Category, Patterns, Risk)
+    // UPDATED: Fixed to handle UNKNOWN risk level
     const parseAIAnalysis = (analysis) => {
         // If it's already an object with the right properties, use it directly
         if (typeof analysis === 'object' && analysis !== null) {
           if (analysis.category && analysis.patterns && analysis.riskLevel) {
             return { 
-              category: analysis.category, 
-              patterns: analysis.patterns, 
-              risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel // Convert UNKNOWN to MEDIUM
-            };
+                category: analysis.category, 
+                patterns: analysis.patterns, 
+                risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel // Convert UNKNOWN to MEDIUM
+              };
           }
         }
         
@@ -226,7 +227,7 @@ const ActivityTracker = () => {
         return { category, patterns, risk: riskLevel };
     };
 
-    // Fix the getRiskBadgeColor function to handle the UNKNOWN case properly
+    // UPDATED: Fix the getRiskBadgeColor function to handle the UNKNOWN case properly
     const getRiskBadgeColor = (risk) => {
         if (!risk || risk.toLowerCase() === 'unknown') return 'warning'; // Handle UNKNOWN as warning (yellow)
         if (risk.toLowerCase() === 'high') return 'danger';
@@ -598,14 +599,14 @@ const ActivityTracker = () => {
                                                                     Risk Level
                                                                 </CCardHeader>
                                                                 <CCardBody className="d-flex justify-content-center align-items-center">
-                                                                    <CBadge 
-                                                                        color={getRiskBadgeColor(riskLevel)} 
-                                                                        size="lg"
-                                                                        shape="rounded-pill"
-                                                                        className="px-4 py-2"
-                                                                    >
-                                                                        {riskLevel}
-                                                                    </CBadge>
+                                                                <CBadge 
+                                                                    color={getRiskBadgeColor(riskLevel)} 
+                                                                    size="lg"
+                                                                    shape="rounded-pill"
+                                                                    className="px-4 py-2"
+                                                                >
+                                                                    {riskLevel === 'UNKNOWN' ? 'MEDIUM' : riskLevel}
+                                                                </CBadge>
                                                                 </CCardBody>
                                                             </>
                                                         );

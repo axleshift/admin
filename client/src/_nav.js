@@ -294,7 +294,7 @@ const _nav = () => {
 
     
     
-    if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
+    if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
     
@@ -330,7 +330,7 @@ const _nav = () => {
     }
 
     
-    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
+    if (accessPermissions[userRole][userDepartment].includes('/hrdash')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
         { 
@@ -362,21 +362,10 @@ const _nav = () => {
     }
 
     
-    if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
+    if (accessPermissions[userRole][userDepartment].includes('/financedash')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
-        { 
-          component: CNavItem, 
-          name: 'Transactions', 
-          icon: <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />, 
-          to: '/freight/transaction' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Overview', 
-          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-          to: '/oversales' 
-        },
+    
         { 
           component: CNavItem, 
           name: 'Financial Analytics', 
@@ -405,22 +394,11 @@ const _nav = () => {
     }
 
     
-    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
+    if (accessPermissions[userRole][userDepartment].includes('/coredash')) {
       navItems.push(
         { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
         
-        { 
-          component: CNavItem, 
-          name: 'Daily', 
-          icon: <FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />, 
-          to: '/daily' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Breakdown', 
-          icon: <FontAwesomeIcon icon={faPieChart} style={{ marginRight: '8px' }} />, 
-          to: '/breakdown' 
-        },
+   
         { 
           component: CNavItem, 
           name: 'Shipment', 
@@ -441,12 +419,7 @@ const _nav = () => {
     if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
       navItems.push(
         { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
-        {
-          component: CNavItem,
-          name: 'Logistic',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
-          to: '/logistic1/index'
-        },
+       
         {
           component: CNavItem,
           name: 'Vehicles',

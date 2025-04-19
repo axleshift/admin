@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { CButton, CToast, CToastHeader, CToastBody, CToaster } from '@coreui/react';
 import logActivity from '../../../utils/activityLogger';
-import notificationService from '../../../utils/notificationService';
 
 const ExampleButtonPage = () => {
   const userRole = localStorage.getItem('role');

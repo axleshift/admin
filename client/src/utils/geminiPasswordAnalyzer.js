@@ -1,7 +1,7 @@
-// utils/geminiPasswordAnalyzer.js
 import axios from 'axios';
 
-const GEMINI_API_KEY = 'AIzaSyBlGfiToGE4_D_86kpLw_7QSzvaAySDASA';
+// Updated API key - replace with your actual key
+const GEMINI_API_KEY = 'AIzaSyA3hQsrM4vH-80RUQU-ZJWX7v3QLRhAzA0';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
 export const analyzePasswordWithAI = async (password) => {
@@ -63,12 +63,30 @@ export const analyzePasswordWithAI = async (password) => {
 
     // Extract and parse the JSON response from Gemini
     const responseText = response.data.candidates[0].content.parts[0].text;
-    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
-                      responseText.match(/\{[\s\S]*\}/);
     
-    const jsonResponse = jsonMatch ? 
-      JSON.parse(jsonMatch[0].startsWith('{') ? jsonMatch[0] : jsonMatch[1]) : 
-      null;
+    // Handle different response formats from Gemini
+    let jsonResponse;
+    try {
+      // First try direct parsing in case response is already clean JSON
+      jsonResponse = JSON.parse(responseText);
+    } catch (e) {
+      // If direct parsing fails, try to extract JSON from markdown code blocks or text
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                        responseText.match(/```\s*([\s\S]*?)\s*```/) ||
+                        responseText.match(/\{[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        const extractedJson = jsonMatch[0].startsWith('{') ? jsonMatch[0] : jsonMatch[1];
+        try {
+          jsonResponse = JSON.parse(extractedJson);
+        } catch (err) {
+          console.error('Failed to parse extracted JSON:', err);
+          throw new Error('Invalid JSON format in AI response');
+        }
+      } else {
+        throw new Error('Could not find JSON in AI response');
+      }
+    }
 
     if (!jsonResponse) {
       throw new Error('Failed to parse AI response');

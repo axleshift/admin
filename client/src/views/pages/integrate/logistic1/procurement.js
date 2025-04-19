@@ -39,6 +39,10 @@ const ProcurementPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleDetails, setVisibleDetails] = useState({});
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userId = localStorage.getItem('userId');
+  const userName = localStorage.getItem('name'); 
 
   const toggleDetails = (id) => {
     setVisibleDetails(prevState => ({
@@ -76,7 +80,14 @@ const ProcurementPage = () => {
     };
     
     const config = statusConfig[status] || statusConfig.default;
-    
+     logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/procurement',
+          action: 'Add Vehicle Initiated',
+          description: 'User initiated adding a new vehicle'
+        }).catch(console.warn);
     return (
       <CBadge color={config.color} className="px-2 py-1">
         <FontAwesomeIcon icon={config.icon} className="me-1" /> {status}

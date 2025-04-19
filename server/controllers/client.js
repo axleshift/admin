@@ -1023,35 +1023,132 @@ export const registerCustomer = async (req, res) => {
     }
 };
 
+
 export const changePassword = async (req, res) => {
-  const { email, currentPassword, newPassword } = req.body;
+  const { email, currentPassword, newPassword, passwordAnalysis } = req.body;
 
   try {
-      // Find the user by email
-      const user = await User.findOne({ email });
-      if (!user) {
-          return res.status(404).json({ success: false, message: "User not found" });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Validate current password
+    const isMatch = await bcryptjs.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Current password is incorrect" 
+      });
+    }
+
+    // Enhanced password validation function
+    const validatePasswordStrength = (password, analysis) => {
+      // Always validate basic requirements regardless of AI analysis
+      if (!password || password.length < 8) {
+        return { valid: false, message: "Password must be at least 8 characters long" };
       }
-
-      // Check if the current password is correct
-      const isMatch = await bcryptjs.compare(currentPassword, user.password);
-      if (!isMatch) {
-          return res.status(400).json({ success: false, message: "Current password is incorrect" });
+      
+      // Check if password contains at least one uppercase, lowercase, number, and special character
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+      
+      if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+        return { 
+          valid: false, 
+          message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character" 
+        };
       }
+      
+      // Check AI analysis score if available
+      if (analysis && analysis.score !== undefined) {
+        if (analysis.score < 40) {
+          return { 
+            valid: false, 
+            message: "Password does not meet minimum security requirements based on analysis" 
+          };
+        }
+      }
+      
+      return { valid: true, message: "Password meets requirements" };
+    };
 
-      // Hash the new password
-      const salt = await bcryptjs.genSalt(10);
-      const hashedPassword = await bcryptjs.hash(newPassword, salt);
+    // Validate password strength
+    const passwordData = passwordAnalysis || { score: 40, strength: 'Moderate' };
+    const validation = validatePasswordStrength(newPassword, passwordData);
+    
+    if (!validation.valid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: validation.message
+      });
+    }
 
-      // Update the user's password
-      user.password = hashedPassword;
-      await user.save();
+    // Check if password exists in the user's password history (including current password)
+    const passwordsToCheck = [user.password, ...(user.passwordHistory || [])];
+    
+    // Create an array of promises for password comparison
+    const passwordMatchPromises = passwordsToCheck.map(async (hashedPassword) => {
+      return await bcryptjs.compare(newPassword, hashedPassword);
+    });
+    
+    // Check if new password matches any stored password
+    const passwordMatchResults = await Promise.all(passwordMatchPromises);
+    const isPasswordReused = passwordMatchResults.some(result => result === true);
+    
+    if (isPasswordReused) {
+      return res.status(400).json({
+        success: false,
+        code: "PASSWORD_RECENTLY_USED",
+        message: "This password was recently used. Please choose a password you haven't used within the last 6 months."
+      });
+    }
 
-      return res.json({ success: true, message: "Password changed successfully" });
+    // Hash the new password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+    
+    // Update password history - add current password to history before updating
+    if (!user.passwordHistory) {
+      user.passwordHistory = [];
+    }
+    
+    // Add current password to history
+    user.passwordHistory.push(user.password);
+    
+    // Keep only the 6 most recent passwords (6 months history)
+    if (user.passwordHistory.length > 6) {
+      user.passwordHistory = user.passwordHistory.slice(-6);
+    }
+    
+    // Update the password
+    user.password = hashedPassword;
+    
+    // Update password metadata
+    user.passwordMeta = {
+      lastChanged: new Date(),
+      strength: passwordData.strength || 'Moderate',
+      score: passwordData.score || 40,
+      validationPassed: true
+    };
+    
+    await user.save();
+
+    return res.json({ 
+      success: true, 
+      message: "Password changed successfully" 
+    });
+
   } catch (error) {
-      return res.status(500).json({ success: false, message: "Server error" });
+    console.error("Change password error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
-};
+}
 
 
 export const generateOTP = async (req, res) => {

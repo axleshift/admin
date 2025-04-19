@@ -22,12 +22,15 @@ import {
   CCardText,
   CRow,
   CCol,
+  CToast,
+  CToastBody,
+  CToastHeader,
+  CToaster
 } from '@coreui/react';
 import { useGetJobPostingsQuery } from '../../../../state/hrApi';
-import logActivity from '../../../../utils/activityLogger'; 
-
+import logActivity from '../../../../utils/activityLogger';
 const RecruitmentModule = () => {
-  const { data: jobPostingsResponse, error, isLoading } = useGetJobPostingsQuery();
+  const { data: jobPostingsResponse, error, isLoading, isSuccess } = useGetJobPostingsQuery();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [userInfo, setUserInfo] = useState({
@@ -36,45 +39,66 @@ const RecruitmentModule = () => {
     department: '',
     userId: ''
   });
+  const [toast, setToast] = useState(null);
+  const [toaster, setToaster] = useState(null);
 
   useEffect(() => {
+    // Get user info from sessionStorage
     setUserInfo({
-      name: sessionStorage.getItem('name'),
-      role: sessionStorage.getItem('role'),
-      department: sessionStorage.getItem('department'),
-      userId: sessionStorage.getItem('userId')
+      name: sessionStorage.getItem('name') || localStorage.getItem('name'),
+      role: sessionStorage.getItem('role') || localStorage.getItem('role'),
+      department: sessionStorage.getItem('department') || localStorage.getItem('department'),
+      userId: sessionStorage.getItem('userId') || localStorage.getItem('userId')
     });
   }, []);
+
+  // Show toast notification when data is successfully fetched
+  useEffect(() => {
+    if (isSuccess && jobPostingsResponse) {
+      setToast(
+        <CToast autohide={true} delay={5000}>
+          <CToastHeader closeButton>
+            <strong className="me-auto">Success</strong>
+          </CToastHeader>
+          <CToastBody>
+            Successfully loaded {jobPostingsResponse?.count || jobPostingsResponse?.data?.length || 0} job postings!
+          </CToastBody>
+        </CToast>
+      );
+    }
+  }, [isSuccess, jobPostingsResponse]);
 
   // Extract jobPostings from the response structure
   const jobPostings = jobPostingsResponse?.data || [];
 
-  const viewJobDetails = (job) => {
+  const viewJobDetails = async (job) => {
     setSelectedJob(job);
     setModalVisible(true);
     
-    logActivity({
-      name: userInfo.name,
-      role: userInfo.role,
-      department: userInfo.department,
-      route: '/recruitment/job-postings',
-      action: 'View Job Details',
-      description: `User viewed details for job: ${job.title}`
-    });
+    try {
+      // Log activity when user views job details
+      await logActivity({
+        name: userInfo.name,
+        role: userInfo.role,
+        department: userInfo.department,
+        route: 'job-postings',
+        action: 'View Job Details',
+        description: `User viewed details for job: ${job.title}`
+      });
+
+      // Create notification
+      const title = "Job Details Viewed";
+      const message = `${userInfo.name} (${userInfo.role}) viewed details for job: ${job.title}`;
+      
+     
+    } catch (error) {
+      console.warn("Error logging activity or showing notification:", error);
+    }
   };
 
   const closeModal = () => {
     setModalVisible(false);
     setSelectedJob(null);
-    
-    logActivity({
-      name: userInfo.name,
-      role: userInfo.role,
-      department: userInfo.department,
-      route: '/recruitment/job-postings',
-      action: 'Close Modal',
-      description: 'User closed the job details modal'
-    });
   };
 
   // Function to get category badge color
@@ -107,6 +131,9 @@ const RecruitmentModule = () => {
 
   return (
     <div>
+      {/* Toaster component to show notifications */}
+      <CToaster ref={setToaster} push={toast} placement="top-end" />
+
       <CCard className="mb-4 shadow">
         <CCardHeader className="bg-primary text-white d-flex justify-content-between align-items-center">
           <div>

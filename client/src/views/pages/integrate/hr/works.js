@@ -754,7 +754,7 @@ const Works = () => {
             <div>Your file <strong>{downloadFileName}</strong> is being downloaded as a password-protected zip file for security.</div>
           </CAlert>
           
-          <p className="mb-4">To open this file, you'll need the following password:</p>
+          <p className="mb-4">To open this file, you&apos;ll need the following password:</p>
           
           <div className="password-container p-3 bg-light border rounded mb-4">
             <div className="d-flex justify-content-between align-items-center">

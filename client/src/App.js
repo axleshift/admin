@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
 import "./scss/style.scss";
-import NotificationToast from "./views/pages/scene/notification";
 
 
 const DefaultLayout = React.lazy(() => import("./layout/DefaultLayout"));
@@ -77,7 +76,6 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      {isAuthenticated() && <NotificationToast />}
       <AppContent />
     </BrowserRouter>
   );
