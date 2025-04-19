@@ -237,6 +237,33 @@ export const resetPassword = async (req, res) => {
 
     console.log("Processing password reset for user:", user.email);
 
+    // Check if password exists in the user's password history
+    if (user.passwordHistory && user.passwordHistory.length > 0) {
+      // Check if any of the hashed passwords in history match the new password
+      const passwordMatchPromises = user.passwordHistory.map(async (hashedPassword) => {
+        return await bcryptjs.compare(password, hashedPassword);
+      });
+      
+      const passwordMatchResults = await Promise.all(passwordMatchPromises);
+      const isPasswordReused = passwordMatchResults.some(result => result === true);
+      
+      if (isPasswordReused) {
+        console.log("Password has been used recently");
+        
+        // Store password reset attempt with failed validation for reuse
+        await storePasswordResetEvent(user._id, passwordAnalysis, false, {
+          valid: false,
+          message: "Password has been used within the last 6 months"
+        }, req);
+        
+        return res.status(400).json({
+          Status: "Error",
+          Code: "PASSWORD_RECENTLY_USED",
+          Message: "This password was recently used. Please choose a password you haven't used within the last 6 months."
+        });
+      }
+    }
+
     // Enhanced password validation function
     const validatePasswordStrength = (password, analysis) => {
       // Always validate basic requirements regardless of AI analysis
@@ -288,9 +315,26 @@ export const resetPassword = async (req, res) => {
 
     console.log("Password validation passed, updating password...");
 
-    // Update password if validation passes
+    // Hash the new password
     const salt = await bcryptjs.genSalt(10);
-    user.password = await bcryptjs.hash(password, salt);
+    const hashedPassword = await bcryptjs.hash(password, salt);
+    
+    // Update password history - add current password to history before updating
+    if (!user.passwordHistory) {
+      user.passwordHistory = [];
+    }
+    
+    if (user.password) {
+      user.passwordHistory.push(user.password);
+    }
+    
+    // Keep only the 6 most recent passwords (6 months history)
+    if (user.passwordHistory.length > 6) {
+      user.passwordHistory = user.passwordHistory.slice(-6);
+    }
+    
+    // Update the password
+    user.password = hashedPassword;
     
     // Update password metadata
     user.passwordMeta = {
