@@ -10,6 +10,7 @@ import clientRoutes from "./routes/client.js";
 import generalRoutes from "./routes/general.js";
 import managementRoutes from "./routes/management.js";
 import salesRoutes from "./routes/sales.js";
+import notificationsRoutes from './routes/notification.js';
 import hrRoutes from "./routes/hr.js";
 import coreRoutes from "./routes/core.js";
 import logisticsRoutes from "./routes/logistics.js";
@@ -23,6 +24,7 @@ import { startAutoSync } from "./UTIL/scheduler.js";
 
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import { Server } from "socket.io";
 import http from "http";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -32,12 +34,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
+import { setupSocketEvents } from "./UTIL/socketHandlers.js";
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
-
-import NewUser from "./model/newUser.js";
-import {newuser} from './data/index.js'
 
 // Create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -46,8 +45,18 @@ const __dirname = dirname(__filename);
 // ✅ 2. Initialize Express app
 const app = express();
 
-// ✅ 3. Create HTTP server
+// ✅ 3. Create HTTP server and Socket.io instance
 const server = http.createServer(app);
+//uncommet niyo nlang pag may problema
+const io = new Server(server, {
+    cors: {
+        origin: ["http://localhost:3000", process.env.CLIENT_URL],
+        methods: ["GET", "POST"]
+    }
+});
+
+// ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
+app.set("io", io);
 
 // ✅ 5. Middleware
 app.use(express.json());
@@ -58,26 +67,25 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+//uncomment pa may problema
+// app.use(
+//     cors({
+//         origin: [
+//             'http://localhost:3000',
+//             process.env.CLIENT_URL,
+//         ],
+//         credentials: true,
+//         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     })
+// );
 
 app.use(
-  cors({
-      origin: function(origin, callback) {
-          if (!origin) return callback(null, true);
-          
-          const allowedOrigins = ["https://admin.axleshift.com", "http://localhost:3000"];
-          
-          return callback(null, true);
-          
-    
-      },
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-      exposedHeaders: ["Content-Range", "X-Content-Range"],
-      maxAge: 86400
-  })
+    cors({
+        origin: true,
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    })
 );
-
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -118,6 +126,7 @@ app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);
 app.use("/logistics", logisticsRoutes);
 app.use("/finance", financeRoutes);
+app.use("/notifications", notificationsRoutes);
 app.use('/webhook',webhookRoutes);
 app.use('/integ',integRoutes);
 // ✅ 9. Load AI service
@@ -145,3 +154,17 @@ mongoose
        // startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
+
+// ✅ 11. Handle WebSocket connections
+
+setupSocketEvents(io);
+io.on("connection", (socket) => {
+    console.log(`✅ A user connected: ${socket.id}`);
+
+    socket.on("disconnect", () => {
+        console.log(`❌ User disconnected: ${socket.id}`);
+    });
+});
+
+// ✅ 12. Export io instance
+export { io };
