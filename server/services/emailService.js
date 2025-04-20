@@ -41,32 +41,3 @@ export const sendOTPEmail = async (email, otp) => {
   }
 };
 
-
-export const verifyTransporter = async (transporter) => {
-  return new Promise((resolve, reject) => {
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error("Email server configuration error:", error);
-        reject(error);
-      } else {
-        resolve(success);
-      }
-    });
-  });
-};
-
-
-export const sendEmail = async (mailOptions) => {
-  try {
-    const transporter = createTransporter();
-    await verifyTransporter(transporter);
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully:", info.messageId);
-    return info;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw error;
-  }
-};
-

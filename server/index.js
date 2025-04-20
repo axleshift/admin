@@ -46,13 +46,7 @@ const app = express();
 
 // ✅ 3. Create HTTP server and Socket.io instance
 const server = http.createServer(app);
-//uncommet niyo nlang pag may problema
-const io = new Server(server, {
-    cors: {
-        origin: ["http://localhost:3000", process.env.CLIENT_URL],
-        methods: ["GET", "POST"]
-    }
-});
+
 
 // ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
 app.set("io", io);
@@ -78,13 +72,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 //     })
 // );
 
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    })
-);
+app.use(cors())
+
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
