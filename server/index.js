@@ -56,7 +56,10 @@ app.use(helmet());
 app.use(morgan("common"));
 app.use(bodyParser.json());
 
-app.use(cors())
+app.use(cors({
+  origin: 'https://admin.axleshift.com',  // Or use an array for multiple origins
+  credentials: true  // This allows cookies/credentials to be sent
+}));
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
