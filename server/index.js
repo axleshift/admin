@@ -23,7 +23,6 @@ import { startAutoSync } from "./UTIL/scheduler.js";
 
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import { Server } from "socket.io";
 import http from "http";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -44,12 +43,10 @@ const __dirname = dirname(__filename);
 // ✅ 2. Initialize Express app
 const app = express();
 
-// ✅ 3. Create HTTP server and Socket.io instance
+// ✅ 3. Create HTTP server
 const server = http.createServer(app);
 
-
-// ✅ 4. Attach io instance to app so routes can use `req.app.get("io")`
-app.set("io", io);
+// Removed Socket.io initialization and setting
 
 // ✅ 5. Middleware
 app.use(express.json());
@@ -73,8 +70,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // );
 
 app.use(cors())
-
-
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -142,5 +137,4 @@ mongoose
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
 
-// ✅ 11. Handle WebSocket connections
-
+// Removed WebSocket handling
