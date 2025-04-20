@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../../../utils/axiosInstance';
 import logActivity from '../../../../utils/activityLogger';
-import {
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CCol,
-  CRow,
-  CTable,
-  CTableHead,
-  CTableBody,
-  CTableHeaderCell,
-  CTableRow,
-  CTableDataCell,
-  CSpinner,
-  CBadge,
-  CAlert,
-  CToast,
-  CToastHeader,
-  CToastBody,
-  CToaster
-} from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBoxOpen, 
@@ -46,7 +26,7 @@ const InventoryList = () => {
   
   // Toast state and ref
   const [toast, setToast] = useState(null);
-  const toaster = React.useRef();
+  const [showToastNotification, setShowToastNotification] = useState(false);
   
   // Check if system is in dark mode
   const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -87,30 +67,19 @@ const InventoryList = () => {
     
     const style = toastStyles[type] || toastStyles.info;
     
-    setToast(
-      <CToast 
-        autohide={true} 
-        delay={5000}
-        animation={true}
-        className={`${style.bgColor} border ${style.borderColor} shadow`}
-      >
-        <CToastHeader 
-          closeButton
-          className={`border-0 ${style.bgColor} ${style.textColor}`}
-        >
-          <div className="d-flex align-items-center">
-            <FontAwesomeIcon 
-              icon={style.icon} 
-              className={`me-2 fs-5 ${style.iconColor}`}
-            />
-            <strong className="me-auto">{title}</strong>
-          </div>
-        </CToastHeader>
-        <CToastBody className={`${style.textColor} py-3 fw-semibold`}>
-          {message}
-        </CToastBody>
-      </CToast>
-    );
+    setToast({
+      type,
+      title,
+      message,
+      style
+    });
+    
+    setShowToastNotification(true);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setShowToastNotification(false);
+    }, 5000);
   };
   
   // Listen for changes in color scheme preference
@@ -144,13 +113,14 @@ const InventoryList = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      'In Stock': { color: 'success', icon: faCheck },
-      'Low Stock': { color: 'warning', icon: faExclamationTriangle },
-      'Out of Stock': { color: 'danger', icon: faExclamationTriangle },
-      'default': { color: 'info', icon: faBoxOpen }
+      'In Stock': { color: 'success', icon: faCheck, bgColor: '#28a745', textColor: 'white' },
+      'Low Stock': { color: 'warning', icon: faExclamationTriangle, bgColor: '#ffc107', textColor: 'black' },
+      'Out of Stock': { color: 'danger', icon: faExclamationTriangle, bgColor: '#dc3545', textColor: 'white' },
+      'default': { color: 'info', icon: faBoxOpen, bgColor: '#17a2b8', textColor: 'white' }
     };
     
     const statusConfig = statusMap[status] || statusMap.default;
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -159,10 +129,24 @@ const InventoryList = () => {
       action: 'Page Visit',
       description: `${userName} visit the Inventory page`
     }).catch(console.warn);
+    
     return (
-      <CBadge color={statusConfig.color} className="ms-2 px-2 py-1">
-        <FontAwesomeIcon icon={statusConfig.icon} className="me-1" /> {status}
-      </CBadge>
+      <span 
+        className="ms-2 px-2 py-1 rounded"
+        style={{ 
+          backgroundColor: statusConfig.bgColor, 
+          color: statusConfig.textColor,
+          padding: '0.25rem 0.5rem',
+          borderRadius: '0.25rem',
+          display: 'inline-flex',
+          alignItems: 'center',
+          fontSize: '0.75rem',
+          fontWeight: '700',
+          marginLeft: '8px'
+        }}
+      >
+        <FontAwesomeIcon icon={statusConfig.icon} style={{ marginRight: '4px' }} /> {status}
+      </span>
     );
   };
 
@@ -194,14 +178,52 @@ const InventoryList = () => {
     refreshInventory();
   }, []);
 
+  // Toast component
+  const Toast = () => {
+    if (!toast || !showToastNotification) return null;
+    
+    return (
+      <div 
+        className={`position-fixed top-0 end-0 p-3`} 
+        style={{ zIndex: 1050 }}
+      >
+        <div 
+          className={`toast show shadow ${toast.style.bgColor} border ${toast.style.borderColor}`}
+          role="alert" 
+          aria-live="assertive" 
+          aria-atomic="true"
+        >
+          <div className={`toast-header border-0 ${toast.style.bgColor} ${toast.style.textColor}`}>
+            <div className="d-flex align-items-center">
+              <FontAwesomeIcon 
+                icon={toast.style.icon} 
+                className={`me-2 fs-5 ${toast.style.iconColor}`}
+              />
+              <strong className="me-auto">{toast.title}</strong>
+            </div>
+            <button 
+              type="button" 
+              className={`btn-close ${toast.style.textColor === 'text-white' ? 'btn-close-white' : ''}`} 
+              onClick={() => setShowToastNotification(false)}
+              aria-label="Close"
+            ></button>
+          </div>
+          <div className={`toast-body ${toast.style.textColor} py-3 fw-semibold`}>
+            {toast.message}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <CRow>
-      <CCol xs={12}>
-        {/* Toaster container with improved positioning */}
-        <CToaster ref={toaster} push={toast} placement="top-end" className="p-3" />
+    <div className="row">
+      <div className="col-12">
+        {/* Toast container */}
+        <Toast />
         
-        <CCard className="mb-4">
-          <CCardHeader className="d-flex justify-content-between align-items-center">
+        <div className="card mb-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
             <div>
               <FontAwesomeIcon icon={faWarehouse} className="me-2" />
               <strong>Inventory Management</strong>
@@ -214,57 +236,61 @@ const InventoryList = () => {
               <FontAwesomeIcon icon={faSync} className={loading ? 'fa-spin me-1' : 'me-1'} />
               Refresh
             </button>
-          </CCardHeader>
-          <CCardBody>
+          </div>
+          <div className="card-body">
             {error && (
-              <CAlert color="danger">
+              <div className="alert alert-danger">
                 <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
                 {error}
-              </CAlert>
+              </div>
             )}
             
             {loading ? (
               <div className="text-center p-5">
-                <CSpinner color="primary" />
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
                 <div className="mt-3">Loading inventory data...</div>
               </div>
             ) : (
               <>
                 {inventory.length === 0 ? (
-                  <CAlert color="info">
+                  <div className="alert alert-info">
                     <FontAwesomeIcon icon={faSearch} className="me-2" />
                     No inventory items found
-                  </CAlert>
+                  </div>
                 ) : (
-                  <CTable hover responsive striped className="border">
-                    <CTableHead color="light">
-                      <CTableRow>
-                        <CTableHeaderCell scope="col"><FontAwesomeIcon icon={faBoxOpen} className="me-2" />SKU</CTableHeaderCell>
-                        <CTableHeaderCell scope="col">Quantity</CTableHeaderCell>
-                        <CTableHeaderCell scope="col">Stock Level</CTableHeaderCell>
-                        <CTableHeaderCell scope="col">Status</CTableHeaderCell>
-                        <CTableHeaderCell scope="col"><FontAwesomeIcon icon={faCalendar} className="me-2" />Created Date</CTableHeaderCell>
-                      </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                      {inventory.map((item) => (
-                        <CTableRow key={item._id}>
-                          <CTableDataCell>{item.sku}</CTableDataCell>
-                          <CTableDataCell>{item.quantity}</CTableDataCell>
-                          <CTableDataCell>{item.stock_level}</CTableDataCell>
-                          <CTableDataCell>{getStatusBadge(item.status)}</CTableDataCell>
-                          <CTableDataCell>{new Date(item.createdAt).toLocaleDateString()}</CTableDataCell>
-                        </CTableRow>
-                      ))}
-                    </CTableBody>
-                  </CTable>
+                  <div className="table-responsive">
+                    <table className="table table-hover table-striped border">
+                      <thead className="table-light">
+                        <tr>
+                          <th scope="col"><FontAwesomeIcon icon={faBoxOpen} className="me-2" />SKU</th>
+                          <th scope="col">Quantity</th>
+                          <th scope="col">Stock Level</th>
+                          <th scope="col">Status</th>
+                          <th scope="col"><FontAwesomeIcon icon={faCalendar} className="me-2" />Created Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventory.map((item) => (
+                          <tr key={item._id}>
+                            <td>{item.sku}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.stock_level}</td>
+                            <td>{getStatusBadge(item.status)}</td>
+                            <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </>
             )}
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

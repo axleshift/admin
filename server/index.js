@@ -52,31 +52,8 @@ const server = http.createServer(app);
 // ✅ 5. Middleware
 app.use(helmet());
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if(!origin) return callback(null, true);
-    
-    // Simple wildcard to allow all subdomains
-    const allowedDomains = [
-      /\.axleshift\.com$/,    // Matches any subdomain of axleshift.com
-      'http://localhost:3000' // For development
-    ];
-    
-    // Check if the origin matches any allowed pattern
-    const allowed = allowedDomains.some(domain => {
-      if(domain instanceof RegExp) {
-        return domain.test(origin);
-      }
-      return domain === origin;
-    });
-    
-    if(allowed) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
+  origin: '*', // Allow all origins
+  credentials: true // Allow cookies and credentials
 }));
 app.use(express.json());
 app.use(cookieParser()); 

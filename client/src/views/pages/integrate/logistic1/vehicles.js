@@ -21,7 +21,11 @@ import {
   CModalHeader,
   CModalBody,
   CModalFooter,
-  CModalTitle
+  CModalTitle,
+  CToast,
+  CToastBody,
+  CToastHeader,
+  CToaster
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -60,6 +64,10 @@ const VehicleDataPage = () => {
   const [downloadFileName, setDownloadFileName] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   
+  // Toast state
+  const [toast, setToast] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  
   // User information (should be retrieved from your auth context/state)
   const userRole = localStorage.getItem('role');
   const userDepartment = localStorage.getItem('department');
@@ -75,6 +83,14 @@ const VehicleDataPage = () => {
         
         if (response.data.success && response.data.data.success) {
           setVehicles(response.data.data.data);
+          
+          // Create and show toast
+          setToast({
+            color: 'success',
+            title: 'Success',
+            content: 'Vehicle data has been successfully loaded!'
+          });
+          setShowToast(true);
           
           // Log activity for viewing vehicle data
           logActivity({
@@ -92,6 +108,14 @@ const VehicleDataPage = () => {
       } catch (err) {
         setError(err.message || 'An error occurred while fetching vehicle data');
         console.error('Error fetching vehicles:', err);
+        
+        // Create error toast
+        setToast({
+          color: 'danger',
+          title: 'Error',
+          content: 'Failed to load vehicle data'
+        });
+        setShowToast(true);
       } finally {
         setLoading(false);
       }
@@ -166,88 +190,27 @@ const VehicleDataPage = () => {
         description: `Downloaded ${fileName} as password-protected zip`
       }).catch(console.warn);
       
+      // Show success toast
+      setToast({
+        color: 'success',
+        title: 'Success',
+        content: `File ${fileName}_Protected.zip downloaded successfully!`
+      });
+      setShowToast(true);
+      
     } catch (err) {
       console.error('Error creating protected zip:', err);
-      alert('Failed to create protected download. Please try again.');
+      
+      // Show error toast
+      setToast({
+        color: 'danger',
+        title: 'Error',
+        content: 'Failed to create protected download. Please try again.'
+      });
+      setShowToast(true);
     } finally {
       setIsDownloading(false);
     }
-  };
-
-  // Function to download vehicles data as CSV directly
-  const handleDownload = (downloadType) => {
-    let dataToDownload = [];
-    let fileName = '';
-    
-    // Filter the data based on downloadType
-    switch(downloadType) {
-      case 'all':
-        dataToDownload = vehicles.filter(v => !v.deleted);
-        fileName = 'All_Vehicles';
-        break;
-      case 'available':
-        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'available');
-        fileName = 'Available_Vehicles';
-        break;
-      case 'in_use':
-        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'in_use');
-        fileName = 'InUse_Vehicles';
-        break;
-      case 'maintenance':
-        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'maintenance');
-        fileName = 'Maintenance_Vehicles';
-        break;
-      case 'forRegistration':
-        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'forRegistration');
-        fileName = 'ForRegistration_Vehicles';
-        break;
-      default:
-        dataToDownload = vehicles.filter(v => !v.deleted);
-        fileName = 'Vehicles';
-    }
-    
-    const columns = ['Registration Number', 'Brand', 'Model', 'Year', 'Type', 'Capacity', 'Fuel Type', 
-                    'Current Mileage', 'Driver', 'Status', 'Registration Expiry'];
-    
-    // Create CSV content
-    let csvContent = columns.join(',') + '\n';
-    
-    dataToDownload.forEach(item => {
-      const row = [
-        item.regisNumber || '',
-        item.brand || '',
-        item.model || '',
-        item.year || '',
-        item.type || '',
-        item.capacity || '',
-        item.fuelType || '',
-        item.currentMileage || '',
-        item.driver || 'Not Assigned',
-        item.status || '',
-        item.regisExprationDate ? new Date(item.regisExprationDate).toLocaleDateString() : 'N/A'
-      ].map(field => `"${String(field).replace(/"/g, '""')}"`); // Escape quotes in CSV
-      
-      csvContent += row.join(',') + '\n';
-    });
-    
-    // Create a blob and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${fileName}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    // Log activity for CSV download
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/vehicles',
-      action: 'Download CSV',
-      description: `Downloaded ${fileName} data as CSV (${dataToDownload.length} records)`
-    }).catch(console.warn);
   };
 
   // Function to handle printing
@@ -374,6 +337,29 @@ const VehicleDataPage = () => {
 
   return (
     <div className="container-fluid p-4">
+      {/* Simple Toast Implementation */}
+      {showToast && toast && (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050 }}>
+          <div 
+            className={`toast show align-items-center text-white bg-${toast.color} border-0`}
+            role="alert" 
+            aria-live="assertive" 
+            aria-atomic="true"
+          >
+            <div className="d-flex">
+              <div className="toast-body">
+                <strong>{toast.title}</strong>: {toast.content}
+              </div>
+              <button 
+                type="button" 
+                className="btn-close btn-close-white me-2 m-auto" 
+                onClick={() => setShowToast(false)}
+              ></button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>
           <FontAwesomeIcon icon={faCar} className="me-3 text-primary" />
@@ -416,8 +402,8 @@ const VehicleDataPage = () => {
                 <div className="d-flex gap-2">
                   {/* Dropdown for secure downloads */}
                   <CDropdown>
-                    <CDropdownToggle color="success" disabled={isDownloading}>
-                      <FontAwesomeIcon icon={faLock} className="me-2" />
+                    <CDropdownToggle disabled={isDownloading}>
+                      <FontAwesomeIcon icon={faLock} className="me-2" color="success" />
                       Secure Download
                       {isDownloading && <CSpinner size="sm" className="ms-2" />}
                     </CDropdownToggle>
@@ -427,21 +413,6 @@ const VehicleDataPage = () => {
                       <CDropdownItem onClick={() => handleDownloadSecureZip('in_use')}>In-Use Vehicles</CDropdownItem>
                       <CDropdownItem onClick={() => handleDownloadSecureZip('maintenance')}>Maintenance Vehicles</CDropdownItem>
                       <CDropdownItem onClick={() => handleDownloadSecureZip('forRegistration')}>For Registration Vehicles</CDropdownItem>
-                    </CDropdownMenu>
-                  </CDropdown>
-                  
-                  {/* Dropdown for regular downloads */}
-                  <CDropdown>
-                    <CDropdownToggle color="light">
-                      <FontAwesomeIcon icon={faFileExcel} className="me-2 text-success" />
-                      Export CSV
-                    </CDropdownToggle>
-                    <CDropdownMenu>
-                      <CDropdownItem onClick={() => handleDownload('all')}>All Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownload('available')}>Available Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownload('in_use')}>In-Use Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownload('maintenance')}>Maintenance Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownload('forRegistration')}>For Registration Vehicles</CDropdownItem>
                     </CDropdownMenu>
                   </CDropdown>
                   

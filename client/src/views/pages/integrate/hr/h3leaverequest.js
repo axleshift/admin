@@ -28,7 +28,12 @@ import {
   CToaster,
   CPagination,
   CPaginationItem,
-  CAlert
+  CAlert,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem,
+  CFormInput,
 } from "@coreui/react";
 import CIcon from '@coreui/icons-react';
 import {
@@ -41,9 +46,15 @@ import {
   cilPencil,
   cilMoney,
   cilFile,
-  cilX
+  cilX,
+  cilLockLocked,
+  cilCopy,
 } from '@coreui/icons';
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faDownload,
+  faDroplet
+} from "@fortawesome/free-solid-svg-icons";
 const H3LeaveRequest = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +70,17 @@ const H3LeaveRequest = () => {
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentError, setDocumentError] = useState(null);
   const itemsPerPage = 5;
-  
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadPassword, setDownloadPassword] = useState('');
+  const [downloadFileName, setDownloadFileName] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordCopied, setPasswordCopied] = useState(false);
+
+  // User information (should be retrieved from your auth context/state)
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userName = localStorage.getItem('name');
+  const userUsername = localStorage.getItem('username');
   // Reference for the toaster
   const toaster = useRef();
 
@@ -170,12 +191,26 @@ const H3LeaveRequest = () => {
     setComments('');
   };
 
+  const handlePasswordModalClose = () => {
+    setShowPasswordModal(false);
+    setPasswordCopied(false);
+  };
+
   const handleDocumentModalClose = () => {
     setShowDocumentModal(false);
     setSelectedDocument(null);
     setDocumentError(null);
   };
 
+  const copyPasswordToClipboard = () => {
+    navigator.clipboard.writeText(downloadPassword).then(() => {
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 3000);
+    }).catch(err => {
+      console.error('Failed to copy password:', err);
+      showToast('danger', 'Error', 'Failed to copy password to clipboard');
+    });
+  };
 
   const handleActionSubmit = async () => {
     if (!selectedRequest || !actionType) return;
@@ -399,7 +434,78 @@ const H3LeaveRequest = () => {
         );
     }
   };
-
+  const handleDownloadSecurePdf = async (downloadType) => {
+    try {
+      setActionLoading(true);
+      
+      // Get the download type and set file name
+      let fileName = '';
+      
+      switch(downloadType) {
+        case 'all': 
+          fileName = 'All_LeaveRequests'; 
+          break;
+        case 'pending': 
+          fileName = 'Pending_LeaveRequests'; 
+          break;
+        case 'approved': 
+          fileName = 'Approved_LeaveRequests';
+          break;
+        case 'rejected': 
+          fileName = 'Rejected_LeaveRequests';
+          break;
+        default:
+          fileName = 'LeaveRequests';
+      }
+      
+      // Send request to server
+      const response = await axiosInstance.post(
+        '/management/downloadLeaveRequest',
+        {
+          name: userName,
+          role: userRole,
+          username: userUsername,
+          downloadType: downloadType
+        },
+        { responseType: 'blob' }
+      );
+      
+      // Generate password and show in modal
+      const password = userName.substring(0, 2) + userRole.charAt(0) + userUsername.slice(-6);
+      setDownloadPassword(password);
+      setDownloadFileName(`${fileName}_Protected.zip`);
+      setShowPasswordModal(true);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${fileName}_Protected.zip`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Show success toast
+      showToast(
+        'success', 
+        'Success', 
+        `File ${fileName}_Protected.zip downloaded successfully!`
+      );
+      
+    } catch (err) {
+      console.error('Error creating protected zip:', err);
+      
+      // Show error toast
+      showToast(
+        'danger', 
+        'Error', 
+        'Failed to create protected download. Please try again.'
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
   return (
     <CContainer fluid className="mt-4">
       {/* Render toast notifications */}
@@ -411,6 +517,20 @@ const H3LeaveRequest = () => {
             <CIcon icon={cilCalendar} className="me-2" />
             Leave Requests
           </h4>
+          {/* Add this dropdown near your action buttons */}
+            <CDropdown>
+              <CDropdownToggle color="primary" disabled={actionLoading}>
+                <FontAwesomeIcon icon={faDownload} className="me-2" />
+                Secure PDF Download
+                {actionLoading && <CSpinner size="sm" className="ms-2" />}
+              </CDropdownToggle>
+              <CDropdownMenu>
+                <CDropdownItem onClick={() => handleDownloadSecurePdf('all')}>All Leave Requests</CDropdownItem>
+                <CDropdownItem onClick={() => handleDownloadSecurePdf('pending')}>Pending Requests</CDropdownItem>
+                <CDropdownItem onClick={() => handleDownloadSecurePdf('approved')}>Approved Requests</CDropdownItem>
+                <CDropdownItem onClick={() => handleDownloadSecurePdf('rejected')}>Rejected Requests</CDropdownItem>
+              </CDropdownMenu>
+            </CDropdown>
           <CButton 
             color="light" 
             size="sm" 
@@ -678,8 +798,77 @@ const H3LeaveRequest = () => {
           </CButton>
         </CModalFooter>
       </CModal>
-    </CContainer>
-  );
-};
 
-export default H3LeaveRequest;
+      {/* Password Modal */}
+      <CModal 
+        visible={showPasswordModal} 
+        onClose={handlePasswordModalClose}
+        backdrop="static"
+        alignment="center"
+      >
+        <CModalHeader className="bg-info text-white">
+          <CModalTitle>
+            <CIcon icon={cilLockLocked} className="me-2" />
+            Secure File Password
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody className="p-4">
+          <div className="text-center mb-3">
+            <div className="display-6 mb-3 text-info">
+              <CIcon icon={cilLockLocked} size="xl" />
+            </div>
+            <h5>Your download has started</h5>
+            <p className="text-muted">
+              Use the password below to extract the ZIP file contents:
+            </p>
+          </div>
+          
+          <div className="password-container p-3 bg-light rounded border position-relative mb-4">
+            <div className="d-flex align-items-center">
+              <CFormInput
+                type="text"
+                value={downloadPassword}
+                readOnly
+                className="bg-white border-info text-center fw-bold"
+              />
+              <CButton 
+                color="secondary"
+                className="ms-2"
+                onClick={copyPasswordToClipboard}
+                title="Copy to clipboard"
+                >
+                  <CIcon icon={cilCopy} />
+                </CButton>
+              </div>
+              {passwordCopied && (
+                <div className="text-success mt-2 small">
+                  <i className="fas fa-check-circle"></i> Password copied to clipboard!
+                </div>
+              )}
+            </div>
+            
+            <div className="file-info mb-4 p-3 bg-light rounded border">
+              <p className="mb-1"><strong>File Name:</strong> {downloadFileName}</p>
+              <p className="mb-1"><strong>Format:</strong> Protected ZIP Archive</p>
+              <p className="mb-0"><strong>Contents:</strong> HR Leave Request Reports (PDF)</p>
+            </div>
+            
+            <div className="alert alert-warning">
+            <strong>Important:</strong> Keep this password secure. You&apos;ll need it to access the contents of the downloaded file.
+            </div>
+          </CModalBody>
+          <CModalFooter>
+            <CButton 
+              color="info" 
+              className="px-4"
+              onClick={handlePasswordModalClose}
+            >
+             I&apos;ve Saved My Password
+            </CButton>
+          </CModalFooter>
+        </CModal>
+      </CContainer>
+    );
+  };
+  
+  export default H3LeaveRequest;

@@ -291,7 +291,7 @@ export const getAllUsers = async (req, res) => {
   };
    // Ensure environment variables are loaded
   
-  const HR3 = process.env.EXTERNAL_Hr3;
+  const HR3 = process.env.EXTERNAL_HR3;
   
   export const leave = async (req, res) => {
     try {
