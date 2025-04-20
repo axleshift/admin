@@ -10,7 +10,6 @@ import clientRoutes from "./routes/client.js";
 import generalRoutes from "./routes/general.js";
 import managementRoutes from "./routes/management.js";
 import salesRoutes from "./routes/sales.js";
-import notificationsRoutes from './routes/notification.js';
 import hrRoutes from "./routes/hr.js";
 import coreRoutes from "./routes/core.js";
 import logisticsRoutes from "./routes/logistics.js";
@@ -34,7 +33,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { setupSocketEvents } from "./UTIL/socketHandlers.js";
+//import { setupSocketEvents } from "./UTIL/socketHandlers.js";
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
@@ -126,7 +125,6 @@ app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);
 app.use("/logistics", logisticsRoutes);
 app.use("/finance", financeRoutes);
-app.use("/notifications", notificationsRoutes);
 app.use('/webhook',webhookRoutes);
 app.use('/integ',integRoutes);
 // ✅ 9. Load AI service
@@ -157,14 +155,3 @@ mongoose
 
 // ✅ 11. Handle WebSocket connections
 
-setupSocketEvents(io);
-io.on("connection", (socket) => {
-    console.log(`✅ A user connected: ${socket.id}`);
-
-    socket.on("disconnect", () => {
-        console.log(`❌ User disconnected: ${socket.id}`);
-    });
-});
-
-// ✅ 12. Export io instance
-export { io };

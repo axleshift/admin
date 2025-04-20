@@ -11,6 +11,11 @@ import { analyzeActivityWithAI } from "../services/geminiService.js";
 import Activitytracker from '../model/Activitytracker.js';
 import PasswordResetEvent from '../model/PasswordResetEvent.js';
 import mongoose from 'mongoose'
+
+import { sendEmail } from "../services/emailService.js";
+import { getPasswordResetTemplate } from "../services/emailTemplates.js";
+import { getClientUrl } from "../UTIL/urlUtils.js";
+
 dotenv.config();
 // Backend: Enhanced accessReview controller
 export const accessReview = async (req, res) => {
@@ -124,91 +129,71 @@ export const getUser = async (req, res) => {
     }
 };
 
-const baseUrl = process.env.NODE_ENV === "development" ? process.env.DEV_URL : process.env.CLIENT_URL;
+//forgotpass
+
+const generateResetToken = (user) => {
+  const token = jwt.sign(
+    { id: user._id }, 
+    process.env.JWT_SECRET_KEY, 
+    { expiresIn: "1d" }
+  );
+  
+  const clientUrl = getClientUrl();
+  const resetLink = `${clientUrl}/resetpass/${user._id}/${token}`;
+  
+  return { token, resetLink };
+};
+
+export const sendPasswordResetEmail = async (email, resetLink) => {
+  const mailOptions = {
+    from: `"Account Recovery" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Reset your password",
+    text: `Reset link: ${resetLink}`,
+    html: getPasswordResetTemplate(resetLink)
+  };
+  
+  return sendEmail(mailOptions);
+};
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-      console.log("Received email:", email);
-      const user = await User.findOne({ email });
-
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
-      
-      // FIX: Use consistent URL format that works in all environments
-      const clientUrl = process.env.NODE_ENV === "development" 
-          ? process.env.DEV_URL 
-          : process.env.CLIENT_URL;
-          
-      if (!clientUrl) {
-          console.error("CLIENT_URL environment variable is not set");
-          return res.status(500).json({ message: "Server configuration error" });
-      }
-          
-      const resetLink = `${clientUrl}/resetpass/${user._id}/${token}`;
-      console.log("Generated reset link:", resetLink);
-      
-      const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,
-          },
-      });
-
-      // Verify transporter configuration
-      await new Promise((resolve, reject) => {
-          transporter.verify((error, success) => {
-              if (error) {
-                  console.error("Email server configuration error:", error);
-                  reject(error);
-              } else {
-                  resolve(success);
-              }
-          });
-      });
-
-      const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: user.email,
-          subject: "Reset your password",
-          text: `Reset link: ${resetLink}`,
-          // Add HTML version for better email client compatibility
-          html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-                  <h2 style="color: #333;">Password Reset Request</h2>
-                  <p>Hello,</p>
-                  <p>You requested to reset your password. Please click the link below to set a new password:</p>
-                  <p style="margin: 20px 0;">
-                      <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a>
-                  </p>
-                  <p>If you didn't request this, please ignore this email or contact support if you have concerns.</p>
-                  <p>This link will expire in 24 hours.</p>
-                  <p>If the button above doesn't work, copy and paste this URL into your browser:</p>
-                  <p style="word-break: break-all; color: #666;">${resetLink}</p>
-              </div>
-          `,
-      };
-
-      await transporter.sendMail(mailOptions);
-      console.log("Email sent successfully");
-      
-      res.status(200).json({ 
-          message: "Reset link sent to your email",
-          userId: user._id
-      });
+    console.log("Received forgot password request for email:", email);
+    
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Generate reset token and link
+    const { resetLink } = generateResetToken(user);
+    console.log("Generated reset link:", resetLink);
+    
+    // Send password reset email
+    await sendPasswordResetEmail(user.email, resetLink);
+    
+    res.status(200).json({ 
+      message: "Reset link sent to your email",
+      userId: user._id
+    });
   } catch (err) {
-      console.error("Server error:", err);
-      res.status(500).json({ 
-          message: "Server error", 
-          error: err.message 
-      });
+    console.error("Password reset error:", err);
+    
+    // Provide appropriate error message based on error type
+    if (err.message === "CLIENT_URL environment variable is not set") {
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+    
+    res.status(500).json({ 
+      message: "Failed to process password reset request", 
+      error: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 };
+
 export const resetPassword = async (req, res) => {
   const { id, token } = req.params;
   const { password, passwordAnalysis } = req.body;
