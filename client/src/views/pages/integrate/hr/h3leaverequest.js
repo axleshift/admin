@@ -27,7 +27,8 @@ import {
   CToastHeader,
   CToaster,
   CPagination,
-  CPaginationItem
+  CPaginationItem,
+  CAlert
 } from "@coreui/react";
 import CIcon from '@coreui/icons-react';
 import {
@@ -39,7 +40,8 @@ import {
   cilInfo,
   cilPencil,
   cilMoney,
-  cilFile 
+  cilFile,
+  cilX
 } from '@coreui/icons';
 
 const H3LeaveRequest = () => {
@@ -52,6 +54,10 @@ const H3LeaveRequest = () => {
   const [showModal, setShowModal] = useState(false);
   const [comments, setComments] = useState('');
   const [toast, setToast] = useState(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
+  const [documentError, setDocumentError] = useState(null);
   const itemsPerPage = 5;
   
   // Reference for the toaster
@@ -61,6 +67,18 @@ const H3LeaveRequest = () => {
     fetchLeaveRequests();
   }, []);
 
+  // Show toast function
+  const showToast = (color, title, message) => {
+    setToast(
+      <CToast autohide={true} delay={5000}>
+        <CToastHeader closeButton color={color}>
+          <strong className="me-auto">{title}</strong>
+        </CToastHeader>
+        <CToastBody>{message}</CToastBody>
+      </CToast>
+    );
+  };
+
   const fetchLeaveRequests = async () => {
     try {
       setLoading(true);
@@ -68,10 +86,24 @@ const H3LeaveRequest = () => {
       const response = await axiosInstance.get("/hr/leaveRequest");
       
       // Extract the data using the new structure from the endpoint
-      setLeaveRequests(response.data.data || []);
+      const fetchedData = response.data.data || [];
+      setLeaveRequests(fetchedData);
+      
+      // Show success toast with count information
+      showToast(
+        'success', 
+        'Data Fetched Successfully', 
+        `Retrieved ${fetchedData.length} leave request(s)`,
+      );
     } catch (error) {
       console.error("Error fetching leave requests:", error);
-      showToast('danger', 'Error', 'Failed to load leave requests');
+      
+      // Show error toast
+      showToast(
+        'danger', 
+        'Fetch Error', 
+        `Failed to load leave requests: ${error.response?.data?.error || error.message}`
+      );
     } finally {
       setLoading(false);
     }
@@ -138,16 +170,12 @@ const H3LeaveRequest = () => {
     setComments('');
   };
 
-  const showToast = (color, title, message) => {
-    setToast(
-      <CToast autohide={true} delay={5000}>
-        <CToastHeader closeButton color={color}>
-          <strong className="me-auto">{title}</strong>
-        </CToastHeader>
-        <CToastBody>{message}</CToastBody>
-      </CToast>
-    );
+  const handleDocumentModalClose = () => {
+    setShowDocumentModal(false);
+    setSelectedDocument(null);
+    setDocumentError(null);
   };
+
 
   const handleActionSubmit = async () => {
     if (!selectedRequest || !actionType) return;
@@ -209,11 +237,168 @@ const H3LeaveRequest = () => {
     setCurrentPage(page);
   };
 
-  const handleDocumentView = (documentPath) => {
-    if(!documentPath){
-      showToast('warning','info','No document available');
+  const handleDocumentView = async (documentPath, requestInfo) => {
+    if (!documentPath) {
+      showToast('warning', 'Info', 'No document available');
+      return;
     }
-  }
+
+    try {
+      setDocumentLoading(true);
+      setDocumentError(null);
+      setSelectedDocument({
+        path: documentPath,
+        name: `Document-${requestInfo.id || 'Unknown'}`,
+        type: getFileType(documentPath),
+        employeeName: requestInfo.name || 'Unknown Employee'
+      });
+      
+      // In a real implementation, you might need to fetch the document here
+      // const response = await axiosInstance.get(`/documents/${documentPath}`, { responseType: 'blob' });
+      // setSelectedDocument({
+      //   ...selectedDocument,
+      //   data: URL.createObjectURL(new Blob([response.data]))
+      // });
+      
+      setShowDocumentModal(true);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+      setDocumentError("Failed to load document. Please try again later.");
+    } finally {
+      setDocumentLoading(false);
+    }
+  };
+
+  const getFileType = (filePath) => {
+    if (!filePath) return 'unknown';
+    
+    const extension = filePath.split('.').pop().toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return 'pdf';
+      case 'doc':
+      case 'docx':
+        return 'word';
+      case 'xls':
+      case 'xlsx':
+        return 'excel';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return 'image';
+      default:
+        return 'unknown';
+    }
+  };
+
+  const renderDocumentViewer = () => {
+    if (documentLoading) {
+      return (
+        <div className="text-center p-5">
+          <CSpinner color="primary" />
+          <p className="mt-3">Loading document...</p>
+        </div>
+      );
+    }
+
+    if (documentError) {
+      return (
+        <CAlert color="danger" className="mb-0">
+          <h4>Error Loading Document</h4>
+          <p>{documentError}</p>
+          <p>Please try again or contact support if the issue persists.</p>
+        </CAlert>
+      );
+    }
+
+    if (!selectedDocument) {
+      return (
+        <CAlert color="warning" className="mb-0">
+          <h4>No Document Selected</h4>
+          <p>There was an error selecting the document. Please try again.</p>
+        </CAlert>
+      );
+    }
+
+    // In a real implementation, you would use the actual document URL from your backend
+    const documentUrl = selectedDocument.path;
+    
+    // Based on file type, render appropriate viewer
+    switch (selectedDocument.type) {
+      case 'pdf':
+        return (
+          <div className="document-viewer-container" style={{ height: '600px', width: '100%' }}>
+            <iframe
+              src={documentUrl}
+              title={selectedDocument.name}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+            >
+              Your browser does not support iframes.
+            </iframe>
+          </div>
+        );
+      case 'image':
+        return (
+          <div className="text-center p-3">
+            <img 
+              src={documentUrl} 
+              alt={selectedDocument.name} 
+              className="img-fluid" 
+              style={{ maxHeight: '600px', maxWidth: '100%' }} 
+            />
+          </div>
+        );
+      case 'word':
+        return (
+          <div className="text-center p-4">
+            <div className="document-preview-card p-4 border rounded bg-light">
+              <CIcon icon={cilFile} size="3xl" className="text-primary mb-3" />
+              <h5>Microsoft Word Document</h5>
+              <p className="text-muted mb-3">Preview not available for Word documents</p>
+              <div className="document-info p-3 bg-white rounded border mb-3">
+                <p className="mb-1"><strong>File Name:</strong> {selectedDocument.name}</p>
+                <p className="mb-1"><strong>Employee:</strong> {selectedDocument.employeeName}</p>
+                <p className="mb-0"><strong>Type:</strong> Microsoft Word Document</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'excel':
+        return (
+          <div className="text-center p-4">
+            <div className="document-preview-card p-4 border rounded bg-light">
+              <CIcon icon={cilFile} size="3xl" className="text-success mb-3" />
+              <h5>Microsoft Excel Document</h5>
+              <p className="text-muted mb-3">Preview not available for Excel documents</p>
+              <div className="document-info p-3 bg-white rounded border mb-3">
+                <p className="mb-1"><strong>File Name:</strong> {selectedDocument.name}</p>
+                <p className="mb-1"><strong>Employee:</strong> {selectedDocument.employeeName}</p>
+                <p className="mb-0"><strong>Type:</strong> Microsoft Excel Document</p>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="text-center p-4">
+            <div className="document-preview-card p-4 border rounded bg-light">
+              <CIcon icon={cilFile} size="3xl" className="text-secondary mb-3" />
+              <h5>Document Preview</h5>
+              <p className="text-muted mb-3">Preview not available for this file type</p>
+              <div className="document-info p-3 bg-white rounded border mb-3">
+                <p className="mb-1"><strong>File Name:</strong> {selectedDocument.name}</p>
+                <p className="mb-1"><strong>Employee:</strong> {selectedDocument.employeeName}</p>
+                <p className="mb-0"><strong>Type:</strong> {selectedDocument.type.toUpperCase()}</p>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <CContainer fluid className="mt-4">
@@ -339,16 +524,16 @@ const H3LeaveRequest = () => {
                         <CTableDataCell>{getStatusBadge(request.status)}</CTableDataCell>
                         <CTableDataCell>
                            {request.document_path ? (
-                                                      <CButton
-                                                        color="info"
-                                                        size="sm"
-                                                        onClick={() => handleDocumentView(request.document_path)}
-                                                      >
-                                                        <CIcon icon={cilFile} />
-                                                      </CButton>
-                                                    ) : (
-                                                      <span className="text-muted">No doc</span>
-                                                    )}
+                              <CButton
+                                color="info"
+                                size="sm"
+                                onClick={() => handleDocumentView(request.document_path, request)}
+                              >
+                                <CIcon icon={cilFile} />
+                              </CButton>
+                            ) : (
+                              <span className="text-muted">No doc</span>
+                            )}
                         </CTableDataCell>
                         <CTableDataCell>
                           {request.status && request.status.toLowerCase() === 'pending' && (
@@ -460,6 +645,36 @@ const H3LeaveRequest = () => {
             ) : (
               actionType === 'approve' ? 'Approve' : 'Reject'
             )}
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* Document Viewer Modal */}
+      <CModal 
+        visible={showDocumentModal} 
+        onClose={handleDocumentModalClose}
+        size="lg"
+        backdrop="static"
+      >
+        <CModalHeader onClose={handleDocumentModalClose}>
+          <CModalTitle>
+            {selectedDocument && (
+              <>
+                <CIcon icon={cilFile} className="me-2" />
+                Document Preview: {selectedDocument.employeeName}
+              </>
+            )}
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody className="p-0">
+          <div className="document-viewer">
+            {renderDocumentViewer()}
+          </div>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={handleDocumentModalClose}>
+            <CIcon icon={cilX} className="me-1" />
+            Close
           </CButton>
         </CModalFooter>
       </CModal>

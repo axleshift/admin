@@ -14,17 +14,18 @@ import { faBriefcase, faEnvelope, faUser, faLock } from '@fortawesome/free-solid
 import { Link } from 'react-router-dom' // Import Link from react-router-dom
 
 const Settings = () => {
-  // Retrieve the user's data from session storage
-  const name = sessionStorage.getItem('name')
-  const email = sessionStorage.getItem('email')
-  const role = sessionStorage.getItem('role')
+  // Retrieve the user's data from local storage
+  const name = localStorage.getItem('name')
+  const email = localStorage.getItem('email')
+  const role = localStorage.getItem('role')
+  const department = localStorage.getItem('department')
 
   return (
     <div>
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={9} lg={7} xl={6}>
-            <CCard className="mx-4" style={{ padding: '20px', marginBottom: '20px' }}>
+            <CCard className="mx-4" style={{ padding: '20px', marginBottom: '20px', width: '150%' }}>
               <CCardBody className="p-4">
                 <h1>Settings</h1>
                 <CInputGroup className="mb-3">
@@ -44,6 +45,12 @@ const Settings = () => {
                     <FontAwesomeIcon icon={faBriefcase} />
                   </CInputGroupText>
                   <span className="ms-2">{role ? `Role: ${role}` : 'No role'}</span>
+                </CInputGroup>
+                <CInputGroup className="mb-3">
+                  <CInputGroupText>
+                    <FontAwesomeIcon icon={faBriefcase} />
+                  </CInputGroupText>
+                  <span className="ms-2">{department ? `Department: ${department}` : 'No department'}</span>
                 </CInputGroup>
                 <CInputGroup className="mb-3">
                   <CInputGroupText>

@@ -27,27 +27,27 @@ const AppSidebar = () => {
 
   const reduxUserRole = useSelector((state) => state.changeState.auth?.role)
   const reduxUserDepartment = useSelector((state) => state.changeState.auth?.department)
-  const [userRole, setUserRole] = useState(sessionStorage.getItem('role') || 'guest')
-  const [userDepartment, setUserDepartment] = useState(sessionStorage.getItem('department') || 'none')
+  const [userRole, setUserRole] = useState(localStorage.getItem('role') || 'guest')
+  const [userDepartment, setUserDepartment] = useState(localStorage.getItem('department') || 'none')
 
   useEffect(() => {
     if (reduxUserRole) {
       setUserRole(reduxUserRole)
-      sessionStorage.setItem('role', reduxUserRole)
+      localStorage.setItem('role', reduxUserRole)
     } else {
-      const sessionRole = sessionStorage.getItem('role')
-      if (sessionRole) {
-        setUserRole(sessionRole)
+      const localRole = localStorage.getItem('role')
+      if (localRole) {
+        setUserRole(localRole)
       }
     }
 
     if (reduxUserDepartment) {
       setUserDepartment(reduxUserDepartment)
-      sessionStorage.setItem('department', reduxUserDepartment)
+      localStorage.setItem('department', reduxUserDepartment)
     } else {
-      const sessionDepartment = sessionStorage.getItem('department')
-      if (sessionDepartment) {
-        setUserDepartment(sessionDepartment)
+      const localDepartment = localStorage.getItem('department')
+      if (localDepartment) {
+        setUserDepartment(localDepartment)
       }
     }
   }, [reduxUserRole, reduxUserDepartment])

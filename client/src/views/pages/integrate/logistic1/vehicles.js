@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../../../utils/axiosInstance';
+import logActivity from '../../../../utils/activityLogger';
 import { 
   CCard, 
   CCardHeader, 
@@ -11,7 +12,16 @@ import {
   CButton,
   CBadge,
   CCollapse,
-  CCardFooter
+  CCardFooter,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem,
+  CModal,
+  CModalHeader,
+  CModalBody,
+  CModalFooter,
+  CModalTitle
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -35,7 +45,9 @@ import {
   faPrint,
   faInfoCircle,
   faMapMarkerAlt,
-  faTag
+  faTag,
+  faDownload,
+  faLock
 } from '@fortawesome/free-solid-svg-icons';
 
 const VehicleDataPage = () => {
@@ -43,6 +55,17 @@ const VehicleDataPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadPassword, setDownloadPassword] = useState('');
+  const [downloadFileName, setDownloadFileName] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  
+  // User information (should be retrieved from your auth context/state)
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userName = localStorage.getItem('name');
+  const userUsername = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId') || '';
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -52,6 +75,17 @@ const VehicleDataPage = () => {
         
         if (response.data.success && response.data.data.success) {
           setVehicles(response.data.data.data);
+          
+          // Log activity for viewing vehicle data
+          logActivity({
+            name: userName,
+            role: userRole,
+            department: userDepartment,
+            route: '/vehicles',
+            action: 'View Vehicles',
+            description: `${userName} viewed vehicle fleet data`
+          }).catch(console.warn);
+          
         } else {
           setError('Failed to fetch vehicle data');
         }
@@ -64,7 +98,231 @@ const VehicleDataPage = () => {
     };
 
     fetchVehicles();
-  }, []);
+  }, [userName, userRole, userDepartment]);
+
+  // Function to download vehicles data as secure ZIP
+  const handleDownloadSecureZip = async (downloadType) => {
+    try {
+      setIsDownloading(true);
+      
+      // Get the download type and set file name
+      let fileName = '';
+      
+      switch(downloadType) {
+        case 'all': 
+          fileName = 'All_Vehicles'; 
+          break;
+        case 'available': 
+          fileName = 'Available_Vehicles'; 
+          break;
+        case 'in_use': 
+          fileName = 'InUse_Vehicles';
+          break;
+        case 'maintenance': 
+          fileName = 'Maintenance_Vehicles';
+          break;
+        case 'forRegistration': 
+          fileName = 'ForRegistration_Vehicles';
+          break;
+        default:
+          fileName = 'Vehicles';
+      }
+      
+      // Send request to server
+      const response = await axiosInstance.post(
+        '/management/downloadVehicleZip',
+        {
+          name: userName,
+          role: userRole,
+          username: userUsername,
+          downloadType: downloadType
+        },
+        { responseType: 'blob' }
+      );
+      
+      // Generate password and show in modal
+      const password = userName.substring(0, 2) + userRole.charAt(0) + userUsername.slice(-6);
+      setDownloadPassword(password);
+      setDownloadFileName(`${fileName}_Protected.zip`);
+      setShowPasswordModal(true);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${fileName}_Protected.zip`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Log activity for secure download
+      logActivity({
+        name: userName,
+        role: userRole,
+        department: userDepartment,
+        route: '/vehicles',
+        action: 'Download Protected Data',
+        description: `Downloaded ${fileName} as password-protected zip`
+      }).catch(console.warn);
+      
+    } catch (err) {
+      console.error('Error creating protected zip:', err);
+      alert('Failed to create protected download. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Function to download vehicles data as CSV directly
+  const handleDownload = (downloadType) => {
+    let dataToDownload = [];
+    let fileName = '';
+    
+    // Filter the data based on downloadType
+    switch(downloadType) {
+      case 'all':
+        dataToDownload = vehicles.filter(v => !v.deleted);
+        fileName = 'All_Vehicles';
+        break;
+      case 'available':
+        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'available');
+        fileName = 'Available_Vehicles';
+        break;
+      case 'in_use':
+        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'in_use');
+        fileName = 'InUse_Vehicles';
+        break;
+      case 'maintenance':
+        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'maintenance');
+        fileName = 'Maintenance_Vehicles';
+        break;
+      case 'forRegistration':
+        dataToDownload = vehicles.filter(v => !v.deleted && v.status === 'forRegistration');
+        fileName = 'ForRegistration_Vehicles';
+        break;
+      default:
+        dataToDownload = vehicles.filter(v => !v.deleted);
+        fileName = 'Vehicles';
+    }
+    
+    const columns = ['Registration Number', 'Brand', 'Model', 'Year', 'Type', 'Capacity', 'Fuel Type', 
+                    'Current Mileage', 'Driver', 'Status', 'Registration Expiry'];
+    
+    // Create CSV content
+    let csvContent = columns.join(',') + '\n';
+    
+    dataToDownload.forEach(item => {
+      const row = [
+        item.regisNumber || '',
+        item.brand || '',
+        item.model || '',
+        item.year || '',
+        item.type || '',
+        item.capacity || '',
+        item.fuelType || '',
+        item.currentMileage || '',
+        item.driver || 'Not Assigned',
+        item.status || '',
+        item.regisExprationDate ? new Date(item.regisExprationDate).toLocaleDateString() : 'N/A'
+      ].map(field => `"${String(field).replace(/"/g, '""')}"`); // Escape quotes in CSV
+      
+      csvContent += row.join(',') + '\n';
+    });
+    
+    // Create a blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Log activity for CSV download
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: '/vehicles',
+      action: 'Download CSV',
+      description: `Downloaded ${fileName} data as CSV (${dataToDownload.length} records)`
+    }).catch(console.warn);
+  };
+
+  // Function to handle printing
+  const handlePrint = () => {
+    window.print();
+    
+    // Log activity for print action
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: '/vehicles',
+      action: 'Print Vehicle List',
+      description: `Printed vehicle fleet list (${vehicles.filter(v => !v.deleted).length} vehicles)`
+    }).catch(console.warn);
+  };
+
+  // Function to handle adding a new vehicle
+  const handleAddVehicle = () => {
+    // Navigate to add vehicle page or open modal
+    // This would be implemented based on your app's routing/state management
+    
+    // Log activity for initiating add vehicle
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: '/vehicles',
+      action: 'Add Vehicle Initiated',
+      description: 'User initiated adding a new vehicle'
+    }).catch(console.warn);
+  };
+
+  // Function to handle vehicle actions (view, edit, delete)
+  const handleVehicleAction = (action, vehicle) => {
+    // Implement action handling based on your app's requirements
+    
+    // Log activity based on the action
+    const actionDescriptions = {
+      'view': `Viewed details for vehicle ${vehicle.regisNumber || vehicle._id}`,
+      'edit': `Initiated editing vehicle ${vehicle.regisNumber || vehicle._id}`,
+      'delete': `Initiated deletion of vehicle ${vehicle.regisNumber || vehicle._id}`
+    };
+    
+    logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: '/vehicles',
+      action: `Vehicle ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+      description: actionDescriptions[action]
+    }).catch(console.warn);
+  };
+
+  // Function to handle card expansion
+  const toggleCard = (vehicleId) => {
+    if (expandedCard === vehicleId) {
+      setExpandedCard(null);
+    } else {
+      setExpandedCard(vehicleId);
+      
+      // Log activity for expanding a vehicle card
+      const vehicle = vehicles.find(v => v._id === vehicleId);
+      if (vehicle) {
+        logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/vehicles',
+          action: 'View Vehicle Details',
+          description: `${userName} Expanded details for vehicle ${vehicle.regisNumber || vehicleId}`
+        }).catch(console.warn);
+      }
+    }
+  };
 
   // Function to format date strings
   const formatDate = (dateString) => {
@@ -94,15 +352,6 @@ const VehicleDataPage = () => {
     return statusIconMap[status] || faExclamationCircle;
   };
 
-  // Function to toggle card expansion
-  const toggleCard = (vehicleId) => {
-    if (expandedCard === vehicleId) {
-      setExpandedCard(null);
-    } else {
-      setExpandedCard(vehicleId);
-    }
-  };
-
   // Function to render status badge
   const renderStatusBadge = (status) => (
     <CBadge color={getBadgeColor(status)}>
@@ -130,7 +379,7 @@ const VehicleDataPage = () => {
           <FontAwesomeIcon icon={faCar} className="me-3 text-primary" />
           Vehicle Fleet Management
         </h1>
-        <CButton color="primary">
+        <CButton color="primary" onClick={handleAddVehicle}>
           <FontAwesomeIcon icon={faPlus} className="me-2" />
           Add Vehicle
         </CButton>
@@ -165,11 +414,38 @@ const VehicleDataPage = () => {
                   Total Vehicles: {vehicles.filter(v => !v.deleted).length}
                 </span>
                 <div className="d-flex gap-2">
-                  <CButton color="light" size="sm">
-                    <FontAwesomeIcon icon={faFileExcel} className="me-2 text-success" />
-                    Export Excel
-                  </CButton>
-                  <CButton color="light" size="sm">
+                  {/* Dropdown for secure downloads */}
+                  <CDropdown>
+                    <CDropdownToggle color="success" disabled={isDownloading}>
+                      <FontAwesomeIcon icon={faLock} className="me-2" />
+                      Secure Download
+                      {isDownloading && <CSpinner size="sm" className="ms-2" />}
+                    </CDropdownToggle>
+                    <CDropdownMenu>
+                      <CDropdownItem onClick={() => handleDownloadSecureZip('all')}>All Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownloadSecureZip('available')}>Available Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownloadSecureZip('in_use')}>In-Use Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownloadSecureZip('maintenance')}>Maintenance Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownloadSecureZip('forRegistration')}>For Registration Vehicles</CDropdownItem>
+                    </CDropdownMenu>
+                  </CDropdown>
+                  
+                  {/* Dropdown for regular downloads */}
+                  <CDropdown>
+                    <CDropdownToggle color="light">
+                      <FontAwesomeIcon icon={faFileExcel} className="me-2 text-success" />
+                      Export CSV
+                    </CDropdownToggle>
+                    <CDropdownMenu>
+                      <CDropdownItem onClick={() => handleDownload('all')}>All Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownload('available')}>Available Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownload('in_use')}>In-Use Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownload('maintenance')}>Maintenance Vehicles</CDropdownItem>
+                      <CDropdownItem onClick={() => handleDownload('forRegistration')}>For Registration Vehicles</CDropdownItem>
+                    </CDropdownMenu>
+                  </CDropdown>
+                  
+                  <CButton color="light" size="sm" onClick={handlePrint}>
                     <FontAwesomeIcon icon={faPrint} className="me-2 text-primary" />
                     Print List
                   </CButton>
@@ -258,13 +534,25 @@ const VehicleDataPage = () => {
                       </CCardBody>
                       {expandedCard === vehicle._id && (
                         <CCardFooter className="bg-white d-flex justify-content-end gap-2 py-2">
-                          <CButton color="info" size="sm">
+                          <CButton 
+                            color="info" 
+                            size="sm"
+                            onClick={() => handleVehicleAction('view', vehicle)}
+                          >
                             <FontAwesomeIcon icon={faEye} className="me-1" /> View
                           </CButton>
-                          <CButton color="success" size="sm">
+                          <CButton 
+                            color="success" 
+                            size="sm"
+                            onClick={() => handleVehicleAction('edit', vehicle)}
+                          >
                             <FontAwesomeIcon icon={faEdit} className="me-1" /> Edit
                           </CButton>
-                          <CButton color="danger" size="sm">
+                          <CButton 
+                            color="danger" 
+                            size="sm"
+                            onClick={() => handleVehicleAction('delete', vehicle)}
+                          >
                             <FontAwesomeIcon icon={faTrash} className="me-1" /> Delete
                           </CButton>
                         </CCardFooter>
@@ -277,8 +565,29 @@ const VehicleDataPage = () => {
           </CRow>
         </>
       )}
+      
+      {/* Password Modal */}
+      <CModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
+        <CModalHeader closeButton>
+          <CModalTitle>Password Protected File</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p>Your file <strong>{downloadFileName}</strong> has been downloaded successfully.</p>
+          <p>Use the following password to unlock the ZIP file:</p>
+          <CAlert color="info" className="d-flex align-items-center">
+            <FontAwesomeIcon icon={faLock} className="me-3 fs-4" />
+            <div className="font-monospace fw-bold">{downloadPassword}</div>
+          </CAlert>
+          <p className="text-muted small">This password is unique to your account. Please keep it secure.</p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowPasswordModal(false)}>
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
     </div>
   );
 };
-
+  
 export default VehicleDataPage;

@@ -20,7 +20,11 @@ import {
   CInputGroupText,
   CBadge,
   CPagination,
-  CPaginationItem
+  CPaginationItem,
+  CToast,
+  CToastBody,
+  CToastHeader,
+  CToaster
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -33,6 +37,8 @@ import {
   faEye,
   faSync
 } from '@fortawesome/free-solid-svg-icons';
+import CIcon from '@coreui/icons-react';
+import logActivity from '../../../../utils/activityLogger';
 
 const PayrollPage = () => {
   const [payrollData, setPayrollData] = useState([]);
@@ -41,11 +47,43 @@ const PayrollPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'ascending' });
   const [currentPage, setCurrentPage] = useState(1);
+  const [toast, setToast] = useState(null);
+  const [toaster, setToaster] = useState(null);
   const itemsPerPage = 10;
-
+  
+  // Get user information from localStorage
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userUsername = localStorage.getItem('username'); 
+  const userId = localStorage.getItem('userId');
+  const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
+  const userName = localStorage.getItem('name');
+  
   useEffect(() => {
     fetchPayrollData();
+    
+    // Log page view when component mounts
+    logPageView();
   }, []);
+
+  // Function to log the page view activity
+  const logPageView = async () => {
+    try {
+      if (userId && userName && userRole && userDepartment) {
+        // Log activity
+        await logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: 'payroll',
+          action: 'Page View',
+          description: 'User viewed the Payroll page'
+        });
+      }
+    } catch (error) {
+      console.warn("Error logging page view:", error);
+    }
+  };
 
   const fetchPayrollData = async () => {
     try {
@@ -54,9 +92,33 @@ const PayrollPage = () => {
       
       if (response.data && Array.isArray(response.data)) {
         setPayrollData(response.data);
+        
+        // Show success toast notification
+        setToast(
+          <CToast autohide={true} delay={5000}>
+            <CToastHeader closeButton>
+              <strong className="me-auto">Success</strong>
+            </CToastHeader>
+            <CToastBody>
+              Successfully loaded {response.data.length} payroll records!
+            </CToastBody>
+          </CToast>
+        );
       } else {
         console.warn("Unexpected API response format:", response.data);
         setPayrollData([]);
+        
+        // Show warning toast notification
+        setToast(
+          <CToast autohide={true} delay={5000} color="warning">
+            <CToastHeader closeButton>
+              <strong className="me-auto">Warning</strong>
+            </CToastHeader>
+            <CToastBody>
+              Received unexpected data format. Please contact support if this persists.
+            </CToastBody>
+          </CToast>
+        );
       }
       
       setError(null);
@@ -64,8 +126,41 @@ const PayrollPage = () => {
       setError('Failed to fetch payroll data. Please try again later.');
       console.error('Error fetching payroll data:', err);
       setPayrollData([]);
+      
+      // Show error toast notification
+      setToast(
+        <CToast autohide={true} delay={5000} color="danger">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Error</strong>
+          </CToastHeader>
+          <CToastBody>
+            Failed to fetch payroll data. Please try again later.
+          </CToastBody>
+        </CToast>
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle refresh button click
+  const handleRefresh = async () => {
+    await fetchPayrollData();
+    
+    // Log refresh action
+    try {
+      if (userId && userName && userRole && userDepartment) {
+        await logActivity({
+          name: userName,
+          role: userRole,
+          department: userDepartment,
+          route: '/hr/payroll',
+          action: 'Refresh Data',
+          description: 'User refreshed the Payroll data'
+        });
+      }
+    } catch (error) {
+      console.warn("Error logging refresh action:", error);
     }
   };
 
@@ -167,10 +262,14 @@ const PayrollPage = () => {
   // Get status badge color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'success';
       case 'paid':
         return 'success';
       case 'pending':
         return 'warning';
+      case 'rejected':
+        return 'danger';
       case 'failed':
         return 'danger';
       default:
@@ -180,18 +279,17 @@ const PayrollPage = () => {
 
   return (
     <div className="mb-4">
+      {/* Toaster component to show notifications */}
+      <CToaster ref={setToaster} push={toast} placement="top-end" />
+      
       <CRow>
         <CCol>
           <CCard className="mb-4">
             <CCardHeader className="d-flex justify-content-between align-items-center">
               <h4 className="mb-0">Payroll Management</h4>
               <div>
-                <CButton color="light" className="me-2" onClick={fetchPayrollData}>
+                <CButton color="light" className="me-2" onClick={handleRefresh}>
                   <FontAwesomeIcon icon={faSync} className="me-1" /> Refresh
-                </CButton>
-                <CButton color="primary">
-                  <FontAwesomeIcon icon={faFileInvoice} className="me-1" /> 
-                  Generate Report
                 </CButton>
               </div>
             </CCardHeader>
@@ -231,7 +329,7 @@ const PayrollPage = () => {
               {error && (
                 <CAlert color="danger">
                   {error}
-                  <CButton color="link" className="p-0 ms-2" onClick={fetchPayrollData}>
+                  <CButton color="link" className="p-0 ms-2" onClick={handleRefresh}>
                     Try again
                   </CButton>
                 </CAlert>
@@ -302,7 +400,6 @@ const PayrollPage = () => {
                           >
                             Status {getSortIcon('status')}
                           </CTableHeaderCell>
-                          
                         </CTableRow>
                       </CTableHead>
                       <CTableBody>
@@ -324,7 +421,6 @@ const PayrollPage = () => {
                                   {item.status || 'Pending'}
                                 </CBadge>
                               </CTableDataCell>
-                             
                             </CTableRow>
                           ))
                         ) : (

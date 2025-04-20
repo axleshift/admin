@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import StatBox from '../pages/scene/statbox';
 import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol } from '@coreui/react';
-import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import axiosInstance from '../../utils/axiosInstance'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCar, faTruck, faExclamationTriangle, faTools } from '@fortawesome/free-solid-svg-icons';
@@ -54,7 +53,6 @@ const LogisticDash = () => {
       <CRow>
         <CCol>
           <CustomHeader title="Logistic Dashboard" subtitle="Welcome to the Logistic Dashboard" />
-          <AnnouncementList />
         </CCol>
       </CRow>
       <CRow className="my-3 g-3">

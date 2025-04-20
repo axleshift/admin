@@ -7,7 +7,7 @@ import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
-  const userDepartment = sessionStorage.getItem('department');
+  const userDepartment = localStorage.getItem('department');
   const navigate = useNavigate()
 
   const getRouteName = (pathname, routes) => {
