@@ -14,9 +14,9 @@ const ProtectedRoute = ({ children }) => {
   }
   
   
-  const userRole = localStorage.getItem('role');
-  const userDepartment = localStorage.getItem('department');
-  const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
 
   
   const currentPath = location.pathname;

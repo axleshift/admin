@@ -32,7 +32,7 @@ const Profile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const userId = localStorage.getItem("userId");
+  const userId = sessionStorage.getItem("userId");
   
   // Using RTK Query hooks
   const { 
@@ -42,7 +42,7 @@ const Profile = () => {
     refetch: refetchActivity
   } = useGetUserActivityQuery(undefined, {
     skip: !isBoxVisible,
-    // Add credentials to match backend local requirements
+    // Add credentials to match backend session requirements
     credentials: 'include'
   });
 
@@ -54,14 +54,14 @@ const Profile = () => {
     credentials: 'include'
   });
   useEffect(() => {
-    // Retrieve user data from localStorage
-    const permissions = localStorage.getItem("permissions");
+    // Retrieve user data from sessionStorage
+    const permissions = sessionStorage.getItem("permissions");
     const userData = {
-      name: localStorage.getItem("name") || "Unknown Name",
-      username: localStorage.getItem("username") || "Unknown Username",
-      email: localStorage.getItem("email") || "Unknown Email",
-      role: localStorage.getItem("role") || "Unknown Role",
-      department: localStorage.getItem("department") || "Unknown Department",
+      name: sessionStorage.getItem("name") || "Unknown Name",
+      username: sessionStorage.getItem("username") || "Unknown Username",
+      email: sessionStorage.getItem("email") || "Unknown Email",
+      role: sessionStorage.getItem("role") || "Unknown Role",
+      department: sessionStorage.getItem("department") || "Unknown Department",
       permissions: permissions ? JSON.parse(permissions) : [],
     };
     setUser(userData);

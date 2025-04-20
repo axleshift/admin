@@ -23,13 +23,13 @@ import {
 
 const _nav = () => {
   
-  const userRole = localStorage.getItem('role');
-  const userName = localStorage.getItem('name')
-  const userDepartment = localStorage.getItem('department');
-  const userUsername = localStorage.getItem('username'); 
-  const userId = localStorage.getItem('userId');
-  const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
-  const userEmail = localStorage.getItem('email');
+  const userRole = sessionStorage.getItem('role');
+  const userName = sessionStorage.getItem('name')
+  const userDepartment = sessionStorage.getItem('department');
+  const userUsername = sessionStorage.getItem('username'); 
+  const userId = sessionStorage.getItem('userId');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+  const userEmail = sessionStorage.getItem('email');
 
   
 
@@ -39,7 +39,7 @@ const _nav = () => {
   
   useEffect(() => {
     if (!userId) {
-      console.error('❌ No userId found in localStorage');
+      console.error('❌ No userId found in sessionStorage');
       return;
     }
 
@@ -91,6 +91,7 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
+        '/announce',
         '/restore',
         '/recovery',
         '/Toasts',
@@ -100,6 +101,7 @@ const _nav = () => {
         '/Request',
         './usermanagement',
         '/button',
+        '/announce'
       ],
       HR: [
         '/employeedash',
@@ -117,6 +119,7 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
+        '/announce',
         '/restore',
         '/button',
         '/recovery',
@@ -140,6 +143,7 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
+        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -162,6 +166,7 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
+        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -184,6 +189,7 @@ const _nav = () => {
         '/daily',
         '/breakdown',
         '/useractivity/index',
+        '/announce',
         '/restore',
 '/button',
         '/recovery',
@@ -268,6 +274,7 @@ const _nav = () => {
           name: 'Dashboard',
           to: 'employeedash',
           icon: <FontAwesomeIcon icon={faHouse} style={{ marginRight: '8px' }} />,
+          badge: { color: 'info', text: 'NEW' },
         }
       );
     }
@@ -294,7 +301,7 @@ const _nav = () => {
 
     
     
-    if (accessPermissions[userRole][userDepartment].includes('/employeedash')) {
+    if (accessPermissions[userRole][userDepartment].includes('/useractivity/index')) {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
     
@@ -323,14 +330,19 @@ const _nav = () => {
           to: '/registernew'
         },
       
-      
+        {
+          component: CNavItem,
+          name:'Announce',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/announce'
+        },
       
        
       );
     }
 
     
-    if (accessPermissions[userRole][userDepartment].includes('/hrdash')) {
+    if (accessPermissions[userRole][userDepartment].includes('/worker')) {
       navItems.push(
         { component: CNavTitle, name: 'HR', className: 'custom-nav-title' },
         { 
@@ -362,10 +374,21 @@ const _nav = () => {
     }
 
     
-    if (accessPermissions[userRole][userDepartment].includes('/financedash')) {
+    if (accessPermissions[userRole][userDepartment].includes('/freight/transaction')) {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
-    
+        { 
+          component: CNavItem, 
+          name: 'Transactions', 
+          icon: <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />, 
+          to: '/freight/transaction' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Overview', 
+          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+          to: '/oversales' 
+        },
         { 
           component: CNavItem, 
           name: 'Financial Analytics', 
@@ -383,6 +406,19 @@ const _nav = () => {
           name: 'Freight Audit', 
           icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
           to: '/freightaudit' 
+        }
+      );
+    }
+
+    
+    if (accessPermissions[userRole][userDepartment].includes('/customer')) {
+      navItems.push(
+        { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
+        { 
+          component: CNavItem, 
+          name: 'Customer', 
+          icon: <FontAwesomeIcon icon={faUserGroup} style={{ marginRight: '8px' }} />, 
+          to: '/customer' 
         },
         { 
           component: CNavItem, 
@@ -390,15 +426,18 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px' }} />, 
           to: '/monthly' 
         },
-      );
-    }
-
-    
-    if (accessPermissions[userRole][userDepartment].includes('/coredash')) {
-      navItems.push(
-        { component: CNavTitle, name: 'CORE', className: 'custom-nav-title' },
-        
-   
+        { 
+          component: CNavItem, 
+          name: 'Daily', 
+          icon: <FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />, 
+          to: '/daily' 
+        },
+        { 
+          component: CNavItem, 
+          name: 'Breakdown', 
+          icon: <FontAwesomeIcon icon={faPieChart} style={{ marginRight: '8px' }} />, 
+          to: '/breakdown' 
+        },
         { 
           component: CNavItem, 
           name: 'Shipment', 
@@ -419,24 +458,17 @@ const _nav = () => {
     if (accessPermissions[userRole][userDepartment].includes('/logisticdash')){
       navItems.push(
         { component: CNavTitle, name: 'Logistic', className: 'custom-nav-title' },
-       
+        {
+          component: CNavItem,
+          name: 'Logistic',
+          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          to: '/logistic1/index'
+        },
         {
           component: CNavItem,
           name: 'Vehicles',
           icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
           to: '/vehicles'
-        },
-        {
-          component: CNavItem,
-          name: 'Procurement',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
-          to: '/procurement'
-        },
-        {
-          component: CNavItem,
-          name: 'Inventory',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
-          to: '/inventory'
         }
       );
     }
@@ -462,7 +494,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
-        
+        {
+          component: CNavItem,
+          name:'Password Analysis',
+          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+          to:'/passwordanalysis'
+        },
        
       )
     }

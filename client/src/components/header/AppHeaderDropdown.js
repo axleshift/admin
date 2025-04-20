@@ -42,12 +42,12 @@ const AppHeaderDropdown = () => {
     deleteCookie('accessToken')
     deleteCookie('refreshToken')
 
-    localStorage.clear()
+    sessionStorage.clear()
 
     navigate('/login')
   }
 
-  const name = localStorage.getItem('name')
+  const name = sessionStorage.getItem('name')
 
   return (
     <CDropdown variant="nav-item">

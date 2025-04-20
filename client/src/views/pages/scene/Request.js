@@ -104,10 +104,10 @@ const AccessRequestPage = () => {
   const storedTheme = useSelector((state) => state.changeState?.theme);
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('userId');
-    const storedUserName = localStorage.getItem('name');
-    const storedUserDepartment = localStorage.getItem('department');
-    const userRole = localStorage.getItem('role');
+    const storedUserId = sessionStorage.getItem('userId');
+    const storedUserName = sessionStorage.getItem('name');
+    const storedUserDepartment = sessionStorage.getItem('department');
+    const userRole = sessionStorage.getItem('role');
     
     if (storedUserId) {
       setUserId(storedUserId);
@@ -135,7 +135,7 @@ const AccessRequestPage = () => {
     
     logActivity({
       name: userName,
-      role: localStorage.getItem('role'),
+      role: sessionStorage.getItem('role'),
       department: userDepartment,
       route: '/access-request',
       action: 'Toggle Permission',
@@ -149,7 +149,7 @@ const AccessRequestPage = () => {
     
     logActivity({
       name: userName,
-      role: localStorage.getItem('role'),
+      role: sessionStorage.getItem('role'),
       department: userDepartment,
       route: '/access-request',
       action: 'Toggle Category',
@@ -177,7 +177,7 @@ const AccessRequestPage = () => {
 
       logActivity({
         name: userName,
-        role: localStorage.getItem('role'),
+        role: sessionStorage.getItem('role'),
         department: userDepartment,
         route: '/access-request',
         action: 'Submit Request',
@@ -189,7 +189,7 @@ const AccessRequestPage = () => {
     } catch (error) {
       logActivity({
         name: userName,
-        role: localStorage.getItem('role'),
+        role: sessionStorage.getItem('role'),
         department: userDepartment,
         route: '/access-request',
         action: 'Submit Request Failed',

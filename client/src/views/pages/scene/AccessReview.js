@@ -66,10 +66,10 @@ const AccessReview = () => {
   const [filterRole, setFilterRole] = useState("");
   const [alertMessage, setAlertMessage] = useState(null);
   const itemsPerPage = 10;
-  const userRole = localStorage.getItem('role');
-  const userDepartment = localStorage.getItem('department');
-  const userId = localStorage.getItem('userId');
-  const userName = localStorage.getItem('name');
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
+  const userId = sessionStorage.getItem('userId');
+  const userName = sessionStorage.getItem('name');
 
   // Load current user info
   useEffect(() => {

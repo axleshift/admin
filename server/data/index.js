@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import bcryptjs from "bcryptjs";
+import bcrypt from "bcrypt";
 
 const saltRounds = 10;
 const plainPassword = "123123";
 
-const hashedPassword1 = bcryptjs.hashSync(plainPassword, saltRounds);
-const hashedPassword2 = bcryptjs.hashSync(plainPassword, saltRounds);
-const hashedPassword3 = bcryptjs.hashSync(plainPassword, saltRounds);
-const hashedPassword4 = bcryptjs.hashSync(plainPassword, saltRounds);
+const hashedPassword1 = bcrypt.hashSync(plainPassword, saltRounds);
+const hashedPassword2 = bcrypt.hashSync(plainPassword, saltRounds);
+const hashedPassword3 = bcrypt.hashSync(plainPassword, saltRounds);
+const hashedPassword4 = bcrypt.hashSync(plainPassword, saltRounds);
 
 const generateObjectId = () => new mongoose.Types.ObjectId();
 
@@ -265,70 +265,7 @@ export const users = [
     },
 ];
 
-export const newuser = [
-    {
-      name: "Aarav Mehta",
-      email: "aarav.mehta@example.com",
-      role: "manager",
-      department: "Logistics"
-    },
-    {
-      name: "Fatima Zahra",
-      email: "fatima.zahra@example.com",
-      role: "admin",
-      department: "Finance"
-    },
-    {
-      name: "Mohammed Al-Mansoori",
-      email: "mohammed.mansoori@example.com",
-      role: "manager",
-      department: "HR"
-    },
-    {
-      name: "Sneha Reddy",
-      email: "sneha.reddy@example.com",
-      role: "manager",
-      department: "Core"
-    },
-    {
-      name: "Omar Khaleel",
-      email: "omar.khaleel@example.com",
-      role: "manager",
-      department: "Logistics"
-    },
-    {
-      name: "Zainab Qureshi",
-      email: "zainab.qureshi@example.com",
-      role: "admin",
-      department: "Finance"
-    },
-    {
-      name: "Imran Shaikh",
-      email: "imran.shaikh@example.com",
-      role: "manager",
-      department: "HR"
-    },
-    {
-      name: "Aisha Noor",
-      email: "aisha.noor@example.com",
-      role: "manager",
-      department: "Core"
-    },
-    {
-      name: "Rohan Malhotra",
-      email: "rohan.malhotra@example.com",
-      role: "superadmin",
-      department: "Administrative"
-    },
-    {
-      name: "Nadia Hussein",
-      email: "nadia.hussein@example.com",
-      role: "superadmin",
-      department: "Administrative"
-    }
-  ];
-  
-  
+
 
 export const mockLogisticsData = [
     {

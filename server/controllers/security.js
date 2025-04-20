@@ -132,3 +132,84 @@ function hashPassword(password) {
 }
 
 
+
+export const passwordresetanaly = async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+      
+      // Build query filters
+      let query = {};
+      
+      if (req.query.dateFrom || req.query.dateTo) {
+        query.timestamp = {};
+        if (req.query.dateFrom) {
+          query.timestamp.$gte = new Date(req.query.dateFrom);
+        }
+        if (req.query.dateTo) {
+          // Add one day to include the end date fully
+          const endDate = new Date(req.query.dateTo);
+          endDate.setDate(endDate.getDate() + 1);
+          query.timestamp.$lte = endDate;
+        }
+      }
+      
+      if (req.query.strengthLevel) {
+        query['passwordAnalysis.strength'] = req.query.strengthLevel;
+      }
+      
+      if (req.query.searchTerm) {
+        // Search by user name or email
+        const userIds = await User.find({
+          $or: [
+            { name: { $regex: req.query.searchTerm, $options: 'i' } },
+            { email: { $regex: req.query.searchTerm, $options: 'i' } }
+          ]
+        }).distinct('_id');
+        
+        query.userId = { $in: userIds };
+      }
+      
+      // Get total count for pagination
+      const total = await PasswordResetEvent.countDocuments(query);
+      
+      // Get data with pagination - properly populating the userId field
+      const events = await PasswordResetEvent.find(query)
+        .populate('userId', 'name email role department')
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(limit);
+      
+      // Transform data for frontend - making sure we handle the populated userId correctly
+      const transformedEvents = events.map(event => ({
+        _id: event._id,
+        user: event.userId ? {
+          _id: event.userId._id,
+          name: event.userId.name,
+          email: event.userId.email,
+          role: event.userId.role,
+          department: event.userId.department
+        } : null,
+        timestamp: event.timestamp,
+        passwordAnalysis: event.passwordAnalysis,
+        validationPassed: event.validationPassed,
+        validationDetails: event.validationDetails,
+        ipAddress: event.ipAddress
+      }));
+      
+      res.json({
+        data: transformedEvents,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page
+      });
+    } catch (err) {
+      console.error('Error fetching password reset analysis:', err);
+      res.status(500).json({ 
+        Status: 'Error', 
+        Message: 'Failed to fetch password reset analysis data',
+        error: err.message
+      });
+    }
+  };

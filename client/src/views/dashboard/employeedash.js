@@ -23,6 +23,7 @@ import OverviewChart from '../pages/sales/overviewChart';
 import Monthly from '../pages/sales/monthly';
 import Papa from 'papaparse';
 import '../../scss/dashboard.scss';
+import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import Loader from '../../components/Loader';  
 
 
@@ -91,6 +92,7 @@ const Employeedash = () => {
       <CRow className="mb-4">
         <CCol xs={12} md={8}>
           <CustomHeader title="Dashboard" subtitle="Welcome to Dashboard" />
+                    <AnnouncementList />
         </CCol>
         <CCol xs={12} md={4} className="d-flex justify-content-md-end align-items-center mb-3 mb-md-0">
         </CCol>

@@ -40,4 +40,3 @@ export const sendOTPEmail = async (email, otp) => {
     throw error; // CRITICAL: Re-throw to be caught by the calling function
   }
 };
-

@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
 import "./scss/style.scss";
+import NotificationToast from "./views/pages/scene/notification";
 
 
 const DefaultLayout = React.lazy(() => import("./layout/DefaultLayout"));
@@ -34,14 +35,6 @@ const AppContent = () => {
     }
   }, [isColorModeSet, setColorMode, storedTheme]);
 
-  const userLog = ()  =>{
-    const keys = ['accesstoken', 'refresh', 'userid', 'username', 'userrole', 'department'];
-  return keys.every(key => localStorage.getItem(key) !== null);
-};
-
-  
-
-
   return (
     <Suspense
       fallback={
@@ -51,7 +44,7 @@ const AppContent = () => {
       }
     >
       <Routes>
-      <Route path="/login" element={!userLog() && <Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/OTP" element={<OTP />} />
         <Route path="/systemlogin" element={<SystemLogin />} />
         <Route path="/logout" element={<Logout />} />
@@ -76,6 +69,7 @@ const App = () => {
 
   return (
     <BrowserRouter>
+      {isAuthenticated() && <NotificationToast />}
       <AppContent />
     </BrowserRouter>
   );

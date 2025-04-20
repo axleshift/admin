@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { CButton, CToast, CToastHeader, CToastBody, CToaster } from '@coreui/react';
 import logActivity from '../../../utils/activityLogger';
+import notificationService from '../../../utils/notificationService';
 
 const ExampleButtonPage = () => {
-  const userRole = localStorage.getItem('role');
-  const userDepartment = localStorage.getItem('department');
-  const userUsername = localStorage.getItem('username'); 
-  const userId = localStorage.getItem('userId');
-  const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
-  const userName = localStorage.getItem('name'); 
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
+  const userUsername = sessionStorage.getItem('username'); 
+  const userId = sessionStorage.getItem('userId');
+  const userPermissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+  const userName = sessionStorage.getItem('name'); 
   
   // State to manage toasts
   const [toasts, setToasts] = useState([]);

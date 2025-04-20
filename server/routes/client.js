@@ -7,32 +7,20 @@ import {
     changePassword, 
     generateOTP, 
     verifyOTP,
-
-    saveUser, 
-    processPendingRegistrations,
-    getNewlyRegisteredUsers,
-
-
-    refreshToken
+    saveUser
 } from "../controllers/client.js";
 import detectAnomaly from "../middleware/detectAnomaly.js";
 import detectRapidLogin from "../middleware/detectRapidLogin.js";
 import loginActivityLogger from "../middleware/loginActivitytracker.js";
 const router = express.Router();
-router.post('/users', saveUser);
-
-// New endpoint to process pending registrations
-router.post('/process-registrations', processPendingRegistrations);
-
-// New endpoint to get all newly registered users
-router.get('/new-users', getNewlyRegisteredUsers);
+router.post('/save-user', saveUser)
 
 router.get('/customers', getCustomers);
 
 
 // Login
 router.post("/login",detectRapidLogin,detectAnomaly,loginUser,loginActivityLogger);
-router.post('/refresh-token', refreshToken);
+
 // Add this to your routes file
 router.get("/check-anomalies", async (req, res) => {
     try {

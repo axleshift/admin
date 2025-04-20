@@ -24,11 +24,6 @@ const Monthly = () => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Get user information from session storage
-  const userName = sessionStorage.getItem('name');
-  const userRole = sessionStorage.getItem('role');
-  const userDepartment = sessionStorage.getItem('department');
-
   const fetchData = async () => {
     try {
       setIsLoading(true);
@@ -38,17 +33,6 @@ const Monthly = () => {
       
       const response = await axiosInstance.get('/finance/monthlysalesrevenue');
       setData(response.data);
-      
-      // Log successful data fetch
-      logActivity({
-        name: userName,
-        role: userRole,
-        department: userDepartment,
-        route: '/monthly',
-        action: 'Data Fetch',
-        description: 'Successfully retrieved monthly sales and revenue data'
-      });
-      
       setIsLoading(false);
     } catch (err) {
       // Check if the response has our custom system status
@@ -65,7 +49,11 @@ const Monthly = () => {
       }
       setIsLoading(false);
       
-      // Log the system unavailability or error
+      // Log the system unavailability
+      const userName = sessionStorage.getItem('name');
+      const userRole = sessionStorage.getItem('role');
+      const userDepartment = sessionStorage.getItem('department');
+      
       logActivity({
         name: userName,
         role: userRole,
@@ -83,6 +71,10 @@ const Monthly = () => {
     fetchData();
 
     // Log activity when component mounts
+    const userName = sessionStorage.getItem('name');
+    const userRole = sessionStorage.getItem('role');
+    const userDepartment = sessionStorage.getItem('department');
+    
     logActivity({
       name: userName,
       role: userRole,
@@ -92,22 +84,6 @@ const Monthly = () => {
       description: 'User accessed the monthly sales and revenue report'
     });
   }, []);
-
-  // Handle refresh button click with activity logging
-  const handleRefresh = async () => {
-    // Log the refresh action
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/monthly',
-      action: 'Refresh Data',
-      description: 'User manually refreshed the monthly sales data'
-    });
-    
-    // Fetch fresh data
-    await fetchData();
-  };
 
   // Format data for the chart
   const formattedData = React.useMemo(() => {
@@ -166,18 +142,6 @@ const Monthly = () => {
     return { highestSales, highestRevenue };
   }, [data]);
 
-  // Log when user views details by card selection
-  const logCardView = (cardType) => {
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/monthly',
-      action: 'View Detail',
-      description: `User viewed ${cardType} details in monthly report`
-    });
-  };
-
   // Render system unavailability message
   const renderSystemUnavailable = () => {
     return (
@@ -188,7 +152,7 @@ const Monthly = () => {
             <h4>External Finance System Unavailable</h4>
             <p>{errorMessage || 'The financial reporting system is currently unavailable. Please try again later.'}</p>
           </div>
-          <CButton color="warning" variant="outline" onClick={handleRefresh}>
+          <CButton color="warning" variant="outline" onClick={fetchData}>
             <FontAwesomeIcon icon={faSync} className="me-2" />
             Retry
           </CButton>
@@ -239,7 +203,7 @@ const Monthly = () => {
               <CAlert color="danger" className="d-flex align-items-center">
                 <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" size="lg" />
                 <div className="flex-grow-1">Error loading monthly data: {error}</div>
-                <CButton color="danger" variant="outline" onClick={handleRefresh}>
+                <CButton color="danger" variant="outline" onClick={fetchData}>
                   <FontAwesomeIcon icon={faSync} className="me-2" />
                   Retry
                 </CButton>
@@ -252,7 +216,7 @@ const Monthly = () => {
                 <CRow className="mb-4">
                   {/* Total Sales Card */}
                   <CCol md={6} xl={3} className="mb-3 mb-xl-0">
-                    <CCard className="border-0 shadow-sm h-100" onClick={() => logCardView('Total Sales')}>
+                    <CCard className="border-0 shadow-sm h-100">
                       <CCardBody className="d-flex align-items-center">
                         <div className="bg-light p-3 rounded me-3">
                           <FontAwesomeIcon icon={faChartLine} size="lg" className="text-primary" />
@@ -267,7 +231,7 @@ const Monthly = () => {
                   
                   {/* Total Revenue Card */}
                   <CCol md={6} xl={3} className="mb-3 mb-xl-0">
-                    <CCard className="border-0 shadow-sm h-100" onClick={() => logCardView('Total Revenue')}>
+                    <CCard className="border-0 shadow-sm h-100">
                       <CCardBody className="d-flex align-items-center">
                         <div className="bg-light p-3 rounded me-3">
                           <FontAwesomeIcon icon={faMoneyBillWave} size="lg" className="text-success" />
@@ -282,7 +246,7 @@ const Monthly = () => {
                   
                   {/* Highest Sales Card */}
                   <CCol md={6} xl={3} className="mb-3 mb-xl-0">
-                    <CCard className="border-0 shadow-sm h-100" onClick={() => logCardView('Highest Sales')}>
+                    <CCard className="border-0 shadow-sm h-100">
                       <CCardBody className="d-flex align-items-center">
                         <div className="bg-light p-3 rounded me-3">
                           <FontAwesomeIcon icon={faChartLine} size="lg" className="text-info" />
@@ -298,7 +262,7 @@ const Monthly = () => {
                   
                   {/* Highest Revenue Card */}
                   <CCol md={6} xl={3} className="mb-3 mb-xl-0">
-                    <CCard className="border-0 shadow-sm h-100" onClick={() => logCardView('Highest Revenue')}>
+                    <CCard className="border-0 shadow-sm h-100">
                       <CCardBody className="d-flex align-items-center">
                         <div className="bg-light p-3 rounded me-3">
                           <FontAwesomeIcon icon={faMoneyBillWave} size="lg" className="text-warning" />
@@ -382,17 +346,6 @@ const Monthly = () => {
                               }
                             },
                           },
-                          // Log chart interactions
-                          onClick: () => {
-                            logActivity({
-                              name: userName,
-                              role: userRole,
-                              department: userDepartment,
-                              route: '/monthly',
-                              action: 'Chart Interaction',
-                              description: 'User interacted with the monthly sales chart'
-                            });
-                          }
                         }}
                       />
                     </div>
@@ -409,7 +362,7 @@ const Monthly = () => {
                     minute: '2-digit'
                   })}
                 </div>
-                <CButton color="primary" size="sm" onClick={handleRefresh}>
+                <CButton color="primary" size="sm" onClick={fetchData}>
                   <FontAwesomeIcon icon={faSync} className="me-1" />
                   Refresh Data
                 </CButton>

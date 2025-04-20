@@ -6,6 +6,7 @@ import {
     logSecurityEvent, 
     checkPasswordStrength, 
     checkPasswordBreach ,
+    passwordresetanaly
 } from "../controllers/security.js";
 import User from '../model/User.js';
 
@@ -48,4 +49,6 @@ router.get('/analyze-passwords', async (req, res) => {
     }
 });
 
+
+router.get('/password-reset-analysis',passwordresetanaly)
 export default router;

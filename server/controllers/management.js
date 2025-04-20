@@ -1,301 +1,232 @@
-import fs from 'fs-extra';
-import path from 'path';
-import archiver from 'archiver';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import User from '../model/User.js'
-
-//log1
-import axios from 'axios';
-import ExcelJS from 'exceljs';
-import PDFDocument from 'pdfkit';
-
-
-// Import and register the plugin properly
-import archiverZipEncrypted from 'archiver-zip-encrypted';
-archiver.registerFormat('zip-encrypted', archiverZipEncrypted);
-
+import cron from "node-cron";
+import { exec } from "child_process";
+import path from "path";
+import fs from "fs";
+import express from "express";
+import dotenv from "dotenv";
+import Announcement from "../model/Announcement.js";
+import { fileURLToPath } from 'url';  // Add this import
+import { dirname } from 'path';       // Add this import
+import { generateBanner } from "../UTIL/aiImageGenerator.js"
+import User from '../model/User.js';
+import jwt from 'jsonwebtoken'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export const downloadzip = async (req, res) => {
-    const { name, role, username, downloadType } = req.body;
+
   
+
+  export const announce = async (req, res) => {
     try {
-      // Create the password
-      const password = name.substring(0, 2) + role.charAt(0) + username.slice(-6);
+      const { title, message } = req.body;
       
-      // Ensure directories exist
-      const tempDir = path.join(__dirname, '../temp');
-      await fs.ensureDir(tempDir);
-      
-      // Create a filename based on download type
-      let fileName = 'Employees';
-      let query = {};
-      
-      // Set up query based on downloadType
-      switch(downloadType) {
-        case 'all': 
-          fileName = 'All_Employees'; 
-          break;
-        case 'hr': 
-          fileName = 'HR_Employees'; 
-          query = { department: 'HR' };
-          break;
-        case 'finance': 
-          fileName = 'Finance_Employees';
-          query = { department: 'Finance' };
-          break;
-        case 'core': 
-          fileName = 'Core_Employees';
-          query = { department: 'Core' };
-          break;
-        case 'logistics': 
-          fileName = 'Logistics_Employees';
-          query = { department: 'Logistics' };
-          break;
-        case 'administrative': 
-          fileName = 'Administrative_Employees';
-          query = { department: 'Administrative' };
-          break;
-        case 'superadmin': 
-          fileName = 'SuperAdmin_Employees';
-          query = { role: 'superadmin' };
-          break;
-        case 'admin': 
-          fileName = 'Admin_Employees';
-          query = { role: 'admin' };
-          break;
-        case 'manager': 
-          fileName = 'Manager_Employees';
-          query = { role: 'manager' };
-          break;
-        case 'employee': 
-          fileName = 'Regular_Employees';
-          query = { role: 'employee' };
-          break;
-        default:
-          fileName = 'Employees';
+      // Check if required fields are provided
+      if (!title || !message) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Title and message are required fields" 
+        });
       }
       
-      // Fetch employees based on query
-      const employees = await User.find(query);
-      
-      // Create CSV data manually without papaparse
-      const columns = ['Username', 'Name', 'Email', 'Phone Number', 'Country', 'Occupation', 'Role', 'Department'];
-      let csvContent = columns.join(',') + '\n';
-      
-      employees.forEach(item => {
-        const row = [
-          item.username || '',
-          item.name || '',
-          item.email || '',
-          item.phoneNumber || 'N/A',
-          item.country || '',
-          item.occupation || '',
-          item.role || '',
-          item.department || ''
-        ].map(field => `"${field.toString().replace(/"/g, '""')}"`); // Escape quotes in CSV
-        
-        csvContent += row.join(',') + '\n';
+      // Create new announcement object
+      const newAnnouncement = new Announcement({
+        title,
+        message,
+        // Include banner filename if a file was uploaded
+        banner: req.file ? req.file.filename : null
       });
       
-      // Create temp CSV file
-      const csvFilePath = path.join(tempDir, `${fileName}.csv`);
-      await fs.writeFile(csvFilePath, csvContent);
+      // Save to database
+      const savedAnnouncement = await newAnnouncement.save();
       
-      // Create output path for ZIP
-      const outputZipPath = path.join(tempDir, `${fileName}_Protected.zip`);
-      
-      // Create a writable stream
-      const output = fs.createWriteStream(outputZipPath);
-      
-      // Create the archive with encryption
-      const archive = archiver('zip-encrypted', {
-        zlib: { level: 9 },
-        encryptionMethod: 'aes256',
-        password: password
+      res.status(201).json({
+        success: true,
+        message: "Announcement created successfully",
+        announcement: savedAnnouncement
       });
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to create announcement",
+        error: error.message
+      });
+    }
+  };
+  
+  // Get announcements with pagination
+  export const getannounce = async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 5;
+      const skip = (page - 1) * limit;
       
-      // Pipe the archive to the output file
-      archive.pipe(output);
+      // Get total count
+      const totalCount = await Announcement.countDocuments();
+      const totalPages = Math.ceil(totalCount / limit);
       
-      // Add the CSV file to the archive
-      archive.file(csvFilePath, { name: `${fileName}.csv` });
+      // Get announcements with pagination, sorted by creation date (newest first)
+      const announcements = await Announcement.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
       
-      // Set up event handlers
-      output.on('close', () => {
-        console.log('Archive created successfully:', outputZipPath);
-        
-        res.download(outputZipPath, `${fileName}_Protected.zip`, (err) => {
-          if (err) {
-            console.error('Download error:', err);
-          }
-          // Clean up the temp files after download completes
-          fs.remove(csvFilePath).catch(err => console.error('Failed to clean up CSV:', err));
-          fs.remove(outputZipPath).catch(err => console.error('Failed to clean up ZIP:', err));
+      res.status(200).json({
+        success: true,
+        announcements,
+        currentPage: page,
+        totalPages,
+        totalCount
+      });
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch announcements",
+        error: error.message
+      });
+    }
+  };
+  
+  // Delete an announcement
+  export const delannounce = async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Find the announcement to get the banner filename
+      const announcement = await Announcement.findById(id);
+      
+      if (!announcement) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Announcement not found" 
         });
+      }
+      
+      // Delete banner file if it exists
+      if (announcement.banner) {
+        const bannerPath = path.join(__dirname, '..', 'uploads', announcement.banner);
+        if (fs.existsSync(bannerPath)) {
+          fs.unlinkSync(bannerPath);
+        }
+      }
+      
+      // Delete from database
+      await Announcement.findByIdAndDelete(id);
+      
+      res.status(200).json({
+        success: true,
+        message: "Announcement deleted successfully"
       });
-      
-      archive.on('error', (err) => {
-        console.error('Archive error:', err);
-        res.status(500).send('ZIP creation failed');
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to delete announcement",
+        error: error.message
       });
+    }
+  };
+  export const generateAiBanner = async (req, res) => {
+    try {
+      const { prompt } = req.body;
       
-      // Finalize the archive
-      await archive.finalize();
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required for banner generation' });
+      }
       
-    } catch (err) {
-      console.error('ZIP creation error:', err);
-      res.status(500).send('ZIP creation failed');
+      console.log(`Generating banner with prompt: "${prompt}"`);
+      
+      // Ensure the uploads directory exists
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      // Generate the banner
+      const bannerFilename = await generateBanner(prompt);
+      
+      res.status(200).json({ 
+        success: true, 
+        banner: bannerFilename,
+        bannerUrl: `/uploads/${bannerFilename}`
+      });
+    } catch (error) {
+      console.error("Error in AI banner generation:", error);
+      res.status(500).json({ 
+        error: 'Failed to generate banner', 
+        message: error.message 
+      });
     }
   };
 
-  const LOG1_API = process.env.EXTERNAL_LOG1;
-  const LOG1_APIKEY = process.env.LOG1_API_KEY;
-  
-  export const downloadVehicleZip = async (req, res) => {
-    const { name, role, username, downloadType } = req.body;
-  
-    try {
-      // Create the password
-      const password = name.substring(0, 2) + role.charAt(0) + username.slice(-6);
+
+
+//   export const getUserDep = async (req, res) => {
+//     // This function looks good as is, no changes needed
+//     try {
+//       const { department } = req.params;
+//       const { systemId } = req.system; // From the verified token
+    
+//       // Validate department
+//       const validDepartments = ["HR", "Core", "Logistics", "Finance", "Administrative"];
+//       if (!validDepartments.includes(department)) {
+//         return res.status(400).json({ 
+//           success: false, 
+//           message: 'Invalid department. Must be one of: HR, Core, Logistics, Finance, Administrative' 
+//         });
+//       }
       
-      // Ensure directories exist
-      const tempDir = path.join(__dirname, '../temp');
-      await fs.ensureDir(tempDir);
+//       // Fetch active users from the specified department
+//       const users = await User.find({ 
+//         department: department,
+//         isActive: true 
+//       }).select('-password -token -refreshToken -otp -otpExpires -resetPasswordToken -resetPasswordExpires');
       
-      // Create a filename based on download type
-      let fileName = 'Vehicles';
+//       // Log the access for audit purposes
+//       console.log(`External system ${systemId} accessed ${department} department data at ${new Date().toISOString()}`);
+    
+//       // Return the users
+//       return res.status(200).json({
+//         success: true,
+//         count: users.length,
+//         data: users
+//       });
       
-      // Fetch vehicle data from LOG1 API
-      console.log(`Attempting to call API at: ${LOG1_API}/api/v1/vehicle/all`);
+//     } catch (error) {
+//       console.error('Error retrieving department users:', error);
+//       return res.status(500).json({
+//         success: false,
+//         message: 'Server error while retrieving department users',
+//         error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//       });
+//     }
+//   }
+// export const genSysToken = (req, res) => {
+//     try {
+//       const { systemId, department } = req.body;
       
-      const response = await axios.get(`${LOG1_API}/api/v1/vehicle/all`, {
-        headers: {
-          'x-api-key': LOG1_APIKEY,
-          'Content-Type': 'application/json',
-        },
-      });
+//       // Validate inputs
+//       if (!systemId || !department) {
+//         return res.status(400).json({
+//           success: false,
+//           message: 'SystemId and department are required'
+//         });
+//       }
       
-      console.log('API response status:', response.status);
+//       // Call the token generation function with the extracted parameters
+//       const token = generateSystemToken(systemId, department);
       
-      if (!response.data) {
-        throw new Error('No data received from API');
-      }
-      
-      if (!response.data.success) {
-        console.error('API error response:', JSON.stringify(response.data));
-        throw new Error(`Failed to fetch vehicle data from API: ${response.data.message || 'Unknown error'}`);
-      }
-      
-      // Get vehicles directly from response.data.data
-      let vehicles = response.data.data;
-      
-      // Filter data based on downloadType
-      switch(downloadType) {
-        case 'all': 
-          fileName = 'All_Vehicles'; 
-          break;
-        case 'available': 
-          fileName = 'Available_Vehicles'; 
-          vehicles = vehicles.filter(v => v.status === 'available');
-          break;
-        case 'in_use': 
-          fileName = 'InUse_Vehicles';
-          vehicles = vehicles.filter(v => v.status === 'in_use');
-          break;
-        case 'maintenance': 
-          fileName = 'Maintenance_Vehicles';
-          vehicles = vehicles.filter(v => v.status === 'maintenance');
-          break;
-        case 'forRegistration': 
-          fileName = 'ForRegistration_Vehicles';
-          vehicles = vehicles.filter(v => v.status === 'forRegistration');
-          break;
-        default:
-          fileName = 'Vehicles';
-      }
-      
-      // Create CSV data
-      const columns = ['Registration Number', 'Brand', 'Model', 'Year', 'Type', 'Capacity', 'Fuel Type', 
-                      'Current Mileage', 'Driver', 'Status', 'Registration Expiry'];
-      
-      let csvContent = columns.join(',') + '\n';
-      
-      vehicles.forEach(item => {
-        if (item.deleted) return; // Skip deleted vehicles
-        
-        const row = [
-          item.regisNumber || '',
-          item.brand || '',
-          item.model || '',
-          item.year || '',
-          item.type || '',
-          item.capacity || '',
-          item.fuelType || '',
-          item.currentMileage || '',
-          item.assignedDriver ? item.assignedDriver : 'Not Assigned', // Updated to use assignedDriver property
-          item.status || '',
-          item.regisExprationDate ? new Date(item.regisExprationDate).toLocaleDateString() : 'N/A'
-        ].map(field => `"${field.toString().replace(/"/g, '""')}"`); // Escape quotes in CSV
-        
-        csvContent += row.join(',') + '\n';
-      });
-      
-      // Create temp CSV file
-      const csvFilePath = path.join(tempDir, `${fileName}.csv`);
-      await fs.writeFile(csvFilePath, csvContent);
-      
-      // Create output path for ZIP
-      const outputZipPath = path.join(tempDir, `${fileName}_Protected.zip`);
-      
-      // Create a writable stream
-      const output = fs.createWriteStream(outputZipPath);
-      
-      // Create the archive with encryption
-      const archive = archiver('zip-encrypted', {
-        zlib: { level: 9 },
-        encryptionMethod: 'aes256',
-        password: password
-      });
-      
-      // Pipe the archive to the output file
-      archive.pipe(output);
-      
-      // Add the CSV file to the archive
-      archive.file(csvFilePath, { name: `${fileName}.csv` });
-      
-      // Set up event handlers
-      output.on('close', () => {
-        console.log('Archive created successfully:', outputZipPath);
-        
-        res.download(outputZipPath, `${fileName}_Protected.zip`, (err) => {
-          if (err) {
-            console.error('Download error:', err);
-          }
-          // Clean up the temp files after download completes
-          fs.remove(csvFilePath).catch(err => console.error('Failed to clean up CSV:', err));
-          fs.remove(outputZipPath).catch(err => console.error('Failed to clean up ZIP:', err));
-        });
-      });
-      
-      archive.on('error', (err) => {
-        console.error('Archive error:', err);
-        res.status(500).send('ZIP creation failed');
-      });
-      
-      // Finalize the archive
-      await archive.finalize();
-      
-    } catch (err) {
-      console.error('ZIP creation error details:', err.message);
-      if (err.response) {
-        console.error('API response error:', {
-          status: err.response.status,
-          data: err.response.data
-        });
-      }
-      res.status(500).send('ZIP creation failed: ' + err.message);
-    }
-  };
+//       return res.status(200).json({
+//         success: true,
+//         token
+//       });
+//     } catch (error) {
+//       console.error('Error generating system token:', error);
+//       return res.status(500).json({
+//         success: false,
+//         message: 'Server error while generating token',
+//         error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//       });
+//     }
+//   };

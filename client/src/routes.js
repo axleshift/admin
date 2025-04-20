@@ -7,6 +7,7 @@ const HrDash = React.lazy(() => import('./views/dashboard/hrdash'));
 const CoreDash = React.lazy(() => import('./views/dashboard/coredash'));
 const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
+const Announce = React.lazy(() => import('./views/pages/Announcement/announce'));
 const Register = React.lazy(() => import('./views/pages/register/registerNew'));
 
 const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
@@ -15,7 +16,7 @@ const Cron = React.lazy(()=> import ('./views/pages/scene/cron'))
 const Monitoring = React.lazy(()=> import ('./views/pages/Security/monitoring'))
 const UserManager = React.lazy(() => import ('./views/pages/Security/UserManagement'))
 const SecurityCheck = React.lazy(() => import ('./views/pages/Security/SecurityCheck'))
-
+const PasswordAnalysis = React.lazy(()=>import('./views/pages/Security/PasswordAnalysis'))
 
 const Worker = React.lazy(() => import('./views/pages/integrate/hr/works'));
 const Jobpost = React.lazy(() => import('./views/pages/integrate/hr/jobposting'));
@@ -55,8 +56,6 @@ const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
 const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/index'));
 const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
 const Vehicles = React.lazy (()=> import('./views/pages/integrate/logistic1/vehicles'))
-const Procurement = React.lazy (()=> import ('./views/pages/integrate/logistic1/procurement'))
-const Inventory = React.lazy(() => import ("./views/pages/integrate/logistic1/inventory"))
 
 const Button = React.lazy(()=> import ("./views/pages/scene/button"))
 const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
@@ -74,6 +73,7 @@ const routes = [
   { path: '/financedash', name: 'Dashboard', element: <ProtectedRoute><FinanceDash /></ProtectedRoute> },
 
 
+  { path: '/announce' , name: 'Announcement', element: <ProtectedRoute><Announce /></ProtectedRoute>},
 
   { path: '/registerNew', name: 'Register New Users', element: <ProtectedRoute><Register /> </ProtectedRoute>},
 
@@ -104,6 +104,7 @@ const routes = [
   { path: '/monitoring', name: 'Monitoring', element: <ProtectedRoute><Monitoring/></ProtectedRoute>},
   { path: '/usermanagement', name:'User Management', element: <ProtectedRoute><UserManager/></ProtectedRoute>},
   { path: '/securitycheck' , name:'Security Check', element: <ProtectedRoute><SecurityCheck/></ProtectedRoute>},
+  { path: '/passwordanalysis', name:"password Analysis", element: <ProtectedRoute><PasswordAnalysis/></ProtectedRoute>},
 
   { path: '/PendingRequest', name:'PendingRequest', element: <ProtectedRoute><PendingRequest /></ProtectedRoute>},
 
@@ -113,9 +114,7 @@ const routes = [
   { path: '/invoice', name:'FreightAudit', element: <ProtectedRoute><Invoice /></ProtectedRoute> },
 
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
-  { path: '/procurement', name:'Procurement', element: <ProtectedRoute><Procurement/></ProtectedRoute>},
-  { path: '/inventory', name: 'Inventory', element: <ProtectedRoute> <Inventory/></ProtectedRoute>},
-
+  
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
   { path: '/insight', name: 'Insight', element: <ProtectedRoute><Insight/></ProtectedRoute>},
   { path: '/insShipment', name: 'Insight', element: <ProtectedRoute><Shipment_insight/></ProtectedRoute>},

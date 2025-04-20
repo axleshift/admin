@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StatBox from '../pages/scene/statbox';
 import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol } from '@coreui/react';
+import AnnouncementList from '../pages/Announcement/AnnouncementList';
 import FreightTable from '../pages/integrate/core/shipment';
 import axiosInstance from '../../utils/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,75 +22,10 @@ const CoreDash = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Retrieve user information from localStorage
-  const userName = localStorage.getItem('name');
-  const userRole = localStorage.getItem('role');
-  const userDepartment = localStorage.getItem('department');
-
-  // Auto-detect and format currency function
-  const autoDetectAndFormatCurrency = (amount) => {
-    if (amount === undefined || amount === null) return 'N/A';
-    
-    // Convert to string if it's a number
-    const amountStr = typeof amount === 'number' ? amount.toString() : amount;
-    
-    // Remove whitespace and common separators to help with detection
-    const sanitized = amountStr.replace(/[\s,]/g, '');
-    
-    // Currency symbol detection patterns
-    const currencyPatterns = {
-      '$': 'USD',
-      '₱': 'PHP',
-      '€': 'EUR',
-      '£': 'GBP',
-      '¥': 'JPY',
-      '₩': 'KRW',
-      '₹': 'INR',
-      'R$': 'BRL',
-      'A$': 'AUD',
-      'C$': 'CAD',
-      '฿': 'THB',
-      '₽': 'RUB',
-      'kr': 'SEK', // Used for multiple Nordic currencies
-      'CHF': 'CHF',
-      'zł': 'PLN'
-    };
-    
-    // Check for currency codes at start or end
-    const currencyCodes = ['USD', 'PHP', 'EUR', 'GBP', 'JPY', 'KRW', 'INR', 'BRL', 'AUD', 'CAD', 'THB', 'RUB', 'SEK', 'CHF', 'PLN'];
-    let detectedCurrency = 'USD'; // Default currency
-    
-    // First, check for symbols
-    for (const [symbol, currency] of Object.entries(currencyPatterns)) {
-      if (sanitized.includes(symbol)) {
-        detectedCurrency = currency;
-        break;
-      }
-    }
-    
-    // Then check for currency codes
-    for (const code of currencyCodes) {
-      if (sanitized.includes(code)) {
-        detectedCurrency = code;
-        break;
-      }
-    }
-    
-    // Extract the numeric value
-    let numericValue = sanitized.replace(/[^\d.-]/g, '');
-    
-    // Parse to float
-    const value = parseFloat(numericValue);
-    
-    // If we couldn't parse a valid number, return the original input
-    if (isNaN(value)) return amount;
-    
-    // Format with the detected currency
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: detectedCurrency
-    }).format(value);
-  };
+  // Retrieve user information from sessionStorage
+  const userName = sessionStorage.getItem('name');
+  const userRole = sessionStorage.getItem('role');
+  const userDepartment = sessionStorage.getItem('department');
 
   useEffect(() => {
     const fetchFreightData = async () => {
@@ -218,17 +154,15 @@ const CoreDash = () => {
               icon={<FontAwesomeIcon icon={faShippingFast} />}
               color="primary"
               loading={loading}
-              description="Total shipments tracked" // Added required description prop
             />
           </CCol>
           <CCol sm={6} lg={3}>
             <StatBox 
               title="Insight Cost"
-              value={autoDetectAndFormatCurrency(totalInsightCost)}
+              value={`$ ${totalInsightCost.toFixed(2)}`}
               icon={<FontAwesomeIcon icon={faChartLine} />}
               color="success"
               loading={loading}
-              description="Cost insights for period" // Added required description prop
             />
           </CCol>
           <CCol sm={6} lg={3}>
@@ -238,7 +172,6 @@ const CoreDash = () => {
               icon={<FontAwesomeIcon icon={faBoxOpen} />}
               color="info"
               loading={loading}
-              description="Total weight tracked" // Added required description prop
             />
           </CCol>
           <CCol sm={6} lg={3}>
@@ -248,7 +181,6 @@ const CoreDash = () => {
               icon={<FontAwesomeIcon icon={faBoxes} />}
               color="warning"
               loading={loading}
-              description="Total items shipped" // Added required description prop
             />
           </CCol>
         </CRow>
@@ -258,6 +190,7 @@ const CoreDash = () => {
             <FreightTable />
           </CCol>
           <CCol lg={4}>
+            <AnnouncementList />
           </CCol>
         </CRow>
       </CContainer>

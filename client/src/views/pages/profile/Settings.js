@@ -14,11 +14,10 @@ import { faBriefcase, faEnvelope, faUser, faLock } from '@fortawesome/free-solid
 import { Link } from 'react-router-dom' // Import Link from react-router-dom
 
 const Settings = () => {
-  // Retrieve the user's data from local storage
-  const name = localStorage.getItem('name')
-  const email = localStorage.getItem('email')
-  const role = localStorage.getItem('role')
-  const department = localStorage.getItem('department')
+  // Retrieve the user's data from session storage
+  const name = sessionStorage.getItem('name')
+  const email = sessionStorage.getItem('email')
+  const role = sessionStorage.getItem('role')
 
   return (
     <div>
