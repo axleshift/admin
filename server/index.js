@@ -56,13 +56,7 @@ app.use(helmet());
 app.use(morgan("common"));
 app.use(bodyParser.json());
 
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    })
-);
+app.use(cors())
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
