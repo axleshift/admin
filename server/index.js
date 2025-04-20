@@ -60,12 +60,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(
-    cors({
-        origin: true,
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    })
+  cors({
+      origin: function(origin, callback) {
+          if (!origin) return callback(null, true);
+          
+          const allowedOrigins = ["https://admin.axleshift.com", "http://localhost:3000"];
+          
+          return callback(null, true);
+          
+    
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+      exposedHeaders: ["Content-Range", "X-Content-Range"],
+      maxAge: 86400
+  })
 );
+
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
