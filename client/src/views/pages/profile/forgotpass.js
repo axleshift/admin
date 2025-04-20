@@ -42,13 +42,13 @@ const ForgotPass = () => {
       .post('/general/forgot-password', { email })
       .then((res) => {
         if (res.data.message === 'Reset link sent to your email') {
-          setMessage('Reset link sent successfully! Check your email inbox and spam folders.')
+          setMessage('Reset link sent successfully! Check your email.')
           setMessageType('success')
           
           // Auto-navigate after successful reset link send
           setTimeout(() => {
             navigate('/login')
-          }, 3500) // Increased to 3.5 seconds to give users time to read the message
+          }, 2500)
         } else {
           setMessage('Failed to send reset link. Please try again.')
           setMessageType('danger')
@@ -56,15 +56,8 @@ const ForgotPass = () => {
       })
       .catch((err) => {
         console.error(err)
-        let errorMessage = 'An error occurred connecting to the server. Please try again later.'
-        
-        // Try to extract more specific error message if available
-        if (err.response && err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message
-        } else if (err.message === 'Network Error') {
-          errorMessage = 'Network error. Please check your connection and try again.'
-        }
-        
+        const errorMessage = err.response?.data?.message || 
+                             'An error occurred. Please try again.'
         setMessage(errorMessage)
         setMessageType('danger')
       })
@@ -115,7 +108,14 @@ const ForgotPass = () => {
                   {isLoading ? 'Sending...' : 'Send Reset Link'}
                 </CButton>
 
-                
+                <div className="text-center mt-3">
+                  <a 
+                    href="/login" 
+                    className="text-decoration-none text-muted"
+                  >
+                    Remember your password? Login
+                  </a>
+                </div>
               </CForm>
             </CCardBody>
           </CCard>
