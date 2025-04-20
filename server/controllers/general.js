@@ -149,7 +149,8 @@ export const forgotPassword = async (req, res) => {
           return res.status(500).json({ message: "Server configuration error" });
       }
           
-      const resetLink = `${clientUrl}/resetpass/${user._id}/${token}`;
+      //const resetLink = `${clientUrl}/resetpass/${user._id}/${token}`;
+      const resetLink = `${process.env.CLIENT_URL}/resetpass/${user._id}/${token}`;
       console.log("Generated reset link:", resetLink);
       
       const transporter = nodemailer.createTransport({

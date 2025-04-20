@@ -18,6 +18,7 @@ const Settings = () => {
   const name = localStorage.getItem('name')
   const email = localStorage.getItem('email')
   const role = localStorage.getItem('role')
+  const department = localStorage.getItem('department')
 
   return (
     <div>
