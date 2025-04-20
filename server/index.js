@@ -32,9 +32,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-//import { setupSocketEvents } from "./UTIL/socketHandlers.js";
+
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
+
+import NewUser from "./model/newUser.js";
+import {newuser} from './data/index.js'
 
 // Create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -46,30 +49,21 @@ const app = express();
 // ✅ 3. Create HTTP server
 const server = http.createServer(app);
 
-// Removed Socket.io initialization and setting
-
 // ✅ 5. Middleware
 app.use(express.json());
 app.use(cookieParser()); 
-app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-//uncomment pa may problema
-// app.use(
-//     cors({
-//         origin: [
-//             'http://localhost:3000',
-//             process.env.CLIENT_URL,
-//         ],
-//         credentials: true,
-//         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-//     })
-// );
 
-app.use(cors())
+app.use(
+    cors({
+        origin: true,
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    })
+);
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -136,5 +130,3 @@ mongoose
        // startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));
-
-// Removed WebSocket handling
