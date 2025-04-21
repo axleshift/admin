@@ -100,6 +100,21 @@ app.use(session({
     domain: '.axleshift.com' // Allow cookies to be shared across subdomains
   }
 }));
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+  
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  res.status(500).json({
+    success: false,
+    message: 'Server error occurred',
+    error: process.env.NODE_ENV === 'production' ? 'Internal error' : err.message
+  });
+});
+
 app.use('/backupauto/',backupRoutes)
 // ✅ 7. Register routes
 app.use("/client", clientRoutes);
