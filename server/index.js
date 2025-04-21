@@ -76,8 +76,13 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Add this line to handle OPTIONS preflight requests
+app.options('*', cors());
 app.use(express.json());
 app.use(cookieParser()); 
 app.use(morgan("common"));
