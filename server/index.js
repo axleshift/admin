@@ -84,21 +84,22 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ 6. Set up session middleware before routes
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URL,
-      collectionName: 'sessions',
-      ttl: 14 * 24 * 60 * 60
-    }),
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 14 * 24 * 60 * 60 * 1000
-    }
-  }));
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URL,
+    collectionName: 'sessions',
+    ttl: 14 * 24 * 60 * 60
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: true, // Force secure since you're using HTTPS
+    sameSite: 'none', // Allow cross-site cookies
+    maxAge: 14 * 24 * 60 * 60 * 1000,
+    domain: '.axleshift.com' // Allow cookies to be shared across subdomains
+  }
+}));
 app.use('/backupauto/',backupRoutes)
 // ✅ 7. Register routes
 app.use("/client", clientRoutes);
