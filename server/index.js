@@ -53,11 +53,19 @@ const server = http.createServer(app);
 app.use(helmet());
 app.use(
   cors({
-      origin: true,
+      origin: [
+          "https://admin.axleshift.com", 
+          "https://backend-admin.axleshift.com",
+          // Add any other domains you need
+      ],
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
   })
 );
+
+// Add preflight OPTIONS handling
+app.options('*', cors());
 app.use(express.json());
 app.use(cookieParser()); 
 app.use(morgan("common"));
