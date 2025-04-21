@@ -53,19 +53,11 @@ const server = http.createServer(app);
 app.use(helmet());
 app.use(
   cors({
-      origin: [
-          "https://admin.axleshift.com", 
-          "https://backend-admin.axleshift.com",
-          // Add any other domains you need
-      ],
+      origin: true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
   })
 );
-
-// Add preflight OPTIONS handling
-app.options('*', cors());
 app.use(express.json());
 app.use(cookieParser()); 
 app.use(morgan("common"));
@@ -84,37 +76,21 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ 6. Set up session middleware before routes
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URL,
-    collectionName: 'sessions',
-    ttl: 14 * 24 * 60 * 60
-  }),
-  cookie: {
-    httpOnly: true,
-    secure: true, // Force secure since you're using HTTPS
-    sameSite: 'none', // Allow cross-site cookies
-    maxAge: 14 * 24 * 60 * 60 * 1000,
-    domain: '.axleshift.com' // Allow cookies to be shared across subdomains
-  }
-}));
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Global error handler caught:', err);
-  
-  // Set CORS headers
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  res.status(500).json({
-    success: false,
-    message: 'Server error occurred',
-    error: process.env.NODE_ENV === 'production' ? 'Internal error' : err.message
-  });
-});
-
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URL,
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 14 * 24 * 60 * 60 * 1000
+    }
+  }));
 app.use('/backupauto/',backupRoutes)
 // ✅ 7. Register routes
 app.use("/client", clientRoutes);

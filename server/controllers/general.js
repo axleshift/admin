@@ -130,94 +130,83 @@ export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    console.log("Received email:", email);
-    const user = await User.findOne({ email });
+      console.log("Received email:", email);
+      const user = await User.findOne({ email });
 
-    if (!user) {
-      // Don't reveal if the user exists or not (security best practice)
-      return res.status(200).json({ 
-        success: true,
-        message: "If the email exists in our system, a reset link will be sent." 
-      });
-    }
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
-    
-    const clientUrl = process.env.NODE_ENV === "development" 
-      ? process.env.DEV_URL 
-      : process.env.CLIENT_URL;
-          
-    if (!clientUrl) {
-      console.error("CLIENT_URL environment variable is not set");
-      return res.status(500).json({ 
-        success: false,
-        message: "Server configuration error" 
-      });
-    }
-          
-    const resetLink = `${clientUrl}/resetpass/${user._id}/${token}`;
-    console.log("Generated reset link:", resetLink);
-    
-    try {
-      // Use a more reliable email service for production
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587, // Try port 587 instead of 465 
-        secure: false, // false for TLS - as a boolean not string!
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS, // Use app password if 2FA is enabled
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        timeout: 30000 // Longer timeout
-      });
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
       
+      // FIX: Use consistent URL format that works in all environments
+      const clientUrl = process.env.NODE_ENV === "development" 
+          ? process.env.DEV_URL 
+          : process.env.CLIENT_URL;
+          
+      if (!clientUrl) {
+          console.error("CLIENT_URL environment variable is not set");
+          return res.status(500).json({ message: "Server configuration error" });
+      }
+          
+      const resetLink = `${process.env.DEV_URL}/resetpass/${user._id}/${token}`;
+      console.log("Generated reset link:", resetLink);
+      
+      const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+          },
+      });
+
+      // Verify transporter configuration
+      await new Promise((resolve, reject) => {
+          transporter.verify((error, success) => {
+              if (error) {
+                  console.error("Email server configuration error:", error);
+                  reject(error);
+              } else {
+                  resolve(success);
+              }
+          });
+      });
+
       const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: user.email,
-        subject: "Reset your password",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-            <h2 style="color: #333;">Password Reset Request</h2>
-            <p>Hello,</p>
-            <p>You requested to reset your password. Please click the link below to set a new password:</p>
-            <p style="margin: 20px 0;">
-              <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a>
-            </p>
-            <p>If you didn't request this, please ignore this email or contact support if you have concerns.</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If the button above doesn't work, copy and paste this URL into your browser:</p>
-            <p style="word-break: break-all; color: #666;">${resetLink}</p>
-          </div>
-        `,
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "Reset your password",
+          text: `Reset link: ${resetLink}`,
+          // Add HTML version for better email client compatibility
+          html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                  <h2 style="color: #333;">Password Reset Request</h2>
+                  <p>Hello,</p>
+                  <p>You requested to reset your password. Please click the link below to set a new password:</p>
+                  <p style="margin: 20px 0;">
+                      <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a>
+                  </p>
+                  <p>If you didn't request this, please ignore this email or contact support if you have concerns.</p>
+                  <p>This link will expire in 24 hours.</p>
+                  <p>If the button above doesn't work, copy and paste this URL into your browser:</p>
+                  <p style="word-break: break-all; color: #666;">${resetLink}</p>
+              </div>
+          `,
       };
 
       await transporter.sendMail(mailOptions);
-      console.log("Email sent successfully to:", user.email);
+      console.log("Email sent successfully");
       
-      return res.status(200).json({ 
-        success: true,
-        message: "If the email exists in our system, a reset link will be sent." 
+      res.status(200).json({ 
+          message: "Reset link sent to your email",
+          userId: user._id
       });
-      
-    } catch (emailError) {
-      console.error("Failed to send email:", emailError);
-      
-      // Still return 200 to prevent email enumeration attacks
-      // but include success: false to indicate failure to the front-end
-      return res.status(200).json({
-        success: false,
-        message: "Failed to send reset link. Please try again."
-      });
-    }
   } catch (err) {
-    console.error("Server error:", err);
-    return res.status(500).json({ 
-      success: false,
-      message: "Server error occurred. Please try again later."
-    });
+      console.error("Server error:", err);
+      res.status(500).json({ 
+          message: "Server error", 
+          error: err.message 
+      });
   }
 };
 export const resetPassword = async (req, res) => {
