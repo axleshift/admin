@@ -210,168 +210,96 @@ export const resetPassword = async (req, res) => {
   const { password, passwordAnalysis } = req.body;
 
   try {
-    // Verify the JWT token first
+    // Verify the JWT token
+    let decoded;
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     } catch (tokenErr) {
       if (tokenErr.name === "TokenExpiredError") {
         return res.status(400).json({ Status: "Error", Message: "Token has expired" });
       }
       return res.status(400).json({ Status: "Error", Message: "Invalid token" });
     }
-    
-    // Get full user details for notification
+
+    // Ensure the token's user ID matches the provided ID
+    if (decoded.id !== id) {
+      return res.status(400).json({ Status: "Error", Message: "Invalid token or user ID mismatch" });
+    }
+
+    // Find the user by ID
     const user = await User.findById(id);
     if (!user) {
-      console.log("User not found with ID:", id);
       return res.status(404).json({ Status: "Error", Message: "User not found" });
     }
 
     console.log("Processing password reset for user:", user.email);
 
-    // Check if password exists in the user's password history
+    // Check if the password was recently used
     if (user.passwordHistory && user.passwordHistory.length > 0) {
-      // Check if any of the hashed passwords in history match the new password
-      const passwordMatchPromises = user.passwordHistory.map(async (hashedPassword) => {
-        return await bcryptjs.compare(password, hashedPassword);
-      });
-      
-      const passwordMatchResults = await Promise.all(passwordMatchPromises);
-      const isPasswordReused = passwordMatchResults.some(result => result === true);
-      
+      const isPasswordReused = await Promise.all(
+        user.passwordHistory.map(async (hashedPassword) => bcryptjs.compare(password, hashedPassword))
+      ).then((results) => results.some((match) => match));
+
       if (isPasswordReused) {
-        console.log("Password has been used recently");
-        
-        // Store password reset attempt with failed validation for reuse
-        await storePasswordResetEvent(user._id, passwordAnalysis, false, {
-          valid: false,
-          message: "Password has been used within the last 6 months"
-        }, req);
-        
         return res.status(400).json({
           Status: "Error",
           Code: "PASSWORD_RECENTLY_USED",
-          Message: "This password was recently used. Please choose a password you haven't used within the last 6 months."
+          Message: "This password was recently used. Please choose a new password.",
         });
       }
     }
 
-    // Enhanced password validation function
+    // Validate password strength
     const validatePasswordStrength = (password, analysis) => {
-      // Always validate basic requirements regardless of AI analysis
       if (!password || password.length < 8) {
         return { valid: false, message: "Password must be at least 8 characters long" };
       }
-      
-      // Check if password contains at least one uppercase, lowercase, number, and special character
       const hasUppercase = /[A-Z]/.test(password);
       const hasLowercase = /[a-z]/.test(password);
       const hasNumber = /[0-9]/.test(password);
       const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-      
+
       if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
-        return { 
-          valid: false, 
-          message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character" 
+        return {
+          valid: false,
+          message: "Password must contain uppercase, lowercase, number, and special character",
         };
       }
-      
-      // Check AI analysis score if available
-      if (analysis && analysis.score !== undefined) {
-        if (analysis.score < 40) {
-          return { 
-            valid: false, 
-            message: "Password does not meet minimum security requirements based on analysis" 
-          };
-        }
+
+      if (analysis && analysis.score < 40) {
+        return { valid: false, message: "Password does not meet security requirements" };
       }
-      
-      return { valid: true, message: "Password meets requirements" };
+
+      return { valid: true, message: "Password is valid" };
     };
 
-    // Validate password strength
-    const passwordData = passwordAnalysis || { score: 40, strength: 'Moderate' };
-    const validation = validatePasswordStrength(password, passwordData);
-    
+    const validation = validatePasswordStrength(password, passwordAnalysis || { score: 40 });
     if (!validation.valid) {
-      console.log("Password validation failed:", validation.message);
-      
-      // Store password reset attempt with failed validation
-      await storePasswordResetEvent(user._id, passwordData, false, validation, req);
-      
-      return res.status(400).json({ 
-        Status: "Error", 
-        Message: validation.message
-      });
+      return res.status(400).json({ Status: "Error", Message: validation.message });
     }
-
-    console.log("Password validation passed, updating password...");
 
     // Hash the new password
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
-    
-    // Update password history - add current password to history before updating
-    if (!user.passwordHistory) {
-      user.passwordHistory = [];
-    }
-    
-    if (user.password) {
-      user.passwordHistory.push(user.password);
-    }
-    
-    // Keep only the 6 most recent passwords (6 months history)
-    if (user.passwordHistory.length > 6) {
-      user.passwordHistory = user.passwordHistory.slice(-6);
-    }
-    
-    // Update the password
+
+    // Update password history
+    if (!user.passwordHistory) user.passwordHistory = [];
+    if (user.password) user.passwordHistory.push(user.password);
+    if (user.passwordHistory.length > 6) user.passwordHistory = user.passwordHistory.slice(-6);
+
+    // Update the user's password
     user.password = hashedPassword;
-    
-    // Update password metadata
     user.passwordMeta = {
       lastChanged: new Date(),
-      strength: passwordData.strength || 'Moderate',
-      score: passwordData.score || 40,
-      validationPassed: true
+      strength: passwordAnalysis?.strength || "Moderate",
+      score: passwordAnalysis?.score || 40,
     };
-    
+
     await user.save();
-    console.log("Password updated successfully");
-
-    // Store successful password reset event
-    await storePasswordResetEvent(user._id, passwordData, true, validation, req);
-
-    // Create detailed notification using the enhanced utility
-    try {
-      await notificationUtil.createUserActivityNotification({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          department: user.department
-        },
-        action: "has reset their password",
-        type: "system",
-        includeDetails: true // Include all user details in the message
-      });
-      console.log("Password reset notification created");
-    } catch (notificationErr) {
-      console.error("Failed to create notification:", notificationErr.message);
-      // Continue anyway, as this is not critical
-    }
 
     res.json({ Status: "Success", Message: "Password reset successful" });
   } catch (err) {
     console.error("Password reset error:", err);
-    
-    // Error handling...
-    if (err.name === "JsonWebTokenError") {
-      return res.status(400).json({ Status: "Error", Message: "Error with token" });
-    } else if (err.name === "TokenExpiredError") {
-      return res.status(400).json({ Status: "Error", Message: "Token has expired" });
-    }
     res.status(500).json({ Status: "Error", Message: "Internal Server Error", error: err.message });
   }
 };
