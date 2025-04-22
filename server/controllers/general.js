@@ -342,7 +342,32 @@ const storePasswordResetEvent = async (userId, passwordData, validationPassed, v
   }
 };
 
+export const validateResetToken = async (req, res) => {
+  const { id, token } = req.params;
 
+  try {
+    // Verify the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    // Ensure the token's user ID matches the provided ID
+    if (decoded.id !== id) {
+      return res.status(400).json({ Status: "Error", Message: "Invalid token or user ID mismatch" });
+    }
+
+    // Check if the user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ Status: "Error", Message: "User not found" });
+    }
+
+    res.status(200).json({ Status: "Success", Message: "Token is valid" });
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(400).json({ Status: "Error", Message: "Token has expired" });
+    }
+    res.status(400).json({ Status: "Error", Message: "Invalid token" });
+  }
+};
 
 export const getDashboardStats = async (req, res) => {
     try {

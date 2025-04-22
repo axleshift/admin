@@ -2,6 +2,7 @@ import express from "express";
 import { getUser, 
     forgotPassword, 
     resetPassword, 
+    validateResetToken,
   
     getDashboardStats,
     accessReview,
@@ -26,6 +27,7 @@ router.get("/user/:id", getUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:id/:token", resetPassword);
 
+router.get("/validate-reset-token/:id/:token", validateResetToken);
 
 router.get("/dashboard", getDashboardStats);
 router.post('/receive-request', receiveREQ)

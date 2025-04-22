@@ -200,12 +200,16 @@ function ResetPass() {
   useEffect(() => {
     const validateToken = async () => {
       try {
-        await axiosInstance.get(`/general/validate-reset-token/${id}/${token}`);
+        const res = await axiosInstance.get(`/general/validate-reset-token/${id}/${token}`);
+        if (res.data.Status === "Success") {
+          setError(""); // Clear any previous error
+        }
       } catch (err) {
-        setError('This password reset link has expired or is invalid');
+        console.error("Token validation error:", err);
+        setError("This password reset link has expired or is invalid");
       }
     };
-    
+  
     validateToken();
   }, [id, token]);
 
