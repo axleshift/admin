@@ -213,15 +213,11 @@ export const resetPassword = async (req, res) => {
     // Verify the JWT token first
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-      console.log("Token verified successfully:", decoded);
     } catch (tokenErr) {
-      console.error("Token verification failed:", tokenErr.message);
-      if (tokenErr.name === "JsonWebTokenError") {
-        return res.status(400).json({ Status: "Error", Message: "Invalid token" });
-      } else if (tokenErr.name === "TokenExpiredError") {
+      if (tokenErr.name === "TokenExpiredError") {
         return res.status(400).json({ Status: "Error", Message: "Token has expired" });
       }
-      return res.status(400).json({ Status: "Error", Message: "Token validation failed" });
+      return res.status(400).json({ Status: "Error", Message: "Invalid token" });
     }
     
     // Get full user details for notification
