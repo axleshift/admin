@@ -513,52 +513,66 @@ export const downloadzip = async (req, res) => {
 
 
   import nodemailer from 'nodemailer'
-  import express from 'express'
+
+
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates
+    },
+    connectionTimeout: 10000,
   });
 
   
-  export const testsend = async (req, res) => {
-    const { recipient } = req.body;
-    
-    if (!recipient) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email recipient is required' 
-      });
-    }
-  
-    // Email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: recipient,
-      subject: 'Hello from our application',
-      text: 'Hello!',
-      html: '<h1>Hello!</h1><p>This is a test email from our MERN stack application.</p>'
-    };
-  
-    try {
-      // Send the email
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', info.messageId);
-      
-      res.status(200).json({
-        success: true,
-        message: 'Email sent successfully',
-        messageId: info.messageId
-      });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      
-      res.status(500).json({
-        success: false,
-        message: 'Failed to send email',
-        error: error.message
-      });
-    }
+ export const testsend = async (req, res) => {
+  const { recipient } = req.body;
+
+  if (!recipient) {
+    return res.status(400).json({
+      success: false,
+      message: "Email recipient is required",
+    });
   }
+
+  // Validate environment variables
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error("Email configuration is missing");
+    return res.status(500).json({
+      success: false,
+      message: "Email configuration is missing. Please check your environment variables.",
+    });
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: recipient,
+    subject: "Hello from our application",
+    text: "Hello!",
+    html: "<h1>Hello!</h1><p>This is a test email from our MERN stack application.</p>",
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully:", info.messageId);
+
+    res.status(200).json({
+      success: true,
+      message: "Email sent successfully",
+      messageId: info.messageId,
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to send email",
+      error: error.message,
+    });
+  }
+};

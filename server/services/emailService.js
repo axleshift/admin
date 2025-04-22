@@ -3,16 +3,18 @@ import nodemailer from 'nodemailer';
 // Use a test email service like Ethereal or Mailtrap for easier testing
 // Alternatively, use a more straightforward Gmail config
 const createTransporter = () => {
-  // Option 1: Gmail with explicit settings
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    host: process.env.SMTP_HOST || "smtp.gmail.com", // Default to Gmail
+    port: process.env.SMTP_PORT || 587, // Default to TLS port
+    secure: process.env.SMTP_PORT === "465", // Use SSL for port 465
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS.trim() // Make sure to trim any extra spaces
+      pass: process.env.EMAIL_PASS?.trim(), // Ensure no trailing spaces
     },
-    debug: true // This will output additional debug info
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates
+    },
+    connectionTimeout: 10000, // Increase timeout to 10 seconds
   });
 };
 
