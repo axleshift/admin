@@ -358,21 +358,26 @@ const Works = () => {
     });
   };
   
-  const filteredData = data.filter((item) => {
-    const username = item.username || ""; 
-    const email = item.email || ""; 
-  
-    const matchesSearch =
-      username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment =
-      selectedDepartment === 'all' || item.department === selectedDepartment;
-    const matchesRole =
-      selectedRoleFilter === 'all' || item.role === selectedRoleFilter;
-  
-    return matchesSearch && matchesDepartment && matchesRole;
-  });
-  
+const filteredData = data.filter((item) => {
+  const username = item.username || ""; 
+  const email = item.email || ""; 
+
+  const matchesSearch =
+    username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    email.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesDepartment =
+    selectedDepartment === 'all' || item.department === selectedDepartment;
+  const matchesRole =
+    selectedRoleFilter === 'all' || item.role === selectedRoleFilter;
+
+  // Restrict visibility to the user's department if they are not superadmin or administrative
+  const isUserSensitiveDepartment =
+    ['HR', 'Core', 'Finance', 'Logistics'].includes(userDepartment);
+  const matchesUserDepartment =
+    !isUserSensitiveDepartment || item.department === userDepartment;
+
+  return matchesSearch && matchesDepartment && matchesRole && matchesUserDepartment;
+});
   const handleResetPassword = async (userId) => {
     try {
       const user = data.find(user => user._id === userId);
@@ -495,82 +500,41 @@ const Works = () => {
           </CCol>
 
           <CCol xs="4" className="d-flex justify-content-end">
-            <div className="d-flex align-items-center">
-            {isSuperAdminAndAdministrative && (
-              <CDropdown className="download-dropdown">
-                <CDropdownToggle color="primary" size="sm" className="d-flex align-items-center">
-                  <FontAwesomeIcon icon={faDownload} className="me-2" /> 
-                  <span>Export Data</span>
-                </CDropdownToggle>
-                <CDropdownMenu className="shadow-sm p-2">
-                  <h6 className="dropdown-header text-primary">Quick Export</h6>
-                  <CDropdownItem onClick={() => handleDownloadSecureZip('all')} className="d-flex align-items-center">
-                    <FontAwesomeIcon icon={faUsers} className="me-2 text-secondary" /> 
-                    <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                    <span>All Employees (Protected)</span>
-                  </CDropdownItem>
-                  <CDropdownItem onClick={() => handleDownloadSecureZip('current-filter')} className="d-flex align-items-center">
-                    <FontAwesomeIcon icon={faFilter} className="me-2 text-secondary" />
-                    <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                    <span>Current Filter Results (Protected)</span>
-                  </CDropdownItem>
-                  
-                  <CDropdownItem divider className="my-2" />
-                  
-                  <CDropdownItem header className="text-primary">By Department</CDropdownItem>
-                  <div className="department-items">
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('hr')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faIdCard} className="me-2 text-secondary" /> 
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>HR</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('finance')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Finance</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('core')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faCubes} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Core</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('logistics')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faTruck} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Logistics</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('administrative')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faBuilding} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Administrative</span>
-                    </CDropdownItem>
-                  </div>
-                  
-                  <CDropdownItem divider className="my-2" />
-                  
-                  <CDropdownItem header className="text-primary">By Role</CDropdownItem>
-                  <div className="role-items">
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('admin')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faUserCog} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Admins</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('manager')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faUserTie} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Managers</span>
-                    </CDropdownItem>
-                    <CDropdownItem onClick={() => handleDownloadSecureZip('employee')} className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faUser} className="me-2 text-secondary" />
-                      <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
-                      <span>Employees</span>
-                    </CDropdownItem>
-                  </div>
-                </CDropdownMenu>
-              </CDropdown>
-            )}
-            </div>
-          </CCol>
+  <div className="d-flex align-items-center">
+    {(isSuperAdminAndAdministrative || ['HR', 'Core', 'Finance', 'Logistics'].includes(userDepartment)) && (
+      <CDropdown className="download-dropdown">
+        <CDropdownToggle color="primary" size="sm" className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faDownload} className="me-2" /> 
+          <span>Export Data</span>
+        </CDropdownToggle>
+        <CDropdownMenu className="shadow-sm p-2">
+          <h6 className="dropdown-header text-primary">Quick Export</h6>
+          <CDropdownItem onClick={() => handleDownloadSecureZip('all')} className="d-flex align-items-center">
+            <FontAwesomeIcon icon={faUsers} className="me-2 text-secondary" /> 
+            <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+            <span>All Employees (Protected)</span>
+          </CDropdownItem>
+          <CDropdownItem onClick={() => handleDownloadSecureZip('current-filter')} className="d-flex align-items-center">
+            <FontAwesomeIcon icon={faFilter} className="me-2 text-secondary" />
+            <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+            <span>Current Filter Results (Protected)</span>
+          </CDropdownItem>
+          
+          <CDropdownItem divider className="my-2" />
+          
+          <CDropdownItem header className="text-primary">By Department</CDropdownItem>
+          <div className="department-items">
+            <CDropdownItem onClick={() => handleDownloadSecureZip(userDepartment.toLowerCase())} className="d-flex align-items-center">
+              <FontAwesomeIcon icon={faBuilding} className="me-2 text-secondary" />
+              <FontAwesomeIcon icon={faLock} className="me-1 text-secondary" size="xs" />
+              <span>{userDepartment}</span>
+            </CDropdownItem>
+          </div>
+        </CDropdownMenu>
+      </CDropdown>
+    )}
+  </div>
+</CCol>
         </CRow>
 
         {filteredData.map((item) => (

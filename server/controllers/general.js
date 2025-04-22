@@ -285,7 +285,14 @@ export const resetPassword = async (req, res) => {
     // Update password history
     if (!user.passwordHistory) user.passwordHistory = [];
     if (user.password) user.passwordHistory.push(user.password);
-    if (user.passwordHistory.length > 6) user.passwordHistory = user.passwordHistory.slice(-6);
+
+    // Keep only the passwords from the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    user.passwordHistory = user.passwordHistory.filter((passwordEntry) => {
+      const passwordDate = new Date(passwordEntry.timestamp || 0); // Assuming timestamps are stored
+      return passwordDate >= sixMonthsAgo;
+    });
 
     // Update the user's password
     user.password = hashedPassword;

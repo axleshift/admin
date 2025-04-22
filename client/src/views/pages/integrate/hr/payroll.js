@@ -24,7 +24,16 @@ import {
   CToast,
   CToastBody,
   CToastHeader,
-  CToaster
+  CToaster,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -35,9 +44,11 @@ import {
   faSortUp, 
   faSortDown, 
   faEye,
-  faSync
+  faSync,
+  
 } from '@fortawesome/free-solid-svg-icons';
-import CIcon from '@coreui/icons-react';
+import { 
+} from '@coreui/icons-react';
 import logActivity from '../../../../utils/activityLogger';
 
 const PayrollPage = () => {
@@ -50,7 +61,8 @@ const PayrollPage = () => {
   const [toast, setToast] = useState(null);
   const [toaster, setToaster] = useState(null);
   const itemsPerPage = 10;
-  
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
   // Get user information from localStorage
   const userRole = localStorage.getItem('role');
   const userDepartment = localStorage.getItem('department');
@@ -89,26 +101,29 @@ const PayrollPage = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get('/hr/payroll');
-      
+
       if (response.data && Array.isArray(response.data)) {
-        setPayrollData(response.data);
-        
-        // Show success toast notification
+        // Filter payroll data based on the user's department
+        const filteredData =
+          userRole === 'superadmin'
+            ? response.data // Superadmin sees all data
+            : response.data.filter((item) => item.department.toLowerCase() === userDepartment.toLowerCase());
+
+        setPayrollData(filteredData);
+
         setToast(
           <CToast autohide={true} delay={5000}>
             <CToastHeader closeButton>
               <strong className="me-auto">Success</strong>
             </CToastHeader>
             <CToastBody>
-              Successfully loaded {response.data.length} payroll records!
+              Successfully loaded {filteredData.length} payroll records!
             </CToastBody>
           </CToast>
         );
       } else {
-        console.warn("Unexpected API response format:", response.data);
+        console.warn('Unexpected API response format:', response.data);
         setPayrollData([]);
-        
-        // Show warning toast notification
         setToast(
           <CToast autohide={true} delay={5000} color="warning">
             <CToastHeader closeButton>
@@ -120,14 +135,12 @@ const PayrollPage = () => {
           </CToast>
         );
       }
-      
+
       setError(null);
     } catch (err) {
       setError('Failed to fetch payroll data. Please try again later.');
       console.error('Error fetching payroll data:', err);
       setPayrollData([]);
-      
-      // Show error toast notification
       setToast(
         <CToast autohide={true} delay={5000} color="danger">
           <CToastHeader closeButton>
@@ -163,7 +176,43 @@ const PayrollPage = () => {
       console.warn("Error logging refresh action:", error);
     }
   };
+  
+  const handleDownloadPayrollZip = async (downloadType) => {
+    try {
+      const password = userName.substring(0, 2) + userRole.charAt(0) + userUsername.slice(-6);
+      setGeneratedPassword(password);
 
+      const response = await axiosInstance.post(
+        '/management/downloadPayrollZip',
+        {
+          name: userName,
+          role: userRole,
+          username: userUsername,
+          department: userDepartment,
+          downloadType,
+        },
+        { responseType: 'blob' }
+      );
+
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', 'Payroll_Protected.zip');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setShowPasswordModal(true);
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        alert(`No payroll data found for the selected department.`);
+      } else {
+        console.error('Error downloading payroll ZIP:', err);
+        alert('Failed to download payroll ZIP. Please try again.');
+      }
+    }
+  };
+  
   // Handle sorting
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -279,9 +328,25 @@ const PayrollPage = () => {
 
   return (
     <div className="mb-4">
-      {/* Toaster component to show notifications */}
-      <CToaster ref={setToaster} push={toast} placement="top-end" />
-      
+    <CToaster ref={setToaster} push={toast} placement="top-end" />
+      <CModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
+        <CModalHeader>
+          <CModalTitle>Download Successful</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p>Your ZIP file has been downloaded successfully.</p>
+          <p>
+            <strong>Password:</strong> {generatedPassword}
+          </p>
+          <p>Please save this password securely to access the ZIP file.</p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={() => setShowPasswordModal(false)}>
+            OK
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
       <CRow>
         <CCol>
           <CCard className="mb-4">
@@ -292,6 +357,23 @@ const PayrollPage = () => {
                   <FontAwesomeIcon icon={faSync} className="me-1" /> Refresh
                 </CButton>
               </div>
+                {userRole === 'superadmin' ? (
+                    <CDropdown>
+                      <CDropdownToggle color="primary">Download Payroll</CDropdownToggle>
+                      <CDropdownMenu>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('all')}>All Payroll</CDropdownItem>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('logistics')}>Logistics Payroll</CDropdownItem>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('hr')}>HR Payroll</CDropdownItem>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('core')}>Core Payroll</CDropdownItem>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('finance')}>Finance Payroll</CDropdownItem>
+                        <CDropdownItem onClick={() => handleDownloadPayrollZip('admin')}>Admin Payroll</CDropdownItem>
+                      </CDropdownMenu>
+                    </CDropdown>
+                  ) : (
+                    <CButton color="primary" onClick={() => handleDownloadPayrollZip(userDepartment.toLowerCase())}>
+                      Download {userDepartment} Payroll
+                    </CButton>
+                  )}
             </CCardHeader>
             <CCardBody>
               {/* Search and controls */}

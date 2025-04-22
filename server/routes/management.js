@@ -3,6 +3,7 @@ import {
    downloadVehicleZip,
    downloadzip,
    downloadLeaveRequestPdf ,
+   downloadPayrollZip,
    testsend
 
 } from "../controllers/management.js";
@@ -14,6 +15,8 @@ router.post('/downloadZip',downloadzip)
 router.post('/downloadVehicleZip', downloadVehicleZip)
 
 router.post('/downloadLeaveRequest',downloadLeaveRequestPdf )
+
+router.post('/downloadPayrollZip', downloadPayrollZip);
 
 
 router.post("/emailsent",testsend)
