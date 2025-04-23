@@ -1,4 +1,3 @@
-// utils/geminiPasswordAnalyzer.js
 import axios from 'axios';
 
 const GEMINI_API_KEY = 'AIzaSyBlGfiToGE4_D_86kpLw_7QSzvaAySDASA';
@@ -6,15 +5,12 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 
 export const analyzePasswordWithAI = async (password) => {
   try {
-    // Create a prompt that doesn't expose the actual password
-    // We extract features instead of sending the raw password
     const passwordFeatures = {
       length: password.length,
       hasLowercase: /[a-z]/.test(password),
       hasUppercase: /[A-Z]/.test(password),
       hasNumbers: /\d/.test(password),
       hasSymbols: /[^A-Za-z0-9]/.test(password),
-      // Add pattern detection without revealing the actual password
       patterns: {
         hasRepeatedChars: /(.)\1{2,}/.test(password),
         hasSequentialNumbers: /(?:012|123|234|345|456|567|678|789)/.test(password),
@@ -23,23 +19,23 @@ export const analyzePasswordWithAI = async (password) => {
     };
 
     const prompt = `
-      As a password security AI, analyze this password's strength based on these features:
-      - Length: ${passwordFeatures.length} characters
-      - Contains lowercase letters: ${passwordFeatures.hasLowercase}
-      - Contains uppercase letters: ${passwordFeatures.hasUppercase}
-      - Contains numbers: ${passwordFeatures.hasNumbers}
-      - Contains symbols: ${passwordFeatures.hasSymbols}
-      - Contains repeated characters: ${passwordFeatures.patterns.hasRepeatedChars}
-      - Contains sequential numbers: ${passwordFeatures.patterns.hasSequentialNumbers}
-      - Contains keyboard patterns: ${passwordFeatures.patterns.hasKeyboardPatterns}
-      
-      Provide a JSON response with:
-      1. A numerical score from 0-100
-      2. A strength classification (Weak, Moderate, Strong, Very Strong)
-      3. An array of specific improvement suggestions
-      4. A brief explanation of the scoring
-      
-      Return ONLY valid JSON without any other text.
+    Analyze the following password features and provide a JSON response:
+    - Length: ${passwordFeatures.length}
+    - Contains lowercase: ${passwordFeatures.hasLowercase}
+    - Contains uppercase: ${passwordFeatures.hasUppercase}
+    - Contains numbers: ${passwordFeatures.hasNumbers}
+    - Contains symbols: ${passwordFeatures.hasSymbols}
+    - Contains repeated characters: ${passwordFeatures.patterns.hasRepeatedChars}
+    - Contains sequential numbers: ${passwordFeatures.patterns.hasSequentialNumbers}
+    - Contains keyboard patterns: ${passwordFeatures.patterns.hasKeyboardPatterns}
+
+    Return a JSON object with:
+    {
+      "score": (0-100),
+      "strength": "Weak | Moderate | Strong | Very Strong",
+      "feedback": ["list of improvement suggestions"],
+      "explanation": "brief explanation of the score"
+    }
     `;
 
     const response = await axios.post(
@@ -61,7 +57,6 @@ export const analyzePasswordWithAI = async (password) => {
       }
     );
 
-    // Extract and parse the JSON response from Gemini
     const responseText = response.data.candidates[0].content.parts[0].text;
     const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
                       responseText.match(/\{[\s\S]*\}/);
@@ -70,51 +65,66 @@ export const analyzePasswordWithAI = async (password) => {
       JSON.parse(jsonMatch[0].startsWith('{') ? jsonMatch[0] : jsonMatch[1]) : 
       null;
 
-    if (!jsonResponse) {
-      throw new Error('Failed to parse AI response');
+    if (!jsonResponse || typeof jsonResponse.score !== 'number') {
+      console.warn('AI response invalid, using fallback analysis.');
+      return fallbackPasswordAnalysis(password);
     }
 
     return jsonResponse;
   } catch (error) {
     console.error('AI Password Analysis Error:', error);
-    
-    // Fallback to basic analysis if AI fails
     return fallbackPasswordAnalysis(password);
   }
 };
 
-// Fallback function in case the API call fails
 const fallbackPasswordAnalysis = (password) => {
   let score = 0;
   const feedback = [];
-  
-  // Simple scoring algorithm as fallback
+  const commonPasswords = ['password', '123456', 'qwerty', 'letmein', 'welcome'];
+
   if (password.length >= 8) score += 20;
   if (password.length >= 12) score += 10;
   if (/[a-z]/.test(password)) score += 10;
   if (/[A-Z]/.test(password)) score += 15;
   if (/\d/.test(password)) score += 15;
   if (/[^A-Za-z0-9]/.test(password)) score += 20;
-  if (/(.)\1{2,}/.test(password)) score -= 10;
-  
-  // Generate feedback
-  if (password.length < 8) feedback.push("Use at least 8 characters");
-  if (!/[a-z]/.test(password)) feedback.push("Add lowercase letters");
-  if (!/[A-Z]/.test(password)) feedback.push("Add uppercase letters");
-  if (!/\d/.test(password)) feedback.push("Add numbers");
-  if (!/[^A-Za-z0-9]/.test(password)) feedback.push("Add special characters");
-  if (/(.)\1{2,}/.test(password)) feedback.push("Avoid repeated characters");
-  
-  // Determine strength
+  if (/(.)\1{2,}/.test(password)) {
+    score -= 10;
+    feedback.push("Avoid excessive repetition of characters.");
+  }
+  if (commonPasswords.includes(password.toLowerCase())) {
+    score -= 30;
+    feedback.push("Avoid using common passwords.");
+  }
+
+  if (password.length < 8) feedback.push("Use at least 8 characters.");
+  if (!/[a-z]/.test(password)) feedback.push("Add lowercase letters.");
+  if (!/[A-Z]/.test(password)) feedback.push("Add uppercase letters.");
+  if (!/\d/.test(password)) feedback.push("Add numbers.");
+  if (!/[^A-Za-z0-9]/.test(password)) feedback.push("Add special characters.");
+
+  const entropy = calculateEntropy(password);
+  if (entropy < 28) feedback.push("Increase password complexity for better security.");
+
   let strength = "Weak";
   if (score >= 30) strength = "Moderate";
   if (score >= 60) strength = "Strong";
   if (score >= 80) strength = "Very Strong";
-  
+
   return {
     score,
     strength,
     feedback: feedback.length > 0 ? feedback : ["Good password!"],
-    explanation: "Basic password analysis (AI fallback)"
+    explanation: "Basic password analysis (AI fallback)."
   };
+};
+
+export const calculateEntropy = (password) => {
+  let charsetSize = 0;
+  if (/[a-z]/.test(password)) charsetSize += 26;
+  if (/[A-Z]/.test(password)) charsetSize += 26;
+  if (/\d/.test(password)) charsetSize += 10;
+  if (/[^A-Za-z0-9]/.test(password)) charsetSize += 32;
+
+  return password.length * Math.log2(charsetSize);
 };

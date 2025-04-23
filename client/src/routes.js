@@ -9,6 +9,8 @@ const FinanceDash = React.lazy(() => import('./views/dashboard/financedash'));
 const LogisticDash = React.lazy(() => import('./views/dashboard/logisticdash'));
 const Register = React.lazy(() => import('./views/pages/register/registerNew'));
 
+const AiAssistant = React.lazy(() => import('./views/pages/Security/aiAssistant'));
+
 const Request = React.lazy(()=> import ('./views/pages/scene/Request'));
 const Cron = React.lazy(()=> import ('./views/pages/scene/cron'))
 
@@ -76,6 +78,8 @@ const routes = [
 
 
   { path: '/registerNew', name: 'Register New Users', element: <ProtectedRoute><Register /> </ProtectedRoute>},
+
+  { path: '/aiAssistant', name: 'AI Assistant', element: <ProtectedRoute><AiAssistant /> </ProtectedRoute>},
 
   { path: '/request', name: 'Request', element: <ProtectedRoute><Request /> </ProtectedRoute>},
   { path: '/cron', name: 'Cron', element: <ProtectedRoute><Cron/> </ProtectedRoute>},

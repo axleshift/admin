@@ -462,6 +462,13 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
+        {
+          component: CNavItem,
+          name:'Ai Assistant',
+          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+          to:'/aiAssistant'
+        },
+
         
        
       )

@@ -3,7 +3,11 @@ import User from "../model/User.js";
 import Joi from "joi";
 import LoginAttempt from '../model/LoginAttempt.js';
 import Anomaly from '../model/Anomaly.js';
+import axios from 'axios'
+import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
+import dotenv from 'dotenv';
 
+dotenv.config();
 import {
     logLoginAttempt,
     checkForUnusualLogin,
@@ -738,6 +742,8 @@ export const loginUser = async (req, res) => {
           user.lockExpiration = lockoutUntil;
           await user.save();
           
+          await sendAccountLockedEmail(user.email, "15 minutes");
+
           // Create security alert for account lockout
           await createAccountLockoutAlert(user._id, ipAddress, userAgent);
           
@@ -939,27 +945,45 @@ export const refreshToken = async (req, res) => {
 };
 // Helper function to count failed attempts
 
-  export const verifyCaptcha = async (req, res, next) => {
-    const { captchaToken } = req.body;
-    if (!captchaToken) return res.status(400).json({ error: "CAPTCHA is required" });
-  
-    try {
-      const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
-        params: {
-          secret: process.env.RECAPTCHA_SECRET_KEY,
-          response: captchaToken
-        }
-      });
-  
-      if (!response.data.success || response.data.score < 0.5) {
-        return res.status(403).json({ error: "Bot detected!" });
-      }
-  
-      next(); // Allow request to continue
-    } catch (error) {
-      return res.status(500).json({ error: "CAPTCHA verification failed" });
+
+const client = new RecaptchaEnterpriseServiceClient({
+  keyFilename: process.env.RECAPTCHA_SERVICE_ACCOUNT_KEY, // Path to the JSON file
+});
+
+export const verifyCaptcha = async (req, res, next) => {
+  const { captchaToken } = req.body;
+
+  if (!captchaToken) {
+    return res.status(400).json({ message: "CAPTCHA token is required" });
+  }
+
+  const projectPath = client.projectPath(process.env.GOOGLE_CLOUD_PROJECT_ID);
+
+  try {
+    const [response] = await client.createAssessment({
+      parent: projectPath,
+      assessment: {
+        event: {
+          token: captchaToken,
+          siteKey: process.env.RECAPTCHA_KEY,
+        },
+      },
+    });
+
+    if (!response.tokenProperties?.valid) {
+      return res.status(403).json({ message: "Invalid CAPTCHA token" });
     }
-  };
+
+    if (response.riskAnalysis?.score < 0.5) {
+      return res.status(403).json({ message: "CAPTCHA verification failed" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("CAPTCHA verification failed:", error);
+    return res.status(500).json({ message: "CAPTCHA verification service unavailable" });
+  }
+};
 
 const detectAnomaly = async (userId, ipAddress, userAgent) => {
     const recentAttempts = await LoginAttempt.find({ userId, ipAddress }).sort({ timestamp: -1 }).limit(5);

@@ -19,6 +19,8 @@ import {
 import CIcon from "@coreui/icons-react";
 import { cilLockLocked, cilUser } from "@coreui/icons";
 
+const RECAPTCHA_SITE_KEY = "6LdeRSErAAAAAO_tTaCq0sa9yVOtB3-jl6avr05G";
+
 const Login = () => {
   
   const [data, setData] = useState({ identifier: "", password: "" });
@@ -28,7 +30,9 @@ const Login = () => {
   const [lockExpiration, setLockExpiration] = useState(null);
   const [securityNotice, setSecurityNotice] = useState(null);
   const [showOtpOption, setShowOtpOption] = useState(false);
-  
+  const [captchaReady, setCaptchaReady] = useState(false);
+  const [captchaError, setCaptchaError] = useState(null);
+
   const navigate = useNavigate();
   const [loginUser, { isLoading }] = useLoginUserMutation();
 
@@ -67,6 +71,65 @@ const Login = () => {
     checkExistingSession();
   }, [navigate]);
 
+  // Load reCAPTCHA script dynamically to ensure it's available
+  useEffect(() => {
+    // Update the loadRecaptchaScript function
+    const loadRecaptchaScript = () => {
+      // Check if reCAPTCHA is already loaded
+      if ((window.grecaptcha && window.grecaptcha.enterprise) || 
+          (window.grecaptcha && window.grecaptcha.ready)) {
+        
+        const readyFunction = window.grecaptcha.enterprise ? 
+          window.grecaptcha.enterprise.ready : 
+          window.grecaptcha.ready;
+        
+        readyFunction(() => {
+          setCaptchaReady(true);
+          console.log("✅ reCAPTCHA is ready");
+        });
+        return;
+      }
+
+      // Determine which version to load (enterprise or regular)
+      // You should check your environment and configuration to decide
+      const useEnterprise = true; // Set based on your needs
+
+      const script = document.createElement("script");
+      script.src = useEnterprise ? 
+        `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_SITE_KEY}` :
+        `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+      
+      script.async = true;
+      script.defer = true;
+
+      script.onload = () => {
+        if (useEnterprise && window.grecaptcha && window.grecaptcha.enterprise) {
+          window.grecaptcha.enterprise.ready(() => {
+            setCaptchaReady(true);
+            console.log("✅ reCAPTCHA Enterprise is ready");
+          });
+        } else if (window.grecaptcha && window.grecaptcha.ready) {
+          window.grecaptcha.ready(() => {
+            setCaptchaReady(true);
+            console.log("✅ reCAPTCHA v3 is ready");
+          });
+        } else {
+          setCaptchaError("Failed to initialize reCAPTCHA.");
+          console.error("❌ reCAPTCHA initialization failed");
+        }
+      };
+
+      script.onerror = () => {
+        setCaptchaError("Failed to load reCAPTCHA script.");
+        console.error("❌ Failed to load reCAPTCHA script");
+      };
+
+      document.head.appendChild(script);
+    };
+    
+    loadRecaptchaScript();
+  }, []);
+
   // Timer for locked accounts
   useEffect(() => {
     let interval = null;
@@ -90,9 +153,37 @@ const Login = () => {
     };
   }, [accountLocked, remainingTime]);
 
+  const executeRecaptcha = async () => {
+    if (!captchaReady || captchaError) {
+      console.warn("Skipping reCAPTCHA verification due to errors or not ready.");
+      return "recaptcha-unavailable";
+    }
+    
+    try {
+      let token = null;
+      
+      // Check if using enterprise or regular reCAPTCHA
+      if (window.grecaptcha?.enterprise) {
+        console.log("Using reCAPTCHA Enterprise");
+        token = await window.grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action: "login" });
+        console.log("Generated enterprise reCAPTCHA token");
+        return token;
+      } else if (window.grecaptcha?.execute) {
+        console.log("Using reCAPTCHA v3");
+        token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "login" });
+        return token;
+      } else {
+        console.warn('No reCAPTCHA method available');
+        return "recaptcha-unavailable";
+      }
+    } catch (error) {
+      console.error("Error executing reCAPTCHA:", error);
+      return "recaptcha-unavailable";
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     setErrorMessage(null);
     setSecurityNotice(null);
     
@@ -102,15 +193,37 @@ const Login = () => {
     }
     
     try {
-      const response = await loginUser(data).unwrap(); 
+      // Get reCAPTCHA token
+      const captchaToken = await executeRecaptcha();
+      
+      // Check if we got a valid token
+      if (captchaToken === "recaptcha-unavailable") {
+        console.warn("reCAPTCHA unavailable, proceeding without verification");
+      } else {
+        console.log("Generated reCAPTCHA token:", captchaToken);
+      }
+      
+      // Prepare login data - FIXED: Ensure captchaToken is included
+      const loginData = {
+        identifier: data.identifier,
+        password: data.password,
+        captchaToken: captchaToken // This ensures the token is included in the payload
+      };
+      
+      console.log("Login request payload:", loginData);
+      
+      // Send login request
+      const response = await loginUser(loginData).unwrap();
       console.log("Login Success:", response);
       
-      // Store tokens in localStorage instead of sessionStorage for cross-tab persistence
+      // Store tokens in localStorage
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       
+      // Extract user data
       const { id, name, username, role, email, department } = response.user;
       
+      // Handle user permissions
       let permissions = [];
       if (response.user.permissions) {
         if (Array.isArray(response.user.permissions)) {
@@ -136,6 +249,7 @@ const Login = () => {
         console.warn("⚠️ No permissions found in user data");
       }
       
+      // Handle default permissions if needed
       if (permissions.length === 0 && role && department) {
         try {
           const permissionsConfig = await import('../../../components/permissionConfig');
@@ -149,7 +263,7 @@ const Login = () => {
         }
       }
       
-      // Store user data in localStorage instead of sessionStorage
+      // Store user data in localStorage
       localStorage.setItem("userId", id);
       localStorage.setItem("username", username || "");
       localStorage.setItem("name", name || "");
@@ -172,6 +286,7 @@ const Login = () => {
         setSecurityNotice(response.securityAlert.message || "Unusual activity detected on your account.");
       }
       
+      // Navigate to the appropriate dashboard
       switch (department?.toLowerCase()) {
         case "administrative":
           navigate("/employeedash");
@@ -189,13 +304,16 @@ const Login = () => {
           navigate("/logisticdash");
           break;
         default:
-          navigate("/dashboard"); 
+          navigate("/dashboard");
       }
-      
     } catch (err) {
       console.error("Login Failed:", err);
-    
-      if (err.status === 429) {
+      
+      if (err.status === 400) {
+        setErrorMessage(err.data?.message || "Invalid request. Please check your input.");
+      } else if (err.status === 403) {
+        setErrorMessage("CAPTCHA verification failed. Please try again.");
+      } else if (err.status === 429) {
         setAccountLocked(true);
     
         if (err.data?.lockedUntil) {
@@ -267,6 +385,13 @@ const Login = () => {
                     {/* Error Message */}
                     {!isCurrentAccountLocked && errorMessage && (
                       <CAlert color="danger">{errorMessage}</CAlert>
+                    )}
+                    
+                    {/* reCAPTCHA Status/Error Alert */}
+                    {captchaError && (
+                      <CAlert color="warning">
+                        <strong>Security Verification Issue:</strong> {captchaError}
+                      </CAlert>
                     )}
   
                     {/* Email/Username Input */}

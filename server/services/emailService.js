@@ -43,3 +43,24 @@ export const sendOTPEmail = async (email, otp) => {
   }
 };
 
+export const sendAccountLockedEmail = async (email, lockDuration) => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: `"Account Security" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Account Locked Notification",
+    text: `Your account has been locked due to multiple failed login attempts. It will be unlocked automatically after ${lockDuration}.`,
+    html: `<p>Your account has been locked due to multiple failed login attempts.</p>
+           <p>It will be unlocked automatically after <strong>${lockDuration}</strong>.</p>`
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Account lock email sent successfully:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Error sending account lock email:", error);
+    throw error;
+  }
+};

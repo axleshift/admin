@@ -18,6 +18,7 @@ import {
 import detectAnomaly from "../middleware/detectAnomaly.js";
 import detectRapidLogin from "../middleware/detectRapidLogin.js";
 import loginActivityLogger from "../middleware/loginActivitytracker.js";
+import { verifyCaptcha } from "../controllers/client.js";
 const router = express.Router();
 router.post('/users', saveUser);
 
@@ -31,7 +32,7 @@ router.get('/customers', getCustomers);
 
 
 // Login
-router.post("/login",detectRapidLogin,detectAnomaly,loginUser,loginActivityLogger);
+router.post("/login", verifyCaptcha, detectRapidLogin,detectAnomaly,loginUser,loginActivityLogger);
 router.post('/refresh-token', refreshToken);
 // Add this to your routes file
 router.get("/check-anomalies", async (req, res) => {

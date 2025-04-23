@@ -18,6 +18,7 @@ import adminRoutes from './routes/admin.js';
 import securityRoutes from './routes/security.js'
 import webhookRoutes from './routes/webhook.js'
 import integRoutes from './routes/integ.js'
+import  aiAssistantRoutes  from "./routes/aiAssistant.js";
 
 import { startAutoSync } from "./UTIL/scheduler.js";
 
@@ -99,6 +100,7 @@ app.use("/management", managementRoutes);
 app.use("/sales", salesRoutes);
 app.use("/admin", adminRoutes);
 app.use('/security', securityRoutes)
+app.use('/aiAssistant', aiAssistantRoutes);
 // ✅ 8. Integration routes
 app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);

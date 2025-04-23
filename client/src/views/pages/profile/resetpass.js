@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../../utils/axiosInstance';
-import { analyzePasswordWithAI } from '../../../utils/geminiPasswordAnalyzer';
-
+import { analyzePasswordWithAI, calculateEntropy } from '../../../utils/geminiPasswordAnalyzer';
 // CoreUI imports
 import {
   CCard,
@@ -185,17 +184,17 @@ function ResetPass() {
 
   // Analyze password whenever it changes
   useEffect(() => {
-    // Reset the recently used warning when password changes
-    setIsRecentlyUsed(false);
-    
     if (password) {
       debouncedAnalyzePassword(password);
-    } else {
-      setPasswordAnalysis(null);
-      setIsAnalyzing(false);
+      const entropy = calculateEntropy(password);
+      if (entropy < 28) {
+        setPasswordAnalysis((prev) => ({
+          ...prev,
+          feedback: [...(prev?.feedback || []), "Increase password complexity for better security."]
+        }));
+      }
     }
   }, [password, debouncedAnalyzePassword]);
-
   // Check for token expiration on component mount
   useEffect(() => {
     const validateToken = async () => {

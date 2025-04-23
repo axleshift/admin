@@ -20,7 +20,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked } from '@coreui/icons'
 import axiosInstance from '../../../utils/axiosInstance'
-import { analyzePasswordWithAI } from '../../../utils/geminiPasswordAnalyzer'
+import { analyzePasswordWithAI, calculateEntropy } from '../../../utils/geminiPasswordAnalyzer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faInfoCircle, 
@@ -182,18 +182,17 @@ const ChangePass = () => {
 
   // Analyze password whenever it changes
   useEffect(() => {
-    // Reset the recently used warning when password changes
-    setIsRecentlyUsed(false);
-    setErrorMessage(null);
-    
     if (newPassword) {
       debouncedAnalyzePassword(newPassword);
-    } else {
-      setPasswordAnalysis(null);
-      setIsAnalyzing(false);
+      const entropy = calculateEntropy(newPassword);
+      if (entropy < 28) {
+        setPasswordAnalysis((prev) => ({
+          ...prev,
+          feedback: [...(prev?.feedback || []), "Increase password complexity for better security."]
+        }));
+      }
     }
   }, [newPassword, debouncedAnalyzePassword]);
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     const email = localStorage.getItem('email')

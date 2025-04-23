@@ -12,6 +12,11 @@ import Activitytracker from '../model/Activitytracker.js';
 import PasswordResetEvent from '../model/PasswordResetEvent.js';
 import mongoose from 'mongoose'
 dotenv.config();
+
+//openai
+
+
+
 // Backend: Enhanced accessReview controller
 export const accessReview = async (req, res) => {
   try {

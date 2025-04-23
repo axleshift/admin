@@ -30,10 +30,10 @@ export const adminApi = createApi({
     }),
 
     loginUser: build.mutation({
-      query: ({ identifier, password }) => ({
+      query: ({ identifier, password, captchaToken }) => ({
         url: "client/login",
         method: "POST",
-        body: { identifier, password },
+        body: { identifier, password, captchaToken },
       }),
     }),
     changePassword: build.mutation({
