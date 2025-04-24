@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema(
         "user",
         "inpector",
         "driver",
-        "chief mechanic"
+        "chief mechanic",
+        "user"
       ], 
       lowercase: true, 
     },

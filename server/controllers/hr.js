@@ -10,7 +10,7 @@ dotenv.config();
 
 export const getWorker = async (req, res) => {
     try {
-      const workers = await User.find({ role: { $in: ["manager", "admin", "employee","superadmin"] } }).select("-password");
+      const workers = await User.find({ role: { $in: ["manager", "admin", "employee","superadmin",'user'] } }).select("-password");
   
       // Ensure consistent data
       const sanitizedWorkers = workers.map((worker) => ({

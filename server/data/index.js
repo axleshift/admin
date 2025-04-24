@@ -273,6 +273,12 @@ export const newuser = [
       department: "Logistics"
     },
     {
+        name:'hrUser1',
+        email:'hruser1@gmail.com',
+        role:'user',
+        department:'HR'
+    },
+    {
       name: "Fatima Zahra",
       email: "fatima.zahra@example.com",
       role: "admin",

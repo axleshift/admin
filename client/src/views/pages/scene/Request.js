@@ -5,7 +5,6 @@ import {
   CCard, 
   CCardBody, 
   CCardHeader, 
-  CForm, 
   CFormInput, 
   CFormCheck, 
   CButton, 
@@ -25,7 +24,7 @@ import {
   faMoneyBillWave,
   faBell
 } from '@fortawesome/free-solid-svg-icons';
-import logActivity from './../../../utils/activityLogger' 
+import logActivity from './../../../utils/activityLogger';
 
 const maskUserId = (userId) => {
   if (!userId) return '';
@@ -40,50 +39,7 @@ const AVAILABLE_PERMISSIONS = [
       { key: '/worker', label: 'Employees' },
       { key: '/jobposting', label: 'Job Postings' },
       { key: '/payroll', label: 'Payroll Management' },
-    ]
-  },
-  {
-    category: 'Finance',
-    icon: faMoneyBillWave,
-    permissions: [
-      { key: '/freight/transaction', label: 'Transactions' },
-      { key: '/invoice', label: 'Invoicing' },
-      { key: '/financialanalytics', label: 'Financial Analytics' },
-      { key: '/oversales', label: 'Oversales' },
-      { key: '/freightaudit', label: 'Freight Audit' },
-    ]
-  },
-  {
-    category: 'Logistics',
-    icon: faShippingFast,
-    permissions: [
-      { key: '/freight/transaction', label: 'Freight Transactions' },
-      { key: '/logistic1/index', label: 'Logistics Index' },
-    ]
-  },
-  {
-    category: 'Core',
-    icon: faHandshake,
-    permissions: [
-      { key: '/customer', label: 'Customer' },
-      { key: '/monthly', label: 'Monthly' },
-      { key: '/daily', label: 'Daily' },
-      { key: '/breakdown', label: 'Breakdown' },
-      { key: '/shipment', label: 'Shipment Management' },
-    ]
-  },
-  {
-    category: 'Administrative',
-    icon: faBell,
-    permissions: [
-      { key: '/useractivity/index', label: 'User Activity'},
-      { key: '/announce', label: 'Announcements' },
-      { key: '/recovery', label: 'Recovery' },
-      { key: '/registernew', label: 'New User Registration' },
-      { key: '/PendingRequest', label: 'Pending Requests' },
-      { key: '/AccessReview', label: 'Access Review' },
-      { key: '/monitoring', label: 'User Monitoring' },
-      { key: '/restore', label: 'System Restore' },
+      { key: '/leave', label: 'Leave Management' },
     ]
   }
 ];
@@ -95,7 +51,6 @@ const AccessRequestPage = () => {
   const [userDepartment, setUserDepartment] = useState('');
   const [maskedUserId, setMaskedUserId] = useState('');
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState({});
 
   const [sendMessage, { isLoading }] = useSendMessageMutation();
   const { colorMode } = useColorModes();
@@ -140,20 +95,6 @@ const AccessRequestPage = () => {
       route: '/access-request',
       action: 'Toggle Permission',
       description: `User ${selectedPermissions.includes(permission) ? 'removed' : 'added'} permission: ${permission}`
-    });
-  };
-
-  const toggleCategory = (category) => {
-    const newExpandedState = { ...expandedCategories, [category]: !expandedCategories[category] };
-    setExpandedCategories(newExpandedState);
-    
-    logActivity({
-      name: userName,
-      role: localStorage.getItem('role'),
-      department: userDepartment,
-      route: '/access-request',
-      action: 'Toggle Category',
-      description: `User ${expandedCategories[category] ? 'collapsed' : 'expanded'} category: ${category}`
     });
   };
 
@@ -215,10 +156,16 @@ const AccessRequestPage = () => {
 
   const categoryStyle = isDarkMode ? {
     backgroundColor: '#3a3a3a',
-    color: '#fff'
+    color: '#fff',
+    padding: '12px',
+    borderRadius: '6px',
+    marginBottom: '16px'
   } : {
     backgroundColor: '#f8f9fa',
-    color: '#000'
+    color: '#000',
+    padding: '12px',
+    borderRadius: '6px',
+    marginBottom: '16px'
   };
 
   const inputStyle = isDarkMode ? {
@@ -230,67 +177,76 @@ const AccessRequestPage = () => {
     color: '#000'
   };
 
+  const stickyContainerStyle = {
+    position: 'sticky',
+    top: '20px',
+    maxHeight: '90vh',
+    overflowY: 'auto'
+  };
+
   return (
-    <CContainer className={`vh-100 d-flex align-items-center justify-content-center ${isDarkMode ? 'bg-dark' : 'bg-light'}`}>
-      <CRow className="w-100 justify-content-center">
-        <CCol md={10} lg={12}>
-          <CCard className="shadow-lg" style={cardStyle}>
-            <CCardHeader className="d-flex align-items-center" style={headerStyle}>
-              <FontAwesomeIcon icon={faUserShield} className="me-2" />
-              <strong>Access Request</strong>
-            </CCardHeader>
-            <CCardBody>
-              <CForm>
+    <CContainer fluid className={`py-4 ${isDarkMode ? 'bg-dark' : 'bg-light'}`}>
+      <CRow className="justify-content-center">
+        <CCol md={8} lg={6}>
+          <div style={stickyContainerStyle}>
+            <CCard className="shadow-lg mb-4" style={cardStyle}>
+              <CCardHeader className="d-flex align-items-center" style={headerStyle}>
+                <FontAwesomeIcon icon={faUserShield} className="me-2" />
+                <strong>Access Request</strong>
+              </CCardHeader>
+              <CCardBody>
                 <CFormInput 
                   type="text" 
                   label="User ID" 
                   value={maskedUserId} 
                   readOnly 
                   style={inputStyle} 
+                  className="mb-4"
                 />
-                <label className={`form-label mt-3 ${isDarkMode ? 'text-light' : ''}`}>Select Permissions</label>
+                
+                <label className={`form-label ${isDarkMode ? 'text-light' : ''}`}>Available Permissions</label>
+                
                 {AVAILABLE_PERMISSIONS.map((category) => (
-                  <div key={category.category} className="mb-3">
-                    <div 
-                      className="d-flex justify-content-between align-items-center p-2 rounded cursor-pointer" 
-                      style={categoryStyle}
-                      onClick={() => toggleCategory(category.category)}
-                    >
-                      <div>
-                        <FontAwesomeIcon icon={category.icon} className="me-2 text-primary" />
-                        <strong>{category.category}</strong>
-                      </div>
-                      <span>{expandedCategories[category.category] ? '▼' : '►'}</span>
+                  <div key={category.category} className="mb-4">
+                    <div className="d-flex align-items-center mb-2" style={categoryStyle}>
+                      <FontAwesomeIcon icon={category.icon} className="me-2 text-primary" />
+                      <strong>{category.category}</strong>
                     </div>
-                    {expandedCategories[category.category] && (
-                      <CRow className="mt-2">
-                        {category.permissions.map((permission) => (
-                          <CCol xs={6} md={4} key={permission.key} className="mb-2">
-                            <CFormCheck 
-                              id={permission.key} 
-                              label={permission.label} 
-                              checked={selectedPermissions.includes(permission.key)} 
-                              onChange={() => handlePermissionToggle(permission.key)} 
-                              className={isDarkMode ? 'text-light' : ''}
-                            />
-                          </CCol>
-                        ))}
-                      </CRow>
-                    )}
+                    
+                    <CRow>
+                      {category.permissions.map((permission) => (
+                        <CCol xs={12} md={6} key={permission.key} className="mb-3">
+                          <CFormCheck 
+                            id={permission.key} 
+                            label={permission.label} 
+                            checked={selectedPermissions.includes(permission.key)} 
+                            onChange={() => handlePermissionToggle(permission.key)} 
+                            className={isDarkMode ? 'text-light' : ''}
+                          />
+                        </CCol>
+                      ))}
+                    </CRow>
                   </div>
                 ))}
+                
                 {submitStatus && (
-                  <div className={`alert ${submitStatus.success ? 'alert-success' : 'alert-danger'} d-flex align-items-center`}>
+                  <div className={`alert ${submitStatus.success ? 'alert-success' : 'alert-danger'} d-flex align-items-center mt-3`}>
                     <FontAwesomeIcon icon={submitStatus.success ? faCheckCircle : faTimesCircle} className="me-2" />
                     {submitStatus.message}
                   </div>
                 )}
-                <CButton color="primary" className="w-100 mt-3" onClick={handleSubmitRequest} disabled={isLoading || !userId}>
+                
+                <CButton 
+                  color="primary" 
+                  className="w-100 mt-3" 
+                  onClick={handleSubmitRequest} 
+                  disabled={isLoading || !userId}
+                >
                   {isLoading ? 'Sending Request...' : 'Submit Access Request'}
                 </CButton>
-              </CForm>
-            </CCardBody>
-          </CCard>
+              </CCardBody>
+            </CCard>
+          </div>
         </CCol>
       </CRow>
     </CContainer>
