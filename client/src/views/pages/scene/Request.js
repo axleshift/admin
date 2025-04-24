@@ -10,19 +10,14 @@ import {
   CButton, 
   CContainer, 
   CRow, 
-  CCol,
-  useColorModes
+  CCol
 } from '@coreui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserShield, 
   faCheckCircle, 
   faTimesCircle, 
-  faUser,
-  faHandshake,
-  faShippingFast,
-  faMoneyBillWave,
-  faBell
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
 import logActivity from './../../../utils/activityLogger';
 
@@ -53,10 +48,6 @@ const AccessRequestPage = () => {
   const [submitStatus, setSubmitStatus] = useState(null);
 
   const [sendMessage, { isLoading }] = useSendMessageMutation();
-  const { colorMode } = useColorModes();
-  const isDarkMode = colorMode === 'dark';
-
-  const storedTheme = useSelector((state) => state.changeState?.theme);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -141,26 +132,17 @@ const AccessRequestPage = () => {
     }
   };
 
-  const cardStyle = isDarkMode ? {
-    backgroundColor: '#2c2c34',
-    color: '#fff'
-  } : {};
+  const cardStyle = {
+    backgroundColor: '#f8f9fa',
+    color: '#000'
+  };
 
-  const headerStyle = isDarkMode ? {
-    backgroundColor: '#3c4b64',
-    color: '#fff'
-  } : {
+  const headerStyle = {
     backgroundColor: '#321fdb',
     color: '#fff'
   };
 
-  const categoryStyle = isDarkMode ? {
-    backgroundColor: '#3a3a3a',
-    color: '#fff',
-    padding: '12px',
-    borderRadius: '6px',
-    marginBottom: '16px'
-  } : {
+  const categoryStyle = {
     backgroundColor: '#f8f9fa',
     color: '#000',
     padding: '12px',
@@ -168,11 +150,7 @@ const AccessRequestPage = () => {
     marginBottom: '16px'
   };
 
-  const inputStyle = isDarkMode ? {
-    backgroundColor: '#3a3a3a',
-    color: '#fff',
-    borderColor: '#666'
-  } : {
+  const inputStyle = {
     backgroundColor: '#f8f9fa',
     color: '#000'
   };
@@ -185,7 +163,7 @@ const AccessRequestPage = () => {
   };
 
   return (
-    <CContainer fluid className={`py-4 ${isDarkMode ? 'bg-dark' : 'bg-light'}`}>
+    <CContainer fluid className="py-4 bg-light">
       <CRow className="justify-content-center">
         <CCol md={8} lg={6}>
           <div style={stickyContainerStyle}>
@@ -204,7 +182,7 @@ const AccessRequestPage = () => {
                   className="mb-4"
                 />
                 
-                <label className={`form-label ${isDarkMode ? 'text-light' : ''}`}>Available Permissions</label>
+                <label className="form-label">Available Permissions</label>
                 
                 {AVAILABLE_PERMISSIONS.map((category) => (
                   <div key={category.category} className="mb-4">
@@ -221,7 +199,6 @@ const AccessRequestPage = () => {
                             label={permission.label} 
                             checked={selectedPermissions.includes(permission.key)} 
                             onChange={() => handlePermissionToggle(permission.key)} 
-                            className={isDarkMode ? 'text-light' : ''}
                           />
                         </CCol>
                       ))}

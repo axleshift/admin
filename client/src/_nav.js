@@ -17,8 +17,14 @@ import {
   faUniversalAccess,
   faPersonBooth,
   faTimes,
-  faUsers
+  faUsers,
+  faTruck,
+  faTruckRampBox,
+  faChartDiagram,
+  faTv,
+  faPlus
 } from '@fortawesome/free-solid-svg-icons';
+import { FaWatchmanMonitoring } from 'react-icons/fa';
 
 
 const _nav = () => {
@@ -319,7 +325,7 @@ const _nav = () => {
         {
           component: CNavItem, 
           name: 'NewUser', 
-          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
+          icon: <FontAwesomeIcon icon={faPlus} style={{ marginRight: '8px' }} />, 
           to: '/registernew'
         },
       
@@ -408,7 +414,7 @@ const _nav = () => {
         {
           component: CNavItem,
           name:"Insights",
-          icon:<FontAwesomeIcon icon={faUser} style={{marginRight: "8px"}}/>,
+          icon:<FontAwesomeIcon icon={faChartDiagram} style={{marginRight: "8px"}}/>,
           to:'/insight'
         }
        
@@ -423,7 +429,7 @@ const _nav = () => {
         {
           component: CNavItem,
           name: 'Vehicles',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          icon: <FontAwesomeIcon icon={faTruck} style={{ marginRight:'8px' }}/>,
           to: '/vehicles'
         },
         {
@@ -435,7 +441,7 @@ const _nav = () => {
         {
           component: CNavItem,
           name: 'Inventory',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+          icon: <FontAwesomeIcon icon={faTruckRampBox} style={{ marginRight:'8px' }}/>,
           to: '/inventory'
         }
       );
@@ -459,7 +465,7 @@ const _nav = () => {
         {
           component: CNavItem,
           name:'Monitoring',
-          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+          icon: <FontAwesomeIcon icon={faTv} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
         {

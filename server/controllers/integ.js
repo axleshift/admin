@@ -252,3 +252,57 @@ export const getExternalUsersByDepartment = async (req, res) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   };
+
+export const changePasswordSimple = async (req, res) => {
+    const { email, currentPassword, newPassword } = req.body;
+  
+    try {
+      // Find the user by email
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+  
+      // Validate the current password
+      const isMatch = await bcryptjs.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Current password is incorrect" 
+        });
+      }
+  
+      // Check if the new password is the same as the current password
+      const isSamePassword = await bcryptjs.compare(newPassword, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({
+          success: false,
+          message: "New password cannot be the same as the current password"
+        });
+      }
+  
+      // Hash the new password
+      const salt = await bcryptjs.genSalt(10);
+      const hashedPassword = await bcryptjs.hash(newPassword, salt);
+  
+      // Update the user's password
+      user.password = hashedPassword;
+      user.passwordMeta = {
+        lastChanged: new Date()
+      };
+  
+      await user.save();
+  
+      return res.json({ 
+        success: true, 
+        message: "Password changed successfully" 
+      });
+  
+    } catch (error) {
+      console.error("Change password error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error" 
+      });
+    }
+  };

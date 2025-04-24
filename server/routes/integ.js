@@ -7,7 +7,8 @@ import {
     external,
     getExternalUsersByDepartment,
     getUsersByDepartment,
-    updateProfileImage
+    updateProfileImage,
+    changePasswordSimple
  } from '../controllers/integ.js'
 import { authenticateAdmin } from '../middleware/authMiddleware.js';
 
@@ -59,4 +60,6 @@ router.put('/external-login/:username', authenticateAdmin, upload.single('profil
 
 
 router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
+
+router.post('/change-password',authenticateAdmin, changePasswordSimple);
 export default router
