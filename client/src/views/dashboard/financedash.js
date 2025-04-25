@@ -5,9 +5,11 @@ import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol, CCard } from '@coreui/react';
 import MonthlySalesChart from '../pages/integrate/finance/scene/monthchart';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faMoneyBillWave, faCalendarAlt,  faUsers  } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine, faMoneyBillWave, faCalendarAlt, faUsers, faFileInvoice } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../utils/axiosInstance';
 import logActivity from '../../utils/activityLogger'
+import InvoiceList from '../pages/integrate/finance/scene/invoicelist';
+
 const FinanceDash = () => {
   const navigate = useNavigate();
   const [isNonMediumScreens, setIsNonMediumScreens] = useState(window.innerWidth > 768);
@@ -17,11 +19,15 @@ const FinanceDash = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isYearlyLoading, setIsYearlyLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isError, setIsError] = useState(false);
+  const [isInvoice, setIsInvoiceLoading] = useState(true);
+  const [invoiceData, setInvoiceData] = useState([]);
   const [userData, setUsers] = useState([]);
   const userName = localStorage.getItem('name'); 
   const userRole = localStorage.getItem('role');
- const userDepartment = localStorage.getItem('department');
+  const userDepartment = localStorage.getItem('department');
   const userUsername = localStorage.getItem('username');
+
   logActivity({
     name: userName,
     role: userRole,
@@ -129,6 +135,23 @@ const FinanceDash = () => {
         console.error('Error fetching Finance users:', err);
       }
     };
+
+    const fetchInvoice = async () => {
+      try {
+        const invoiceResponse = await axiosInstance.get('/finance/invoice');
+        
+        if (invoiceResponse.data) {
+          setInvoiceData(invoiceResponse.data);
+        }
+        setIsInvoiceLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch invoice data:', err);
+        setError(err.message || 'An error occurred while fetching invoice data');
+        setIsInvoiceLoading(false);
+      }
+    }
+    
+    fetchInvoice();
     fetchDashboardData();
     fetchYearlyData();
     fetchFinanceDepartmentUsers();
@@ -152,57 +175,76 @@ const FinanceDash = () => {
         </CCol>
       </CRow>
       
-      {/* StatBoxes layout */}
-      <CRow>
-      <CCol xs={12} md={6} lg={3}>
-          <StatBox
-            title="Finance Department Employees"
-            value={userData.length}
-            icon={<FontAwesomeIcon icon={faUsers} style={{ fontSize: '20px', color: '#0d6efd' }} />}
-            description="Total Finance personnel"
-          />
-        </CCol>
-        <CCol xs={12} md={6} lg={4}>
-          <StatBox
-            title={`Current Sales (${currentMonthData?.month || 'Loading...'})`}
-            value={currentMonthData?.totalSales?.toLocaleString() || 0}
-            increase={previousMonthData ? 
-              `${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0)}%` : 
-              "0"}
-          
-            icon={<FontAwesomeIcon icon={faChartLine} style={{ fontSize: '20px', color: '#0d6efd' }} />}
-          />
+      {/* New layout: StatBoxes on left, Invoice list on right */}
+      <CRow className="mb-4">
+        {/* Left side - Stat Boxes */}
+        <CCol xs={12} md={6}>
+          <CRow className="h-100">
+            <CCol xs={12} md={6} className="mb-3">
+              <StatBox
+                title="Finance Department Employees"
+                value={userData.length}
+                icon={<FontAwesomeIcon icon={faUsers} style={{ fontSize: '20px', color: '#0d6efd' }} />}
+                description="Total Finance personnel"
+              />
+            </CCol>
+            <CCol xs={12} md={6} className="mb-3">
+              <StatBox
+                title={`Current Sales (${currentMonthData?.month || 'Loading...'})`}
+                value={currentMonthData?.totalSales?.toLocaleString() || 0}
+                increase={previousMonthData ? 
+                  `${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0)}%` : 
+                  "0"}
+                icon={<FontAwesomeIcon icon={faChartLine} style={{ fontSize: '20px', color: '#0d6efd' }} />}
+              />
+            </CCol>
+            <CCol xs={12} md={6} className="mb-3">
+              <StatBox
+                title={`Current Revenue (${currentMonthData?.month || 'Loading...'})`}
+                value={`$${currentMonthData?.totalRevenue?.toLocaleString() || 0}`}
+                increase={previousMonthData ? 
+                  `${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0)}%` : 
+                  "0"}
+                icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: '20px', color: '#198754' }} />}
+              />
+            </CCol>
+            <CCol xs={12} md={6} className="mb-3">
+              <StatBox
+                title="Total Invoices"
+                value={invoiceData.length}
+                description="Total invoices generated"
+                icon={<FontAwesomeIcon icon={faFileInvoice} style={{ fontSize: '20px', color: '#dc3545' }} />}
+                loading={isInvoice}
+              />
+            </CCol>
+            <CCol xs={12} className="mb-3">
+              <StatBox
+                title={`Yearly Sales (${currentYear})`}
+                value={yearlyData ? yearlyData.totalSales.toLocaleString() : 'Loading...'}
+                description="Annual performance"
+                icon={<FontAwesomeIcon icon={faCalendarAlt} style={{ fontSize: '20px', color: '#dc3545' }} />}
+                loading={isYearlyLoading}
+              />
+            </CCol>
+          </CRow>
         </CCol>
         
-        <CCol xs={12} md={6} lg={4}>
-          <StatBox
-            title={`Current Revenue (${currentMonthData?.month || 'Loading...'})`}
-            value={`$${currentMonthData?.totalRevenue?.toLocaleString() || 0}`}
-            increase={previousMonthData ? 
-              `${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0)}%` : 
-              "0"}
-          
-            icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: '20px', color: '#198754' }} />}
-          />
-        </CCol>
-
-        <CCol xs={12} md={6} lg={4}>
-          <StatBox
-            title={`Yearly Sales (${currentYear})`}
-            value={yearlyData ? yearlyData.totalSales.toLocaleString() : 'Loading...'}
-            description="Annual performance"
-            icon={<FontAwesomeIcon icon={faCalendarAlt} style={{ fontSize: '20px', color: '#dc3545' }} />}
-            loading={isYearlyLoading}
-          />
+        {/* Right side - Invoice List */}
+        <CCol xs={12} md={6}>
+          <CCard className="h-100">
+            <div className="p-3 h-100">
+              <InvoiceList/>
+            </div>
+          </CCard>
         </CCol>
       </CRow>
-      
-      {/* Monthly chart row */}
-      <CRow className="my-3">
+
+      {/* Monthly chart row - underneath both */}
+      <CRow>
         <CCol xs={12}>
           <CCard className="mb-4">
             <div className="p-3">
-            <MonthlySalesChart />
+              <MonthlySalesChart />
             </div>
           </CCard>
         </CCol>

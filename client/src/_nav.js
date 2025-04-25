@@ -351,12 +351,12 @@ const _nav = () => {
         //   icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
         //   to: '/financialanalytics' 
         // },
-        // { 
-        //   component: CNavItem, 
-        //   name: 'Invoice', 
-        //   icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-        //   to: '/invoice' 
-        // },
+        { 
+         component: CNavItem, 
+          name: 'Invoice', 
+          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+        to: '/invoice' 
+       },
         // { 
         //   component: CNavItem, 
         //   name: 'Freight Audit', 
@@ -411,12 +411,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faTruck} style={{ marginRight:'8px' }}/>,
           to: '/vehicles'
         },
-        // {
-        //   component: CNavItem,
-        //   name: 'Procurement',
-        //   icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
-        //   to: '/procurement'
-        // },
+       {
+         component: CNavItem,
+         name: 'Procurement',
+         icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+        to: '/procurement'
+       },
         {
           component: CNavItem,
           name: 'Inventory',
@@ -447,12 +447,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faTv} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
-        {
-          component: CNavItem,
-          name:'Ai Assistant',
-          icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
-          to:'/aiAssistant'
-        },
+        // {
+        //   component: CNavItem,
+        //   name:'Ai Assistant',
+        //   icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
+        //   to:'/aiAssistant'
+        // },
 
         
        

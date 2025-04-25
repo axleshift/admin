@@ -37,8 +37,6 @@ import { dirname } from 'path';
 // ✅ 1. Load environment variables at the very top
 dotenv.config();
 
-import NewUser from "./model/newUser.js";
-import {newuser} from './data/index.js'
 
 // Create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -131,5 +129,6 @@ mongoose
     .then(() => {
         server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
        startAutoSync();
+  
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));

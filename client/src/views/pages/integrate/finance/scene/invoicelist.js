@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axiosInstance from '../../../../utils/axiosInstance';
+import axiosInstance from '../../../../../utils/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   CPagination,
@@ -13,7 +13,7 @@ import {
   CRow,
   CCol
 } from '@coreui/react';
-import '../../../../scss/invoice.scss';
+import '../../../../../scss/invoice.scss';
 import { 
   faCheckCircle, 
   faTimesCircle, 
@@ -38,7 +38,7 @@ const Invoices = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(5); // Changed from 10 to 5
   
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -249,9 +249,7 @@ const Invoices = () => {
               <tr>
                 <th><FontAwesomeIcon icon={faFileInvoice} className="me-2" /> Invoice #</th>
                 <th><FontAwesomeIcon icon={faUser} className="me-2" /> Client</th>
-                <th><FontAwesomeIcon icon={faDollarSign} className="me-2" /> Amount</th>
                 <th><FontAwesomeIcon icon={faFilter} className="me-2" /> Status</th>
-                <th><FontAwesomeIcon icon={faCalendarAlt} className="me-2" /> Date</th>
               </tr>
             </thead>
             <tbody>
@@ -267,17 +265,11 @@ const Invoices = () => {
                       ? `${invoice.firstName} ${invoice.lastName}` 
                       : 'N/A'}
                   </td>
-                  <td className="amount-cell">
-                    <FontAwesomeIcon icon={faDollarSign} className="me-2 text-secondary" />
-                    {formatCurrency(invoice.totalAmount, invoice.selectedCurrency)}
-                  </td>
+                  
                   <td className="status-cell">
                     {getStatusIcon(invoice.status)}
                   </td>
-                  <td>
-                    <FontAwesomeIcon icon={faCalendarAlt} className="me-2 text-secondary" />
-                    {formatDate(invoice.createdAt)}
-                  </td>
+                
                 </tr>
               ))}
             </tbody>

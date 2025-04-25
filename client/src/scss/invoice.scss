@@ -1,0 +1,184 @@
+
+.invoice-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .invoice-header h2 {
+    color: #333;
+    font-size: 24px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .invoice-header h2 svg {
+    margin-right: 10px;
+    color: #4a6cf7;
+  }
+
+  .search-container {
+    margin: 10px 0;
+  }
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    color: #666;
+  }
+
+  .search-input {
+    padding: 10px 10px 10px 35px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 250px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-top: 10px;
+  }
+
+  .invoice-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+  }
+
+  .invoice-table th svg {
+    margin-right: 5px;
+    color: #4a6cf7;
+  }
+
+  .invoice-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eeeeee;
+    vertical-align: middle;
+  }
+
+  .icon-left {
+    margin-right: 8px;
+    color: #666;
+  }
+
+  .invoice-number {
+    font-weight: 500;
+  }
+
+  .amount-cell {
+    font-weight: 600;
+  }
+
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .status-badge svg {
+    margin-right: 5px;
+  }
+
+  .status-paid {
+    background-color: #e6f7ed;
+    color: #00a854;
+  }
+
+  .status-unpaid {
+    background-color: #fff1f0;
+    color: #f5222d;
+  }
+
+  .status-pending {
+    background-color: #fff7e6;
+    color: #fa8c16;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .view-btn {
+    color: #4a6cf7;
+  }
+
+  .view-btn:hover {
+    background-color: #eef2ff;
+  }
+
+  .edit-btn {
+    color: #52c41a;
+  }
+
+  .edit-btn:hover {
+    background-color: #f0fbe9;
+  }
+
+  .delete-btn {
+    color: #f5222d;
+  }
+
+  .delete-btn:hover {
+    background-color: #fff1f0;
+  }
+
+  .loading-container, 
+  .error-container, 
+  .empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .loading-container svg,
+  .error-container svg,
+  .empty-container svg {
+    margin-bottom: 15px;
+  }

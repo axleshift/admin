@@ -48,6 +48,7 @@ const Monthly = React.lazy(() => import('./views/pages/integrate/finance/monthly
 const MonthChart = React.lazy(() => import('./views/pages/integrate/finance/scene/monthchart'));
 const Yearly = React.lazy(() => import('./views/pages/integrate/finance/yearly'));
 const Breakdown = React.lazy(() => import('./views/pages/sales/breakdown'));
+const InvoiceList = React.lazy(() => import('./views/pages/integrate/finance/scene/invoicelist'));
 
 const Activity = React.lazy(() => import('./views/pages/useractivity/index'));
 const AccessReview = React.lazy(() => import('./views/pages/scene/AccessReview'));
@@ -119,6 +120,7 @@ const routes = [
   { path: '/freightaudit', name:'FreightAudit', element: <ProtectedRoute><FreightAudit /></ProtectedRoute> },
   { path: '/financialanalytics', name:'FreightAudit', element: <ProtectedRoute><FinancialAnalytics /></ProtectedRoute> },
   { path: '/invoice', name:'FreightAudit', element: <ProtectedRoute><Invoice /></ProtectedRoute> },
+  { path: '/invoicelist', name:'InvoiceChart', element: <ProtectedRoute><InvoiceList /></ProtectedRoute> },
 
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
   { path: '/procurement', name:'Procurement', element: <ProtectedRoute><Procurement/></ProtectedRoute>},

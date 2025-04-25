@@ -11,9 +11,6 @@ const hashedPassword4 = bcryptjs.hashSync(plainPassword, saltRounds);
 
 const generateObjectId = () => new mongoose.Types.ObjectId();
 
-// Users
-// Assume hashedPassword1, hashedPassword2, hashedPassword3 are defined elsewhere
-
 export const users = [
     {
         name: "Admin One",
@@ -334,499 +331,512 @@ export const newuser = [
     }
   ];
   
-  
-
-export const mockLogisticsData = [
-    {
-        freightId: "FRT001",
-        receivingDate: "2024-10-01",
-        dispatchDate: "2024-10-02",
-        origin: "New York",
-        destination: "San Francisco",
-        carrier: "XYZ Logistics",
-        status: "in transit",
-        loadOptimization: {
-            vehicleId: "VH123",
-            utilization: 80,
-            route: "Highway 101",
-            estimatedTimeArrival: "2024-10-04",
-            optimizationPlan: {
-                strategy: "Stacking strategy for maximum space utilization",
-                cargoArrangement: "Heavier items at the bottom, fragile items on top",
-                additionalNotes: "Use cargo nets for securing fragile items.",
-            },
-        },
-        trackingNumber: "987654321",
-        realTimeNotifications: [
-            { notification: "Freight has departed from New York", date: "2024-10-02" },
-            { notification: "Freight is passing through Phoenix, AZ", date: "2024-10-03" },
-        ],
-        currentLocation: "Phoenix, AZ",
-        employeeId: "670f3546e065cd0bac0a2817", // Added employee ID
-    },
-    {
-        freightId: "FRT002",
-        receivingDate: "2024-10-03",
-        dispatchDate: "2024-10-04",
-        origin: "Chicago",
-        destination: "Los Angeles",
-        carrier: "ABC Freight",
-        status: "delayed",
-        loadOptimization: {
-            vehicleId: "VH456",
-            utilization: 90,
-            route: "I-90",
-            estimatedTimeArrival: "2024-10-06",
-            optimizationPlan: {
-                strategy: "Dynamic load adjustments based on real-time data",
-                cargoArrangement: "Compact items loaded to minimize air gaps",
-                additionalNotes: "Re-evaluate load after each stop due to weather conditions.",
-            },
-        },
-        trackingNumber: "123456789",
-        realTimeNotifications: [{ notification: "Freight delayed due to weather", date: "2024-10-05" }],
-        currentLocation: "Chicago, IL",
-        employeeId: "670f3546e065cd0bac0a2818", // Added employee ID
-    },
-    {
-        freightId: "FRT003",
-        receivingDate: "2024-09-29",
-        dispatchDate: "2024-09-30",
-        origin: "Houston",
-        destination: "Miami",
-        carrier: "FastTrack Shipping",
-        status: "delivered",
-        loadOptimization: {
-            vehicleId: "VH789",
-            utilization: 70,
-            route: "I-10",
-            estimatedTimeArrival: "2024-10-01",
-            optimizationPlan: {
-                strategy: "Load based on delivery sequence to minimize stops",
-                cargoArrangement: "Organized by delivery priority",
-                additionalNotes: "Consider traffic patterns in Miami for final delivery.",
-            },
-        },
-        trackingNumber: "456789123",
-        realTimeNotifications: [{ notification: "Freight delivered at Miami", date: "2024-10-01" }],
-        currentLocation: "Miami, FL",
-        employeeId: "670f3546e065cd0bac0a2819", // Added employee ID
-    },
-    {
-        freightId: "FRT004",
-        receivingDate: "2024-10-05",
-        dispatchDate: "2024-10-06",
-        origin: "Seattle",
-        destination: "Denver",
-        carrier: "Prime Movers",
-        status: "pending",
-        loadOptimization: {
-            vehicleId: "VH321",
-            utilization: 85,
-            route: "I-25",
-            estimatedTimeArrival: "2024-10-08",
-            optimizationPlan: {
-                strategy: "Pre-planning load based on expected delivery conditions",
-                cargoArrangement: "Balanced weight distribution for highway travel",
-                additionalNotes: "Ensure proper tie-downs for all items.",
-            },
-        },
-        trackingNumber: "654321987",
-        realTimeNotifications: [{ notification: "Freight is pending for dispatch", date: "2024-10-05" }],
-        currentLocation: "Seattle, WA",
-        employeeId: "670f3546e065cd0bac0a2820", // Added employee ID
-    },
-    {
-        freightId: "FRT005",
-        receivingDate: "2024-10-02",
-        dispatchDate: "2024-10-03",
-        origin: "Boston",
-        destination: "Atlanta",
-        carrier: "Speedy Carriers",
-        status: "in transit",
-        loadOptimization: {
-            vehicleId: "VH654",
-            utilization: 75,
-            route: "I-95",
-            estimatedTimeArrival: "2024-10-07",
-            optimizationPlan: {
-                strategy: "Utilizing modular containers for mixed cargo",
-                cargoArrangement: "Loading by size and fragility",
-                additionalNotes: "Monitor weight limits for bridge crossings.",
-            },
-        },
-        trackingNumber: "321987654",
-        realTimeNotifications: [
-            { notification: "Freight has departed from Boston", date: "2024-10-03" },
-            { notification: "Freight is passing through Washington, DC", date: "2024-10-05" },
-        ],
-        currentLocation: "Atlanta, GA",
-        employeeId: "670f3546e065cd0bac0a2821", // Added employee ID
-    },
-    {
-        freightId: "FRT006",
-        receivingDate: "2024-10-04",
-        dispatchDate: "2024-10-05",
-        origin: "Dallas",
-        destination: "San Antonio",
-        carrier: "Quick Logistics",
-        status: "in transit",
-        loadOptimization: {
-            vehicleId: "VH888",
-            utilization: 60,
-            route: "I-35",
-            estimatedTimeArrival: "2024-10-06",
-            optimizationPlan: {
-                strategy: "Utilizing local routes to avoid traffic",
-                cargoArrangement: "Loaded to ensure safety during transit",
-                additionalNotes: "Check for road closures before departure.",
-            },
-        },
-        trackingNumber: "222333444",
-        realTimeNotifications: [{ notification: "Freight dispatched", date: "2024-10-05" }],
-        currentLocation: "Dallas, TX",
-        employeeId: "670f3546e065cd0bac0a2822", // Added employee ID
-    },
-    {
-        freightId: "FRT007",
-        receivingDate: "2024-10-01",
-        dispatchDate: "2024-10-02",
-        origin: "Phoenix",
-        destination: "Las Vegas",
-        carrier: "Express Freight",
-        status: "delivered",
-        loadOptimization: {
-            vehicleId: "VH555",
-            utilization: 85,
-            route: "I-10",
-            estimatedTimeArrival: "2024-10-01",
-            optimizationPlan: {
-                strategy: "Fast delivery with priority cargo",
-                cargoArrangement: "Carefully loaded to prevent shifting",
-                additionalNotes: "Keep an eye on delivery timeframes.",
-            },
-        },
-        trackingNumber: "777888999",
-        realTimeNotifications: [{ notification: "Freight delivered in Las Vegas", date: "2024-10-01" }],
-        currentLocation: "Las Vegas, NV",
-        employeeId: "670f3546e065cd0bac0a2823", // Added employee ID
-    },
-    {
-        freightId: "FRT008",
-        receivingDate: "2024-10-02",
-        dispatchDate: "2024-10-03",
-        origin: "Miami",
-        destination: "Orlando",
-        carrier: "Transport Co.",
-        status: "pending",
-        loadOptimization: {
-            vehicleId: "VH444",
-            utilization: 70,
-            route: "I-95",
-            estimatedTimeArrival: "2024-10-05",
-            optimizationPlan: {
-                strategy: "Maximizing space with light cargo",
-                cargoArrangement: "Loosely packed for easy unloading",
-                additionalNotes: "Prepare for a short travel time.",
-            },
-        },
-        trackingNumber: "000111222",
-        realTimeNotifications: [{ notification: "Freight is pending for dispatch", date: "2024-10-02" }],
-        currentLocation: "Miami, FL",
-        employeeId: "670f3546e065cd0bac0a2824", // Added employee ID
-    },
-];
-
-export const employee = [
-    {
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        role: "Logistics Coordinator",
-        jobDescription: "Manages the transportation and delivery of goods.",
-        dateOfJoining: "2022-01-15T00:00:00Z",
-        attendance: [
-            { date: "2024-10-01", status: "present" },
-            { date: "2024-10-02", status: "absent" },
-            { date: "2024-10-03", status: "present" },
-        ],
-        performance: [
-            { reviewDate: "2023-06-01", rating: 4, comments: "Efficient handling of shipping schedules." },
-            { reviewDate: "2024-06-01", rating: 5, comments: "Exceptional problem-solving during logistical challenges." },
-        ],
-        offboarding: {
-            exitInterviewDate: null,
-            reasonForLeaving: null,
-            feedback: null,
-        },
-        selfService: {
-            profileUpdated: true,
-            lastUpdated: "2024-10-01T00:00:00Z",
-        },
-    },
-    {
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@example.com",
-        role: "Freight Manager",
-        jobDescription: "Oversees freight operations and coordinates shipping activities.",
-        dateOfJoining: "2021-03-22T00:00:00Z",
-        attendance: [
-            { date: "2024-10-01", status: "present" },
-            { date: "2024-10-02", status: "present" },
-            { date: "2024-10-03", status: "leave" },
-        ],
-        performance: [
-            { reviewDate: "2023-06-01", rating: 5, comments: "Excellent management of freight costs and schedules." },
-            { reviewDate: "2024-06-01", rating: 4, comments: "Good communication with shipping partners." },
-        ],
-        offboarding: {
-            exitInterviewDate: null,
-            reasonForLeaving: null,
-            feedback: null,
-        },
-        selfService: {
-            profileUpdated: true,
-            lastUpdated: "2024-10-01T00:00:00Z",
-        },
-    },
-    {
-        firstName: "Alice",
-        lastName: "Johnson",
-        email: "alice.johnson@example.com",
-        role: "Supply Chain Analyst",
-        jobDescription: "Analyzes supply chain operations to improve efficiency.",
-        dateOfJoining: "2023-05-10T00:00:00Z",
-        attendance: [
-            { date: "2024-10-01", status: "present" },
-            { date: "2024-10-02", status: "present" },
-            { date: "2024-10-03", status: "present" },
-        ],
-        performance: [{ reviewDate: "2023-12-01", rating: 4, comments: "Strong analytical skills, providing valuable insights." }],
-        offboarding: {
-            exitInterviewDate: null,
-            reasonForLeaving: null,
-            feedback: null,
-        },
-        selfService: {
-            profileUpdated: false,
-            lastUpdated: null,
-        },
-    },
-];
-// Mock Data for Transactions
-export const transactions = [
-    {
-      customerName: "Alice",
-      orderVolume: 3200,
-      orderDate: new Date("2024-01-10"),
-      shippingType: "air",
-      dropOffLocation: "N/A", // You can set this to an appropriate location if needed
-      status: "Delivered",
-      deliveryDate: new Date("2024-01-15"),
-    },
-    {
-      customerName: "Bob",
-      orderVolume: 2100,
-      orderDate: new Date("2024-01-20"),
-      shippingType: "sea",
-      dropOffLocation: "N/A",
-      status: "In Transit",
-      deliveryDate: new Date("2024-01-25"),
-    },
-    {
-      customerName: "Eve",
-      orderVolume: 3500,
-      orderDate: new Date("2024-02-12"),
-      shippingType: "land",
-      dropOffLocation: "N/A",
-      status: "Pending",
-      deliveryDate: new Date("2024-02-20"),
-    },
-    {
-      customerName: "Sam",
-      orderVolume: 2800,
-      orderDate: new Date("2024-02-25"),
-      shippingType: "air",
-      dropOffLocation: "N/A",
-      status: "Delivered",
-      deliveryDate: new Date("2024-02-28"),
-    },
-    {
-      customerName: "Elisa",
-      orderVolume: 50000,
-      orderDate: new Date("2024-12-24"),
-      shippingType: "land",
-      dropOffLocation: "N/A",
-      status: "In Transit",
-      deliveryDate: null, // Delivery date is "N/A" in original data, so set to null
-    },
-    {
-      customerName: "Ark",
-      orderVolume: 100000,
-      orderDate: new Date("2024-12-29"),
-      shippingType: "land",
-      dropOffLocation: "N/A",
-      status: "Pending",
-      deliveryDate: new Date("2025-12-09"),
-    },
-  ];
-
-
-//overall
-export const overalldata = [
-    {
-      totalCustomers: 320,
-      yearlySalesTotal: 1050000,
-      yearlyTotalSoldUnits: 13500,
-      year: 2024,
-      monthlyData: [
-        {
-          month: "January",
-          totalSales: 52000,
-          totalUnits: 190,
-          _id: "637000f7a5a686695b5170b1",
-        },
-        {
-          month: "February",
-          totalSales: 59000,
-          totalUnits: 210,
-          _id: "637000f7a5a686695b5170b2",
-        },
-        {
-          month: "March",
-          totalSales: 72000,
-          totalUnits: 240,
-          _id: "637000f7a5a686695b5170b3",
-        },
-        {
-          month: "April",
-          totalSales: 77000,
-          totalUnits: 260,
-          _id: "637000f7a5a686695b5170b4",
-        },
-        {
-          month: "May",
-          totalSales: 64000,
-          totalUnits: 220,
-          _id: "637000f7a5a686695b5170b5",
-        },
-        {
-          month: "June",
-          totalSales: 89000,
-          totalUnits: 300,
-          _id: "637000f7a5a686695b5170b6",
-        },
-        {
-          month: "July",
-          totalSales: 71000,
-          totalUnits: 240,
-          _id: "637000f7a5a686695b5170b7",
-        },
-        {
-          month: "August",
-          totalSales: 86000,
-          totalUnits: 280,
-          _id: "637000f7a5a686695b5170b8",
-        },
-        {
-          month: "September",
-          totalSales: 63000,
-          totalUnits: 210,
-          _id: "637000f7a5a686695b5170b9",
-        },
-        {
-          month: "October",
-          totalSales: 87000,
-          totalUnits: 290,
-          _id: "637000f7a5a686695b5170ba",
-        },
-        {
-          month: "November",
-          totalSales: 75000,
-          totalUnits: 270,
-          _id: "637000f7a5a686695b5170bb",
-        },
-        {
-          month: "December",
-          totalSales: 93000,
-          totalUnits: 320,
-          _id: "637000f7a5a686695b5170bc",
-        },
-      ],
-      dailyData: [
-        { date: "2024-01-15", totalSales: 2600, totalUnits: 9 },
-        { date: "2024-01-31", totalSales: 2200, totalUnits: 8 },
-        { date: "2024-02-15", totalSales: 3100, totalUnits: 11 },
-        { date: "2024-02-28", totalSales: 2800, totalUnits: 10 },
-        // Add remaining daily entries here as needed
-        { date: "2024-12-31", totalSales: 4800, totalUnits: 16 },
-      ],
-      salesByCategory: {
-        airFreight: 351000,
-        landFreight: 350000,
-        seaFreight: 350000,
+export const sampleProcurementData = [
+  {
+    title: "Q2 Office Supplies Procurement",
+    description: "Quarterly procurement of standard office supplies for all departments including paper, printer cartridges, and stationery.",
+    procurementDate: new Date("2025-04-15"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "Operations",
+    products: [
+      {
+        name: "A4 Paper (500 sheets)",
+        quantity: 50,
+        unit: "ream",
+        unitPrice: 4.25
       },
-      _id: "636ffd4fc7195768677097d7",
-      createdAt: "2024-01-10T18:53:05.874Z",
-      updatedAt: "2024-07-06T05:12:27.736Z",
-      __v: 36729,
-    },
-  ];
+      {
+        name: "Printer Cartridge HP 304XL",
+        quantity: 12,
+        unit: "piece",
+        unitPrice: 29.99
+      },
+      {
+        name: "Ballpoint Pens (Blue)",
+        quantity: 100,
+        unit: "piece",
+        unitPrice: 0.75
+      }
+    ],
+    estimatedCost: 572.75, // (50 * 4.25) + (12 * 29.99) + (100 * 0.75)
+    status: "Approved",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-04-30"),
+    requiresRFQ: false
+  },
+  {
+    title: "Laptop Refresh for IT Department",
+    description: "Procurement of 15 new developer laptops for the IT department to replace aging hardware.",
+    procurementDate: new Date("2025-04-10"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "IT",
+    products: [
+      {
+        name: "Dell XPS 15 Developer Laptop",
+        quantity: 15,
+        unit: "piece",
+        unitPrice: 1899.99
+      },
+      {
+        name: "Laptop Docking Station",
+        quantity: 15,
+        unit: "piece",
+        unitPrice: 249.99
+      }
+    ],
+    estimatedCost: 32249.70, // (15 * 1899.99) + (15 * 249.99)
+    status: "Pending",
+    rejectionReason: null,
+    deliveryDate: null,
+    requiresRFQ: true
+  },
+  {
+    title: "HR Training Materials",
+    description: "Procurement of materials for the upcoming employee onboarding and training program.",
+    procurementDate: new Date("2025-03-20"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "HR",
+    products: [
+      {
+        name: "Training Manual Printing",
+        quantity: 50,
+        unit: "book",
+        unitPrice: 12.50
+      },
+      {
+        name: "USB Flash Drive 32GB",
+        quantity: 50,
+        unit: "piece",
+        unitPrice: 8.99
+      },
+      {
+        name: "Employee Welcome Kit",
+        quantity: 50,
+        unit: "set",
+        unitPrice: 25.00
+      }
+    ],
+    estimatedCost: 2324.50, // (50 * 12.50) + (50 * 8.99) + (50 * 25.00)
+    status: "Completed",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-04-01"),
+    requiresRFQ: false
+  },
+  {
+    title: "Server Infrastructure Upgrade",
+    description: "Procurement of new server hardware to upgrade our primary data center infrastructure.",
+    procurementDate: new Date("2025-04-05"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "IT",
+    products: [
+      {
+        name: "Dell PowerEdge R740 Server",
+        quantity: 4,
+        unit: "piece",
+        unitPrice: 8799.99
+      },
+      {
+        name: "Network Switch 48-Port",
+        quantity: 2,
+        unit: "piece",
+        unitPrice: 2499.99
+      },
+      {
+        name: "UPS System 3000VA",
+        quantity: 2,
+        unit: "piece",
+        unitPrice: 1799.99
+      }
+    ],
+    estimatedCost: 40199.94, // (4 * 8799.99) + (2 * 2499.99) + (2 * 1799.99)
+    status: "Approved",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-05-15"),
+    requiresRFQ: true
+  },
+  {
+    title: "Office Furniture for New Finance Department",
+    description: "Procurement of desks, chairs, and storage cabinets for the newly expanded finance department.",
+    procurementDate: new Date("2025-03-15"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "Finance",
+    products: [
+      {
+        name: "Executive Desk",
+        quantity: 8,
+        unit: "piece",
+        unitPrice: 649.99
+      },
+      {
+        name: "Ergonomic Office Chair",
+        quantity: 8,
+        unit: "piece",
+        unitPrice: 349.99
+      },
+      {
+        name: "Filing Cabinet",
+        quantity: 4,
+        unit: "piece",
+        unitPrice: 199.99
+      }
+    ],
+    estimatedCost: 8799.84, // (8 * 649.99) + (8 * 349.99) + (4 * 199.99)
+    status: "Rejected",
+    rejectionReason: "Budget constraints require postponement to next quarter",
+    deliveryDate: null,
+    requiresRFQ: true
+  },
+  {
+    title: "Logistics Department Vehicle Maintenance",
+    description: "Quarterly maintenance and parts replacement for logistics fleet vehicles.",
+    procurementDate: new Date("2025-04-18"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "Logistics",
+    products: [
+      {
+        name: "Vehicle Oil Change Service",
+        quantity: 12,
+        unit: "service",
+        unitPrice: 49.99
+      },
+      {
+        name: "Vehicle Tire Replacement",
+        quantity: 8,
+        unit: "set",
+        unitPrice: 599.99
+      },
+      {
+        name: "Brake Pad Replacement",
+        quantity: 4,
+        unit: "set",
+        unitPrice: 149.99
+      }
+    ],
+    estimatedCost: 5599.72, // (12 * 49.99) + (8 * 599.99) + (4 * 149.99)
+    status: "Pending",
+    rejectionReason: null,
+    deliveryDate: null,
+    requiresRFQ: false
+  },
+  {
+    title: "Annual Software License Renewals",
+    description: "Renewal of enterprise software licenses including Microsoft 365, Adobe Creative Cloud, and accounting software.",
+    procurementDate: new Date("2025-04-22"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "IT",
+    products: [
+      {
+        name: "Microsoft 365 Business Premium (Annual)",
+        quantity: 150,
+        unit: "license",
+        unitPrice: 219.99
+      },
+      {
+        name: "Adobe Creative Cloud Team (Annual)",
+        quantity: 25,
+        unit: "license",
+        unitPrice: 599.99
+      },
+      {
+        name: "QuickBooks Enterprise (Annual)",
+        quantity: 10,
+        unit: "license",
+        unitPrice: 899.99
+      }
+    ],
+    estimatedCost: 47998.25, // (150 * 219.99) + (25 * 599.99) + (10 * 899.99)
+    status: "Approved",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-05-01"),
+    requiresRFQ: false
+  },
+  {
+    title: "Procurement Department Reference Materials",
+    description: "Purchase of updated procurement guides, reference books and training materials for the procurement team.",
+    procurementDate: new Date("2025-04-08"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "Procurement",
+    products: [
+      {
+        name: "Procurement Strategy Guide 2025",
+        quantity: 5,
+        unit: "book",
+        unitPrice: 89.99
+      },
+      {
+        name: "Supply Chain Management Manual",
+        quantity: 5,
+        unit: "book",
+        unitPrice: 79.99
+      },
+      {
+        name: "Procurement Software Training (Online)",
+        quantity: 10,
+        unit: "license",
+        unitPrice: 199.99
+      }
+    ],
+    estimatedCost: 2849.75, // (5 * 89.99) + (5 * 79.99) + (10 * 199.99)
+    status: "Completed",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-04-20"),
+    requiresRFQ: false
+  },
+  {
+    title: "Office Security System Upgrade",
+    description: "Installation of new security cameras, access control systems, and alarm upgrades for all office locations.",
+    procurementDate: new Date("2025-03-25"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "Operations",
+    products: [
+      {
+        name: "HD Security Camera System (16 cameras)",
+        quantity: 3,
+        unit: "system",
+        unitPrice: 2499.99
+      },
+      {
+        name: "Access Control Terminal",
+        quantity: 12,
+        unit: "piece",
+        unitPrice: 349.99
+      },
+      {
+        name: "Security Alarm System",
+        quantity: 3,
+        unit: "system",
+        unitPrice: 1299.99
+      }
+    ],
+    estimatedCost: 13099.85, // (3 * 2499.99) + (12 * 349.99) + (3 * 1299.99)
+    status: "Pending",
+    rejectionReason: null,
+    deliveryDate: null,
+    requiresRFQ: true
+  },
+  {
+    title: "Employee Wellness Program Supplies",
+    description: "Procurement of fitness equipment and wellness materials for the company's new employee wellness initiative.",
+    procurementDate: new Date("2025-04-12"),
+    requestedBy:"" , // Replace with actual user ID
+    department: "HR",
+    products: [
+      {
+        name: "Yoga Mat",
+        quantity: 30,
+        unit: "piece",
+        unitPrice: 24.99
+      },
+      {
+        name: "Resistance Band Set",
+        quantity: 30,
+        unit: "set",
+        unitPrice: 19.99
+      },
+      {
+        name: "Wellness Program Guide",
+        quantity: 100,
+        unit: "book",
+        unitPrice: 9.99
+      }
+    ],
+    estimatedCost: 1848.70, // (30 * 24.99) + (30 * 19.99) + (100 * 9.99)
+    status: "Approved",
+    rejectionReason: null,
+    deliveryDate: new Date("2025-04-30"),
+    requiresRFQ: false
+  }
+];
 
+export const sampleInvoices = [
+  {
+    invoiceNumber: "INV-2025-001",
+    trackingId: "TRK001",
+    firstName: "John",
+    lastName: "Doe",
+    customerId: "CUST001",
+    email: "john.doe@example.com",
+    phone: "+1-555-123-4567",
+    deliveryDate: new Date("2025-05-15"),
+    discounts: 50.00,
+    dueDate: new Date("2025-05-30"),
+    address: "123 Main St, Anytown, CA 94123",
+    products: [
+      {
+        name: "Wireless Headphones",
+        quantity: 2,
+        price: 129.99,
+        total: 259.98
+      },
+      {
+        name: "Phone Charger",
+        quantity: 1,
+        price: 24.99,
+        total: 24.99
+      }
+    ],
+    selectedCurrency: "USD",
+    status: "Pending",
+    totalAmount: 234.97, // After discount
+    paymentMethod: "Credit Card",
+    qrCode: "qr://invoice/INV2025001",
+    notes: "Please leave package at front door"
+  },
+  {
+    invoiceNumber: "INV-2025-002",
+    trackingId: "TRK002",
+    firstName: "Jane",
+    lastName: "Smith",
+    customerId: "CUST002",
+    email: "jane.smith@example.com",
+    phone: "+1-555-987-6543",
+    deliveryDate: new Date("2025-05-10"),
+    discounts: 0,
+    dueDate: new Date("2025-05-20"),
+    address: "456 Oak Ave, Somewhere, NY 10001",
+    products: [
+      {
+        name: "Laptop",
+        quantity: 1,
+        price: 999.99,
+        total: 999.99
+      },
+      {
+        name: "Laptop Bag",
+        quantity: 1,
+        price: 49.99,
+        total: 49.99
+      },
+      {
+        name: "Mouse",
+        quantity: 1,
+        price: 29.99,
+        total: 29.99
+      }
+    ],
+    selectedCurrency: "USD",
+    status: "Shipped",
+    totalAmount: 1079.97,
+    paymentMethod: "PayPal",
+    qrCode: "qr://invoice/INV2025002",
+    notes: "Call before delivery"
+  },
+  {
+    invoiceNumber: "INV-2025-003",
+    trackingId: "TRK003",
+    firstName: "Robert",
+    lastName: "Johnson",
+    customerId: "CUST003",
+    email: "robert.johnson@example.com",
+    phone: "+1-555-321-7890",
+    deliveryDate: new Date("2025-05-22"),
+    discounts: 100.00,
+    dueDate: new Date("2025-06-05"),
+    address: "789 Pine Rd, Elsewhere, TX 75001",
+    products: [
+      {
+        name: "Smart TV",
+        quantity: 1,
+        price: 599.99,
+        total: 599.99
+      },
+      {
+        name: "Soundbar",
+        quantity: 1,
+        price: 199.99,
+        total: 199.99
+      },
+      {
+        name: "HDMI Cable",
+        quantity: 2,
+        price: 15.99,
+        total: 31.98
+      }
+    ],
+    selectedCurrency: "USD",
+    status: "Delivered",
+    totalAmount: 731.96, // After discount
+    paymentMethod: "Bank Transfer",
+    qrCode: "qr://invoice/INV2025003",
+    notes: "Installation service included"
+  },
+  {
+    invoiceNumber: "INV-2025-004",
+    trackingId: "TRK004",
+    firstName: "Emily",
+    lastName: "Williams",
+    customerId: "CUST004",
+    email: "emily.williams@example.com",
+    phone: "+1-555-654-0987",
+    deliveryDate: new Date("2025-05-25"),
+    discounts: 25.00,
+    dueDate: new Date("2025-06-10"),
+    address: "321 Maple Dr, Nowhere, FL 33101",
+    products: [
+      {
+        name: "Coffee Maker",
+        quantity: 1,
+        price: 149.99,
+        total: 149.99
+      },
+      {
+        name: "Coffee Beans (1kg)",
+        quantity: 2,
+        price: 24.99,
+        total: 49.98
+      }
+    ],
+    selectedCurrency: "USD",
+    status: "Processing",
+    totalAmount: 174.97, // After discount
+    paymentMethod: "Credit Card",
+    qrCode: "qr://invoice/INV2025004",
+    notes: "Gift wrapping requested"
+  },
+  {
+    invoiceNumber: "INV-2025-005",
+    trackingId: "TRK005",
+    firstName: "Michael",
+    lastName: "Brown",
+    customerId: "CUST005",
+    email: "michael.brown@example.com",
+    phone: "+1-555-789-4561",
+    deliveryDate: new Date("2025-06-01"),
+    discounts: 75.00,
+    dueDate: new Date("2025-06-15"),
+    address: "654 Cedar St, Anyplace, WA 98001",
+    products: [
+      {
+        name: "Office Chair",
+        quantity: 1,
+        price: 249.99,
+        total: 249.99
+      },
+      {
+        name: "Desk Lamp",
+        quantity: 1,
+        price: 59.99,
+        total: 59.99
+      },
+      {
+        name: "Mousepad",
+        quantity: 2,
+        price: 19.99,
+        total: 39.98
+      },
+      {
+        name: "Desk Organizer",
+        quantity: 1,
+        price: 34.99,
+        total: 34.99
+      }
+    ],
+    selectedCurrency: "USD",
+    status: "Pending",
+    totalAmount: 309.95, // After discount
+    paymentMethod: "Apple Pay",
+    qrCode: "qr://invoice/INV2025005",
+    notes: "Please call for delivery instructions"
+  }
+];
 
-  export const jobPostings = [
-    {
-      title: "Software Engineer",
-      department: "IT",
-      location: "New York",
-      status: "Open",
-      applicationsCount: 12,
-      applications: [
-        { id: 1, applicantName: "Alice Johnson", status: "Under Review" },
-        { id: 2, applicantName: "Bob Smith", status: "Interview Scheduled" },
-        { id: 3, applicantName: "Charlie Davis", status: "Rejected" },
-        { id: 4, applicantName: "David Brown", status: "Offer Extended" },
-        { id: 5, applicantName: "Eva White", status: "Under Review" },
-        { id: 6, applicantName: "Frank Green", status: "Interview Scheduled" },
-        { id: 7, applicantName: "Grace Lee", status: "Under Review" },
-        { id: 8, applicantName: "Hannah Wilson", status: "Offer Extended" },
-        { id: 9, applicantName: "Ivy Clark", status: "Rejected" },
-        { id: 10, applicantName: "James Moore", status: "Under Review" },
-        { id: 11, applicantName: "Kevin Taylor", status: "Interview Scheduled" },
-        { id: 12, applicantName: "Lily Martinez", status: "Offer Extended" },
-      ]
-    },
-    {
-      title: "HR Manager",
-      department: "Human Resources",
-      location: "San Francisco",
-      status: "Closed",
-      applicationsCount: 8,
-      applications: [
-        { id: 1, applicantName: "Michael Harris", status: "Interview Scheduled" },
-        { id: 2, applicantName: "Nancy Allen", status: "Rejected" },
-        { id: 3, applicantName: "Oscar Scott", status: "Offer Extended" },
-        { id: 4, applicantName: "Patricia King", status: "Under Review" },
-        { id: 5, applicantName: "Quincy Walker", status: "Rejected" },
-        { id: 6, applicantName: "Rachel Young", status: "Offer Extended" },
-        { id: 7, applicantName: "Steven Hall", status: "Under Review" },
-        { id: 8, applicantName: "Tina Lewis", status: "Interview Scheduled" },
-      ]
-    },
-    {
-      title: "Finance Analyst",
-      department: "Finance",
-      location: "Chicago",
-      status: "Open",
-      applicationsCount: 5,
-      applications: [
-        { id: 1, applicantName: "Ursula King", status: "Under Review" },
-        { id: 2, applicantName: "Victor Adams", status: "Offer Extended" },
-        { id: 3, applicantName: "Wendy Nelson", status: "Interview Scheduled" },
-        { id: 4, applicantName: "Xander Carter", status: "Rejected" },
-        { id: 5, applicantName: "Yvonne Phillips", status: "Under Review" },
-      ]
-    }
-  ];
-  

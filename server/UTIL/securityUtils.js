@@ -67,23 +67,24 @@ export const getRecentFailedAttempts = async (userId, identifier) => {
 
 export const createSecurityAlert = async (userId, alertType, details) => {
     try {
+        console.log(`Creating security alert - Type: ${alertType}, UserId: ${userId}`);
+        console.log('Alert details:', details);
+        
         const alert = new SecurityAlert({
             userId,
             alertType,
-            details,
+            details, // Now this will properly store as an object
             timestamp: new Date(),
             status: 'active'
         });
         
-        await alert.save();
+        const savedAlert = await alert.save();
+        console.log('Security alert created successfully:', savedAlert._id);
         
-        // Here you could add notification logic (email, SMS, etc.)
-        // For example:
-        // await sendSecurityAlertNotification(userId, alertType, details);
-        
-        return true;
+        return savedAlert;
     } catch (error) {
         console.error("Error creating security alert:", error);
+        console.error("Error details:", error.message);
         return false;
     }
 };

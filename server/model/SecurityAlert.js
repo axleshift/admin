@@ -4,7 +4,8 @@ const securityAlertSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     alertType: String,
     status: String,
-    details: String,
+    // Change details from String to Object or Mixed type
+    details: mongoose.Schema.Types.Mixed, // This allows storing any type of data including objects
     timestamp: { type: Date, default: Date.now },
     resolution: {
         resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

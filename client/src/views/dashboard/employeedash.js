@@ -250,12 +250,7 @@ const Employeedash = () => {
         </CCol>
       </CRow>
 
-      <CRow>
-        <button className="download-btn" onClick={handleDownload}>
-          <FontAwesomeIcon icon={faDownload} />
-          &nbsp; Download Reports
-        </button>
-      </CRow>
+   
 
       {/* StatBox Row */}
       <CRow className="my-3 g-3">

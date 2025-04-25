@@ -214,35 +214,22 @@ const VehicleDataPage = () => {
   };
 
   // Function to handle printing
-  const handlePrint = () => {
-    window.print();
+  // const handlePrint = () => {
+  //   window.print();
     
-    // Log activity for print action
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/vehicles',
-      action: 'Print Vehicle List',
-      description: `Printed vehicle fleet list (${vehicles.filter(v => !v.deleted).length} vehicles)`
-    }).catch(console.warn);
-  };
+  //   // Log activity for print action
+  //   logActivity({
+  //     name: userName,
+  //     role: userRole,
+  //     department: userDepartment,
+  //     route: '/vehicles',
+  //     action: 'Print Vehicle List',
+  //     description: `Printed vehicle fleet list (${vehicles.filter(v => !v.deleted).length} vehicles)`
+  //   }).catch(console.warn);
+  // };
 
   // Function to handle adding a new vehicle
-  const handleAddVehicle = () => {
-    // Navigate to add vehicle page or open modal
-    // This would be implemented based on your app's routing/state management
-    
-    // Log activity for initiating add vehicle
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/vehicles',
-      action: 'Add Vehicle Initiated',
-      description: 'User initiated adding a new vehicle'
-    }).catch(console.warn);
-  };
+ 
 
   // Function to handle vehicle actions (view, edit, delete)
   const handleVehicleAction = (action, vehicle) => {
@@ -365,10 +352,7 @@ const VehicleDataPage = () => {
           <FontAwesomeIcon icon={faCar} className="me-3 text-primary" />
           Vehicle Fleet Management
         </h1>
-        <CButton color="primary" onClick={handleAddVehicle}>
-          <FontAwesomeIcon icon={faPlus} className="me-2" />
-          Add Vehicle
-        </CButton>
+    
       </div>
       
       {loading && (
@@ -416,10 +400,10 @@ const VehicleDataPage = () => {
                     </CDropdownMenu>
                   </CDropdown>
                   
-                  <CButton color="light" size="sm" onClick={handlePrint}>
+                  {/* <CButton color="light" size="sm" onClick={handlePrint}>
                     <FontAwesomeIcon icon={faPrint} className="me-2 text-primary" />
                     Print List
-                  </CButton>
+                  </CButton> */}
                 </div>
               </div>
             </CCardHeader>

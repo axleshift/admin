@@ -283,37 +283,7 @@ const H3LeaveRequest = () => {
     setCurrentPage(page);
   };
 
-  const handleDocumentView = async (documentPath, requestInfo) => {
-    if (!documentPath) {
-      showToast('warning', 'Info', 'No document available');
-      return;
-    }
 
-    try {
-      setDocumentLoading(true);
-      setDocumentError(null);
-      setSelectedDocument({
-        path: documentPath,
-        name: `Document-${requestInfo.id || 'Unknown'}`,
-        type: getFileType(documentPath),
-        employeeName: requestInfo.name || 'Unknown Employee'
-      });
-      
-      // In a real implementation, you might need to fetch the document here
-      // const response = await axiosInstance.get(`/documents/${documentPath}`, { responseType: 'blob' });
-      // setSelectedDocument({
-      //   ...selectedDocument,
-      //   data: URL.createObjectURL(new Blob([response.data]))
-      // });
-      
-      setShowDocumentModal(true);
-    } catch (error) {
-      console.error("Error fetching document:", error);
-      setDocumentError("Failed to load document. Please try again later.");
-    } finally {
-      setDocumentLoading(false);
-    }
-  };
 
   const getFileType = (filePath) => {
     if (!filePath) return 'unknown';
@@ -639,7 +609,6 @@ const H3LeaveRequest = () => {
                       </CTableHeaderCell>
                       <CTableHeaderCell>Paid Status</CTableHeaderCell>
                       <CTableHeaderCell>Status</CTableHeaderCell>
-                      <CTableHeaderCell>Document</CTableHeaderCell>
                       <CTableHeaderCell>Actions</CTableHeaderCell>
                     </CTableRow>
                   </CTableHead>
@@ -665,19 +634,7 @@ const H3LeaveRequest = () => {
                         <CTableDataCell>{formatCurrency(request.amount)}</CTableDataCell>
                         <CTableDataCell>{getPaidStatusBadge(request.isPaid)}</CTableDataCell>
                         <CTableDataCell>{getStatusBadge(request.status)}</CTableDataCell>
-                        <CTableDataCell>
-                           {request.document_path ? (
-                              <CButton
-                                color="info"
-                                size="sm"
-                                onClick={() => handleDocumentView(request.document_path, request)}
-                              >
-                                <CIcon icon={cilFile} />
-                              </CButton>
-                            ) : (
-                              <span className="text-muted">No doc</span>
-                            )}
-                        </CTableDataCell>
+                     
                         <CTableDataCell>
                           {request.status && request.status.toLowerCase() === 'pending' && (
                             <>
