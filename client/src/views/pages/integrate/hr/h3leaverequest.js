@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../../../utils/axiosInstance";
+import logActivity from '../../../../utils/activityLogger';
 import {
   CTable,
   CTableHead,

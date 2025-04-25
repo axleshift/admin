@@ -36,8 +36,8 @@ const _nav = () => {
   const userId = localStorage.getItem('userId');
   const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
   const userEmail = localStorage.getItem('email');
-
   
+  console.log('permissions', userPermissions);
 
 
   const [allowedRoutes, setAllowedRoutes] = useState([]);
@@ -199,38 +199,11 @@ const _nav = () => {
     },
     
     admin: {
-      HR: [
-        '/hrdash',
-        '/worker',
-        '/jobposting',
-        '/payroll',
-      ],
-      Core: [
-        '/coredash',
-        '/shipment',
-        '/customer',
-        '/monthly',
-        '/daily',
-        '/breakdown',
-      ],
-      Finance: [
-        '/financedash',
-        '/freight/transaction',
-        '/oversales',
-      ],
-      Logistics: [
-        '/logisticdash',
-        '/shipment',
-        '/customer',
-        '/monthly',
-        '/daily',
-        '/breakdown',
-      ],
-      Administrative: [
-        ,
-        '/useractivity/index',
-        '/restore',
-      ]
+      HR: ['/hrdash', '/worker', '/jobposting', '/payroll', '/hr3leaverequest'],
+      Core: ['/coredash', '/shipment', '/insight', ],
+      Finance: ['/financedash', '/monthly'  ],
+      Logistics: ['/logisticdash', '/vehicles'],
+      Administrative: ['/employeedash', '/restore', '/registernew', '/PendingRequest', '/AccessReview',]
     },
     
     Manager: {

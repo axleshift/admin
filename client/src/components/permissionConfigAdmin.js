@@ -4,7 +4,7 @@ const accessPermissions = {
       HR: ['/hrdash', '/worker', '/jobposting', '/payroll', '/hr3leaverequest'],
       Core: ['/coredash', '/shipment', '/insight', ],
       Finance: ['/financedash', '/monthly'  ],
-      Logistics: ['/logisticdash', 'vehicles'],
+      Logistics: ['/logisticdash', '/vehicles'],
       Administrative: ['/employeedash', '/restore', '/registernew', '/PendingRequest', '/AccessReview',]
     }
   };
