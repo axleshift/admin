@@ -111,7 +111,7 @@ const RecoveryPage = () => {
       
           await axiosInstance.post('/admin/restore', {
             timestamp: selectedBackup.name,
-            filename: selectedCollection,
+            filename: `${selectedCollection}.bson`, // Add .bson extension here
             databaseName, // Pass the hardcoded database name
           });
       
@@ -125,11 +125,12 @@ const RecoveryPage = () => {
       
           alert('Restore successful!');
         } catch (error) {
-          setError('Restore failed.');
+          console.error('Restore error:', error.response?.data || error.message);
+          setError('Restore failed. Please check the console for details.');
         } finally {
           setLoading(false);
         }
-      };
+    };
 
     const handlesched = async () => {
         const userInfo = getUserInfo();
@@ -141,6 +142,15 @@ const RecoveryPage = () => {
         });
 
         navigate('/cron');
+    };
+
+    const handleClearBackupSelection = () => {
+        setSelectedBackup(null);
+        setSelectedCollection(null);
+    };
+    
+    const handleClearCollectionSelection = () => {
+        setSelectedCollection(null);
     };
 
     return (
@@ -171,30 +181,45 @@ const RecoveryPage = () => {
             <CRow>
                 <CCol md="6">
                     <CCard>
-                        <CCardHeader>Available Backups</CCardHeader>
+                        <CCardHeader className="d-flex justify-content-between align-items-center">
+                            <div>Available Backups</div>
+                            {selectedBackup && (
+                                <CButton color="link" className="p-0" onClick={handleClearBackupSelection}>
+                                    Select Different
+                                </CButton>
+                            )}
+                        </CCardHeader>
                         <CCardBody>
-                            {loading ? <CSpinner /> : (
+                            {loading && !selectedBackup ? <CSpinner /> : (
                                 <>
-                                    {backups.length === 0 ? (
-                                        <div className="text-center p-3">
-                                            No backups available
-                                        </div>
+                                    {!selectedBackup ? (
+                                        backups.length === 0 ? (
+                                            <div className="text-center p-3">
+                                                No backups available
+                                            </div>
+                                        ) : (
+                                            <CListGroup>
+                                                {backups.map((backup) => (
+                                                    <CListGroupItem 
+                                                        key={backup.name} 
+                                                        onClick={() => setSelectedBackup(backup)} 
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        {backup.name}
+                                                        <small className="d-block text-muted">
+                                                            {new Date(backup.created).toLocaleString()} - {Math.round(backup.size/1024/1024)}MB
+                                                        </small>
+                                                    </CListGroupItem>
+                                                ))}
+                                            </CListGroup>
+                                        )
                                     ) : (
-                                        <CListGroup>
-                                            {backups.map((backup) => (
-                                                <CListGroupItem 
-                                                    key={backup.name} 
-                                                    active={selectedBackup?.name === backup.name} 
-                                                    onClick={() => setSelectedBackup(backup)} 
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    {backup.name}
-                                                    <small className="d-block text-muted">
-                                                        {new Date(backup.created).toLocaleString()} - {Math.round(backup.size/1024/1024)}MB
-                                                    </small>
-                                                </CListGroupItem>
-                                            ))}
-                                        </CListGroup>
+                                        <div className="p-3">
+                                            <h5>{selectedBackup.name}</h5>
+                                            <small className="d-block text-muted">
+                                                {new Date(selectedBackup.created).toLocaleString()} - {Math.round(selectedBackup.size/1024/1024)}MB
+                                            </small>
+                                        </div>
                                     )}
                                 </>
                             )}
@@ -204,31 +229,43 @@ const RecoveryPage = () => {
 
                 <CCol md="6">
                     <CCard>
-                        <CCardHeader>Select Collection</CCardHeader>
+                        <CCardHeader className="d-flex justify-content-between align-items-center">
+                            <div>Select Collection</div>
+                            {selectedCollection && (
+                                <CButton color="link" className="p-0" onClick={handleClearCollectionSelection}>
+                                    Select Different
+                                </CButton>
+                            )}
+                        </CCardHeader>
                         <CCardBody>
-                            {loading ? <CSpinner /> : (
+                            {loading && selectedBackup && !selectedCollection ? <CSpinner /> : (
                                 <>
                                     {!selectedBackup ? (
                                         <div className="text-center p-3">
                                             Select a backup first
                                         </div>
-                                    ) : collections.length === 0 ? (
-                                        <div className="text-center p-3">
-                                            No collections found in this backup
-                                        </div>
+                                    ) : !selectedCollection ? (
+                                        collections.length === 0 ? (
+                                            <div className="text-center p-3">
+                                                No collections found in this backup
+                                            </div>
+                                        ) : (
+                                            <CListGroup>
+                                                {collections.map((collection) => (
+                                                    <CListGroupItem 
+                                                        key={collection} 
+                                                        onClick={() => setSelectedCollection(collection)} 
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        {collection}
+                                                    </CListGroupItem>
+                                                ))}
+                                            </CListGroup>
+                                        )
                                     ) : (
-                                        <CListGroup>
-                                            {collections.map((collection) => (
-                                                <CListGroupItem 
-                                                    key={collection} 
-                                                    onClick={() => setSelectedCollection(collection)} 
-                                                    active={selectedCollection === collection}
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    {collection}
-                                                </CListGroupItem>
-                                            ))}
-                                        </CListGroup>
+                                        <div className="p-3">
+                                            <h5>{selectedCollection}</h5>
+                                        </div>
                                     )}
                                 </>
                             )}

@@ -10,9 +10,19 @@ import archiver from 'archiver'; // Make sure to install this: npm install archi
 dotenv.config();
 const router = express.Router();
 
+const getDownloadDirectory = () => {
+  const homeDir = os.homedir();  // Get the user's home directory
 
+  if (process.platform === 'win32') {
+    // Windows: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  } else {
+    // Linux/macOS: Use the Downloads folder in the user's home directory
+    return path.join(homeDir, 'Downloads', 'my-backups');
+  }
+};
 
-const backupDir = path.join(process.cwd(), 'backup')
+const backupDir = getDownloadDirectory();
 
 if (!fs.existsSync(backupDir)) {
   try {
@@ -141,9 +151,78 @@ router.get('/config', (req, res) => {
 router.post('/backup', async (req, res) => {
   console.log('Backup endpoint hit!');
   try {
-    const result = await createBackup();
+    const collections = process.env.BACKUP_COLLECTIONS?.split(',') || [];
+    if (collections.length === 0) {
+      return res.status(400).send('No collections specified in BACKUP_COLLECTIONS environment variable.');
+    }
+
+    const createBackupForCollections = async () => {
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
+      const backupDirPath = normalizePath(path.join(backupDir, timestamp));
+      const archivePath = normalizePath(`${backupDirPath}.zip`);
+
+      try {
+        // Ensure backup directory exists
+        if (!fs.existsSync(backupDirPath)) {
+          fs.mkdirSync(backupDirPath, { recursive: true });
+        }
+
+        // Backup each collection
+        for (const collection of collections) {
+          await new Promise((resolve, reject) => {
+            const command = `mongodump --uri "${mongoUrl}" --db ${dbName} --collection ${collection} --out "${backupDirPath}"`;
+            exec(command, (error, stdout, stderr) => {
+              if (error) {
+                console.error(`Error backing up collection ${collection}:`, error);
+                return reject(error);
+              }
+              console.log(`Collection ${collection} backed up successfully.`);
+              resolve(stdout);
+            });
+          });
+        }
+
+        // Create a zip archive
+        const output = fs.createWriteStream(archivePath);
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        archive.on('error', (err) => {
+          console.error('Archiver Error:', err);
+          throw err;
+        });
+
+        output.on('close', () => {
+          console.log(`Backup archived: ${archivePath} (${archive.pointer()} bytes)`);
+
+          // Cleanup: Remove original backup folder asynchronously
+          fs.rm(backupDirPath, { recursive: true, force: true }, (err) => {
+            if (err) {
+              console.error('Failed to remove backup folder:', err);
+            }
+          });
+        });
+
+        archive.pipe(output);
+        archive.directory(backupDirPath, false);
+        await archive.finalize();
+
+        return {
+          success: true,
+          archivePath: archivePath,
+        };
+      } catch (error) {
+        console.error('Backup failed:', error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+    };
+
+    const result = await createBackupForCollections();
     if (result.success) {
-      res.send(`Backup triggered successfully. Archive saved to Downloads/my-backups folder.`);
+      res.send(`Backup triggered successfully. `);
     } else {
       res.status(500).send(`Backup failed: ${result.error}`);
     }
