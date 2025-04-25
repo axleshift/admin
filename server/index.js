@@ -130,6 +130,6 @@ mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
         server.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
-       // startAutoSync();
+       startAutoSync();
     })
     .catch((err) => console.log(`❌ MongoDB connection failed: ${err}`));

@@ -10,19 +10,9 @@ import archiver from 'archiver'; // Make sure to install this: npm install archi
 dotenv.config();
 const router = express.Router();
 
-const getDownloadDirectory = () => {
-  const homeDir = os.homedir();  // Get the user's home directory
 
-  if (process.platform === 'win32') {
-    // Windows: Use the Downloads folder in the user's home directory
-    return path.join(homeDir, 'Downloads', 'my-backups');
-  } else {
-    // Linux/macOS: Use the Downloads folder in the user's home directory
-    return path.join(homeDir, 'Downloads', 'my-backups');
-  }
-};
 
-const backupDir = getDownloadDirectory();
+const backupDir = path.join(process.cwd(), 'backup')
 
 if (!fs.existsSync(backupDir)) {
   try {

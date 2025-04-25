@@ -293,27 +293,7 @@ export const adminApi = createApi({
   
  
 
-    posttryBackup: build.mutation({
-      query: () => ({
-        url: 'try/backup',
-        method: 'POST',
-      }),
-    }),
-    posttryRestore: build.mutation({
-      query: ({ timestamp, filename, databaseName }) => ({ 
-        url: 'try/restore',
-        method: 'POST',
-        body: { timestamp, filename, databaseName },  
-      }),
-    }),
-    posttrySave: build.mutation({
-      query: ({ directoryPath }) => ({
-        url: 'try/save-directory',
-        method: 'POST',
-        body: { directoryPath },
-      }),
-    }),
-
+   
  
   
   saveUser: build.mutation({

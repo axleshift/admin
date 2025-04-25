@@ -16,7 +16,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    passwordHistory: [String],
+    passwordHistory: [
+      {
+        password: String, // Hashed password
+        date: Date       // Date when the password was set
+      }
+    ],
     phoneNumber: {
       type: String,
       required: true,

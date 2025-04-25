@@ -1,38 +1,26 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import { 
-    CContainer, CButton, CRow, CCol, CForm, CFormLabel, CFormInput, 
-    CListGroup, CListGroupItem, CCard, CCardBody, CCardHeader, 
-    CSpinner, CAlert 
+    CContainer, CButton, CRow, CCol, CListGroup, CListGroupItem, 
+    CCard, CCardBody, CCardHeader, CSpinner, CAlert 
 } from '@coreui/react';
 import axiosInstance from '../../../utils/axiosInstance';
 import logActivity from './../../../utils/activityLogger';
 
 const RecoveryPage = () => {
-    const [directory, setDirectory] = useState('');
     const [backups, setBackups] = useState([]);
     const [selectedBackup, setSelectedBackup] = useState(null);
-    const [databases, setDatabases] = useState([]);
-    const [selectedDatabase, setSelectedDatabase] = useState(null);
     const [collections, setCollections] = useState([]);
     const [selectedCollection, setSelectedCollection] = useState(null);
     const [loading, setLoading] = useState(false);
     const [backupInProgress, setBackupInProgress] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    const userRole = localStorage.getItem('role');
-    const userDepartment = localStorage.getItem('department');
-    const userId = localStorage.getItem('userId');
     const userName = localStorage.getItem('name'); 
 
-    const getUserInfo = () => {
-        return {
-            name: userName || 'Unknown User',
-            role: userRole || 'Unknown Role',
-            department: userDepartment || 'Unknown Department'
-        };
-    };
+    const getUserInfo = () => ({
+        name: userName || 'Unknown User',
+    });
 
     useEffect(() => {
         fetchBackups();
@@ -40,7 +28,7 @@ const RecoveryPage = () => {
 
     useEffect(() => {
         if (selectedBackup) {
-            fetchDatabases(selectedBackup);
+            fetchCollections(selectedBackup);
 
             const userInfo = getUserInfo();
             logActivity({
@@ -49,22 +37,10 @@ const RecoveryPage = () => {
                 action: 'SELECT_BACKUP',
                 description: `Selected backup: ${selectedBackup.name}`
             });
-        } else setDatabases([]);
+        } else {
+            setCollections([]);
+        }
     }, [selectedBackup]);
-
-    useEffect(() => {
-        if (selectedDatabase && selectedBackup) {
-            fetchCollections(selectedBackup, selectedDatabase);
-
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'SELECT_DATABASE',
-                description: `Selected database: ${selectedDatabase} from backup: ${selectedBackup.name}`
-            });
-        } else setCollections([]);
-    }, [selectedDatabase, selectedBackup]);
 
     const fetchBackups = async () => {
         setLoading(true);
@@ -72,14 +48,6 @@ const RecoveryPage = () => {
         try {
             const response = await axiosInstance.get('/admin/list-backups');
             setBackups(response.data.backups || []);
-
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'FETCH_BACKUPS',
-                description: `Retrieved ${response.data.backups?.length || 0} backups`
-            });
         } catch (error) {
             setError('Error fetching backups');
             setBackups([]);
@@ -88,57 +56,14 @@ const RecoveryPage = () => {
         }
     };
 
-    const fetchDatabases = async (backup) => {
+    const fetchCollections = async (backup) => {
         if (!backup) return;
 
         setLoading(true);
         setError('');
         try {
             const response = await axiosInstance.get(`/admin/list-collections/${backup.name}`);
-
-            if (response.data.databases) {
-                setDatabases(response.data.databases);
-
-                const userInfo = getUserInfo();
-                logActivity({
-                    ...userInfo,
-                    route: '/recovery',
-                    action: 'FETCH_DATABASES',
-                    description: `Retrieved ${response.data.databases.length} databases from backup: ${backup.name}`
-                });
-            } else {
-                setDatabases([]);
-                setError('No databases found in this backup.');
-            }
-        } catch (error) {
-            console.error('Error fetching databases:', error);
-            setError(error?.response?.data?.message || 'Error fetching databases');
-            setDatabases([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchCollections = async (backup, database) => {
-        if (!backup || !database) {
-            setCollections([]);
-            return;
-        }
-
-        setLoading(true);
-        setError('');
-        try {
-            const response = await axiosInstance.get(`/admin/list-collections/${backup.name}?databaseName=${database}`);
-
             setCollections(response.data.collections || []);
-
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'FETCH_COLLECTIONS',
-                description: `Retrieved ${response.data.collections?.length || 0} collections from database: ${database} in backup: ${backup.name}`
-            });
         } catch (error) {
             setError('Error fetching collections');
             setCollections([]);
@@ -169,39 +94,42 @@ const RecoveryPage = () => {
     };
 
     const handleRestore = async () => {
-        if (!selectedBackup || !selectedDatabase || !selectedCollection) {
-            setError('Please select a backup, database, and collection.');
-            return;
+        if (!selectedBackup || !selectedCollection) {
+          setError('Please select a backup and collection.');
+          return;
         }
-
-        if (!window.confirm(`Are you sure you want to restore collection "${selectedCollection}" from database "${selectedDatabase}"? This will replace the current data.`)) {
-            return;
+      
+        if (!window.confirm(`Are you sure you want to restore collection "${selectedCollection}"? This will replace the current data.`)) {
+          return;
         }
-
+      
         setLoading(true);
         setError('');
         try {
-            await axiosInstance.post('/admin/restore', {
-                timestamp: selectedBackup.name,
-                filename: selectedCollection,
-                databaseName: selectedDatabase,
-            });
-
-            const userInfo = getUserInfo();
-            logActivity({
-                ...userInfo,
-                route: '/recovery',
-                action: 'RESTORE_COLLECTION',
-                description: `Restored collection: ${selectedCollection} from database: ${selectedDatabase} in backup: ${selectedBackup.name}`
-            });
-
-            alert('Restore successful!');
+          // Hardcoded database name
+          const databaseName = 'adminis';
+      
+          await axiosInstance.post('/admin/restore', {
+            timestamp: selectedBackup.name,
+            filename: selectedCollection,
+            databaseName, // Pass the hardcoded database name
+          });
+      
+          const userInfo = getUserInfo();
+          logActivity({
+            ...userInfo,
+            route: '/recovery',
+            action: 'RESTORE_COLLECTION',
+            description: `Restored collection: ${selectedCollection} from backup: ${selectedBackup.name}`
+          });
+      
+          alert('Restore successful!');
         } catch (error) {
-            setError('Restore failed.');
+          setError('Restore failed.');
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    };
+      };
 
     const handlesched = async () => {
         const userInfo = getUserInfo();
@@ -213,30 +141,6 @@ const RecoveryPage = () => {
         });
 
         navigate('/cron');
-    };
-
-    const handleSelectCollection = (collection) => {
-        setSelectedCollection(collection);
-
-        const userInfo = getUserInfo();
-        logActivity({
-            ...userInfo,
-            route: '/recovery',
-            action: 'SELECT_COLLECTION',
-            description: `Selected collection: ${collection} from database: ${selectedDatabase} in backup: ${selectedBackup.name}`
-        });
-    };
-
-    const handleChangeCollection = () => {
-        const userInfo = getUserInfo();
-        logActivity({
-            ...userInfo,
-            route: '/recovery',
-            action: 'CHANGE_COLLECTION',
-            description: `Changed selection from collection: ${selectedCollection}`
-        });
-
-        setSelectedCollection(null);
     };
 
     return (
@@ -265,7 +169,7 @@ const RecoveryPage = () => {
             </CRow>
 
             <CRow>
-                <CCol md="4">
+                <CCol md="6">
                     <CCard>
                         <CCardHeader>Available Backups</CCardHeader>
                         <CCardBody>
@@ -298,9 +202,9 @@ const RecoveryPage = () => {
                     </CCard>
                 </CCol>
 
-                <CCol md="4">
+                <CCol md="6">
                     <CCard>
-                        <CCardHeader>Select Database</CCardHeader>
+                        <CCardHeader>Select Collection</CCardHeader>
                         <CCardBody>
                             {loading ? <CSpinner /> : (
                                 <>
@@ -308,63 +212,17 @@ const RecoveryPage = () => {
                                         <div className="text-center p-3">
                                             Select a backup first
                                         </div>
-                                    ) : databases.length === 0 ? (
-                                        <div className="text-center p-3">
-                                            No databases found in this backup
-                                        </div>
-                                    ) : (
-                                        <CListGroup>
-                                            {databases.map((db) => (
-                                                <CListGroupItem 
-                                                    key={db} 
-                                                    active={selectedDatabase === db}
-                                                    onClick={() => setSelectedDatabase(db)} 
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    {db}
-                                                </CListGroupItem>
-                                            ))}
-                                        </CListGroup>
-                                    )}
-                                </>
-                            )}
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-
-                <CCol md="4">
-                    <CCard>
-                        <CCardHeader>Select Collection</CCardHeader>
-                        <CCardBody>
-                            {loading ? <CSpinner /> : (
-                                <>
-                                    {!selectedDatabase ? (
-                                        <div className="text-center p-3">
-                                            Select a database first
-                                        </div>
                                     ) : collections.length === 0 ? (
                                         <div className="text-center p-3">
-                                            No collections found in this database
-                                        </div>
-                                    ) : selectedCollection ? (
-                                        <div className="p-3">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <strong>{selectedCollection}</strong>
-                                                <CButton 
-                                                    color="link" 
-                                                    onClick={handleChangeCollection}
-                                                    size="sm"
-                                                >
-                                                    Change
-                                                </CButton>
-                                            </div>
+                                            No collections found in this backup
                                         </div>
                                     ) : (
                                         <CListGroup>
                                             {collections.map((collection) => (
                                                 <CListGroupItem 
                                                     key={collection} 
-                                                    onClick={() => handleSelectCollection(collection)} 
+                                                    onClick={() => setSelectedCollection(collection)} 
+                                                    active={selectedCollection === collection}
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     {collection}
@@ -388,15 +246,12 @@ const RecoveryPage = () => {
                                 {selectedBackup && (
                                     <div><strong>Selected Backup:</strong> {selectedBackup.name}</div>
                                 )}
-                                {selectedDatabase && (
-                                    <div><strong>Selected Database:</strong> {selectedDatabase}</div>
-                                )}
                                 {selectedCollection && (
                                     <div><strong>Selected Collection:</strong> {selectedCollection}</div>
                                 )}
                             </div>
 
-                            {selectedBackup && selectedDatabase && selectedCollection ? (
+                            {selectedBackup && selectedCollection ? (
                                 <CButton 
                                     color="warning" 
                                     onClick={handleRestore}
@@ -406,7 +261,7 @@ const RecoveryPage = () => {
                                 </CButton>
                             ) : (
                                 <div className="text-muted">
-                                    Please select a backup, database, and collection to restore
+                                    Please select a backup and collection to restore
                                 </div>
                             )}
                         </CCardBody>

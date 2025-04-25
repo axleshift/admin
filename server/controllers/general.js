@@ -575,52 +575,63 @@ export const getDashboardStats = async (req, res) => {
         console.error('Database connection not established');
         return res.status(500).json({ message: 'Database connection error' });
       }
-      
+  
       // Get activities from database
       const activities = await Activitytracker.find().sort({ timestamp: -1 });
-      
+  
       // Transform activities to ensure proper data structure
       const formattedActivities = activities.map(activity => {
         // Convert Mongoose document to plain object
-        const plainActivity = activity.toObject ? activity.toObject() : {...activity};
-        
+        const plainActivity = activity.toObject ? activity.toObject() : { ...activity };
+  
         // Process AI analysis to ensure consistent format for the frontend
         if (plainActivity.aiAnalysis) {
-          // If it's already a string but not a stringified JSON
-          if (typeof plainActivity.aiAnalysis === 'string' && 
-              !plainActivity.aiAnalysis.startsWith('{')) {
-            // Keep it as is - it's already a text analysis
-          }
-          // If it's a string that appears to be JSON, parse it
-          else if (typeof plainActivity.aiAnalysis === 'string' && 
-                  plainActivity.aiAnalysis.startsWith('{')) {
-            try {
-              const parsed = JSON.parse(plainActivity.aiAnalysis);
-              if (parsed.fullAnalysis) {
-                plainActivity.aiAnalysis = parsed.fullAnalysis;
-              }
-            } catch (e) {
-              // If parsing fails, keep the original string
-            }
-          }
-          // If it's an object with fullAnalysis property
-          else if (typeof plainActivity.aiAnalysis === 'object' && 
-                  plainActivity.aiAnalysis.fullAnalysis) {
-            // Store the full analysis text for display
-            plainActivity.aiAnalysis = plainActivity.aiAnalysis.fullAnalysis;
-            
-            // Also include the structured data for the UI components
+          // If `aiAnalysis` is an object, ensure all fields are properly included
+          if (typeof plainActivity.aiAnalysis === 'object') {
             plainActivity.aiStructuredAnalysis = {
               category: plainActivity.aiAnalysis.category || 'General activity',
               patterns: plainActivity.aiAnalysis.patterns || 'No unusual patterns detected',
-              riskLevel: plainActivity.aiAnalysis.riskLevel || 'UNKNOWN'
+              riskLevel: plainActivity.aiAnalysis.riskLevel || 'UNKNOWN',
+            };
+            plainActivity.aiAnalysis = plainActivity.aiAnalysis.fullAnalysis || 'AI analysis unavailable';
+          }
+          // If `aiAnalysis` is a string that appears to be JSON, parse it
+          else if (typeof plainActivity.aiAnalysis === 'string' && plainActivity.aiAnalysis.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(plainActivity.aiAnalysis);
+              plainActivity.aiStructuredAnalysis = {
+                category: parsed.category || 'General activity',
+                patterns: parsed.patterns || 'No unusual patterns detected',
+                riskLevel: parsed.riskLevel || 'UNKNOWN',
+              };
+              plainActivity.aiAnalysis = parsed.fullAnalysis || 'AI analysis unavailable';
+            } catch (e) {
+              console.error('Error parsing AI analysis:', e);
+              plainActivity.aiAnalysis = 'AI analysis unavailable';
+            }
+          }
+          // If `aiAnalysis` is a plain string, treat it as the full analysis
+          else {
+            plainActivity.aiAnalysis = plainActivity.aiAnalysis || 'AI analysis unavailable';
+            plainActivity.aiStructuredAnalysis = {
+              category: 'General activity',
+              patterns: 'No unusual patterns detected',
+              riskLevel: 'UNKNOWN',
             };
           }
+        } else {
+          // Default values if `aiAnalysis` is missing
+          plainActivity.aiAnalysis = 'AI analysis unavailable';
+          plainActivity.aiStructuredAnalysis = {
+            category: 'General activity',
+            patterns: 'No unusual patterns detected',
+            riskLevel: 'UNKNOWN',
+          };
         }
-        
+  
         return plainActivity;
       });
-      
+  
       res.status(200).json(formattedActivities);
     } catch (error) {
       console.error('Error retrieving activity logs:', error);

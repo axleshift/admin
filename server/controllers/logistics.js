@@ -31,9 +31,8 @@ export const log1vehicle = async (req, res) => {
 
 //log2
 
-const LOG2_BASE_URL = "https://backend-log2.axleshift.com";
-const LOG2_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2Y2NzE4MzI1ZWVkOGY5YmU2ODliZjEiLCJyb2xlIjoic3VwZXIgYWRtaW4iLCJlbWFpbCI6ImxvZ2l0ZWNodzJAZ21haWwuY29tIiwiaWF0IjoxNzQ0NDI5OTc4LCJleHAiOjE3NDQ0MzM1Nzh9.1TYS6gq8uDYPkYCcabiIJAlpaKwa2s3HnBKj2WiJ3jo';
-
+const LOG2_BASE_URL = process.env.EXTERNAL_LOG2
+const LOG2_API_TOKEN = process.env.LOG2_API
 
   
 export const log2procurement = async (req, res) => {

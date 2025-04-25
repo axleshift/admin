@@ -187,47 +187,84 @@ const ActivityTracker = () => {
         return items;
     };
 
-    // Parse AI analysis into sections (Category, Patterns, Risk)
-    // UPDATED: Fixed to handle UNKNOWN risk level
+    // IMPROVED: Parse AI analysis to handle both string and object formats
     const parseAIAnalysis = (analysis) => {
-        // If it's already an object with the right properties, use it directly
+        // Default values
+        const defaultResult = { 
+            category: 'General activity', 
+            patterns: 'No unusual patterns detected', 
+            risk: 'MEDIUM' // Default to MEDIUM instead of UNKNOWN
+        };
+        
+        // If there's no analysis, return defaults
+        if (!analysis) return defaultResult;
+        
+        // If aiStructuredAnalysis is available, use it directly
         if (typeof analysis === 'object' && analysis !== null) {
-          if (analysis.category && analysis.patterns && analysis.riskLevel) {
-            return { 
-                category: analysis.category, 
-                patterns: analysis.patterns, 
-                risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel // Convert UNKNOWN to MEDIUM
-              };
-          }
+            // Check if it has the expected properties
+            if (analysis.category && analysis.patterns && analysis.riskLevel) {
+                return { 
+                    category: analysis.category, 
+                    patterns: analysis.patterns, 
+                    // Convert UNKNOWN to MEDIUM
+                    risk: analysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : analysis.riskLevel 
+                };
+            }
+            
+            // For database objects with aiStructuredAnalysis
+            if (analysis.aiStructuredAnalysis) {
+                const structuredData = analysis.aiStructuredAnalysis;
+                return {
+                    category: structuredData.category || defaultResult.category,
+                    patterns: structuredData.patterns || defaultResult.patterns,
+                    risk: structuredData.riskLevel === 'UNKNOWN' ? 'MEDIUM' : structuredData.riskLevel || defaultResult.risk
+                };
+            }
         }
         
         // If it's a string or doesn't have the right properties, try to parse it
         const analysisText = typeof analysis === 'string' ? analysis : JSON.stringify(analysis);
         
-        if (!analysisText) return { category: 'Not available', patterns: 'Not available', risk: 'MEDIUM' }; // Changed from UNKNOWN to MEDIUM
+        if (!analysisText) return defaultResult;
         
-        // Extract risk level
+        try {
+            // Try parsing it as JSON first
+            const parsedAnalysis = JSON.parse(analysisText);
+            if (parsedAnalysis.category && parsedAnalysis.patterns && parsedAnalysis.riskLevel) {
+                return {
+                    category: parsedAnalysis.category,
+                    patterns: parsedAnalysis.patterns,
+                    risk: parsedAnalysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : parsedAnalysis.riskLevel
+                };
+            }
+        } catch (e) {
+            // Not valid JSON, proceed with text extraction
+        }
+        
+        // Extract risk level from text
         let riskLevel = 'MEDIUM'; // Default to MEDIUM instead of UNKNOWN
-        const riskMatch = analysisText.match(/risk(?:\s*level|\s*assessment)?:?\s*(low|medium|high)/i);
-        if (riskMatch) riskLevel = riskMatch[1].toUpperCase();
+        const riskMatch = analysisText.match(/risk(?:\s*level|\s*assessment)?:?\s*(low|medium|high|unknown)/i);
+        if (riskMatch) {
+            riskLevel = riskMatch[1].toUpperCase();
+            // Convert UNKNOWN to MEDIUM
+            if (riskLevel === 'UNKNOWN') riskLevel = 'MEDIUM';
+        }
         
         // Try to extract category section
-        let category = '';
+        let category = defaultResult.category;
         const categoryMatch = analysisText.match(/categor(?:y|ization):?\s*([^.]+)/i);
         if (categoryMatch) category = categoryMatch[1].trim();
-        else category = 'General activity';
         
         // Try to extract patterns section
-        let patterns = '';
+        let patterns = defaultResult.patterns;
         const patternsMatch = analysisText.match(/patterns:?\s*([^.]+)/i) || 
-                              analysisText.match(/unusual patterns:?\s*([^.]+)/i);
+                            analysisText.match(/unusual patterns:?\s*([^.]+)/i);
         if (patternsMatch) patterns = patternsMatch[1].trim();
-        else patterns = 'No unusual patterns detected';
         
         return { category, patterns, risk: riskLevel };
     };
 
-    // UPDATED: Fix the getRiskBadgeColor function to handle the UNKNOWN case properly
+    // Get risk badge color with improved handling for UNKNOWN case
     const getRiskBadgeColor = (risk) => {
         if (!risk || risk.toLowerCase() === 'unknown') return 'warning'; // Handle UNKNOWN as warning (yellow)
         if (risk.toLowerCase() === 'high') return 'danger';
@@ -237,7 +274,7 @@ const ActivityTracker = () => {
     };
 
     // Style for the title in dark mode
-    const titleStyle = isDarkMode ? { color: '#FFFFFF' } : {}; // Bright purple in dark mode
+    const titleStyle = isDarkMode ? { color: '#FFFFFF' } : {}; // Bright color in dark mode
 
     // Helper function to get badge color based on action type
     const getBadgeColor = (action) => {
@@ -274,6 +311,32 @@ const ActivityTracker = () => {
         return `${Math.floor(diffInSeconds / 86400)} days ago`;
     };
 
+    // Helper function to extract and properly display AI analysis data
+    const getAnalysisData = (activity) => {
+        // If the activity has structured analysis data
+        if (activity.aiStructuredAnalysis) {
+            return {
+                category: activity.aiStructuredAnalysis.category || 'General activity',
+                patterns: activity.aiStructuredAnalysis.patterns || 'No unusual patterns detected',
+                risk: activity.aiStructuredAnalysis.riskLevel === 'UNKNOWN' ? 'MEDIUM' : activity.aiStructuredAnalysis.riskLevel || 'MEDIUM',
+                fullAnalysis: typeof activity.aiAnalysis === 'string' 
+                    ? activity.aiAnalysis 
+                    : (activity.aiAnalysis?.fullAnalysis || JSON.stringify(activity.aiAnalysis))
+            };
+        }
+        
+        // If no structured data, parse from aiAnalysis
+        const parsedData = parseAIAnalysis(activity.aiAnalysis);
+        return {
+            category: parsedData.category,
+            patterns: parsedData.patterns,
+            risk: parsedData.risk,
+            fullAnalysis: typeof activity.aiAnalysis === 'string' 
+                ? activity.aiAnalysis 
+                : JSON.stringify(activity.aiAnalysis)
+        };
+    };
+
     if (error) {
         return (
             <CContainer className="mt-4">
@@ -304,7 +367,7 @@ const ActivityTracker = () => {
                         <FontAwesomeIcon icon={faHistory} className="me-2 text-primary" />
                         <CCardTitle 
                             className="d-inline mb-0"
-                            style={titleStyle} // Apply purple color in dark mode
+                            style={titleStyle}
                         >
                             Activity Tracker <CBadge color="info" shape="rounded-pill" className="ms-2">AI Enhanced</CBadge>
                         </CCardTitle>
@@ -385,8 +448,8 @@ const ActivityTracker = () => {
                                             </CTableRow>
                                         ) : (
                                             currentActivities.map(activity => {
-                                                // Parse AI analysis for risk level to show in table
-                                                const { risk } = parseAIAnalysis(activity.aiAnalysis);
+                                                // Get analysis data including proper risk level
+                                                const analysisData = getAnalysisData(activity);
                                                 
                                                 return (
                                                     <CTableRow key={activity._id} className="align-middle">
@@ -431,11 +494,11 @@ const ActivityTracker = () => {
                                                             {activity.aiAnalysis ? (
                                                                 <div className="d-flex align-items-center">
                                                                     <CBadge 
-                                                                        color={getRiskBadgeColor(risk)} 
+                                                                        color={getRiskBadgeColor(analysisData.risk)} 
                                                                         shape="rounded-pill"
                                                                         className="me-2"
                                                                     >
-                                                                        {risk}
+                                                                        {analysisData.risk}
                                                                     </CBadge>
                                                                     <CButton 
                                                                         color="light" 
@@ -497,7 +560,7 @@ const ActivityTracker = () => {
                 </CCardFooter>
             </CCard>
 
-            {/* AI Analysis Modal */}
+            {/* AI Analysis Modal - UPDATED to properly display data */}
             <CModal 
                 visible={showAIModal} 
                 onClose={() => setShowAIModal(false)}
@@ -539,81 +602,71 @@ const ActivityTracker = () => {
                                 
                                 {selectedActivity.aiAnalysis ? (
                                     <>
-                                        <CAccordion activeItemKey={1} className="mt-3">
-                                            <CAccordionItem itemKey={1}>
-                                                <CAccordionHeader>Full Analysis</CAccordionHeader>
-                                                <CAccordionBody>
-                                                    <div 
-                                                        className={`p-3 ${isDarkMode ? 'bg-secondary bg-opacity-10' : 'bg-light'}`} 
-                                                        style={{whiteSpace: 'pre-line', borderRadius: '0.25rem'}}
-                                                    >
-                                                        {/* Use the fullAnalysis property directly if available, otherwise use the string */}
-                                                        {typeof selectedActivity.aiAnalysis === 'object' && selectedActivity.aiAnalysis.fullAnalysis 
-                                                            ? selectedActivity.aiAnalysis.fullAnalysis 
-                                                            : selectedActivity.aiAnalysis}
-                                                    </div>
-                                                </CAccordionBody>
-                                            </CAccordionItem>
-                                        </CAccordion>
-                                        
-                                        <CRow className="mt-4">
-                                            <CCol md="4">
-                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                                                    <CCardHeader className="bg-info text-white">
-                                                        <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                                                        Category
-                                                    </CCardHeader>
-                                                    <CCardBody>
-                                                        {/* Get the category */}
-                                                        {selectedActivity.aiStructuredAnalysis
-                                                            ? selectedActivity.aiStructuredAnalysis.category
-                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).category}
-                                                    </CCardBody>
-                                                </CCard>
-                                            </CCol>
-                                            <CCol md="4">
-                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                                                    <CCardHeader className="bg-primary text-white">
-                                                        <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-                                                        Patterns
-                                                    </CCardHeader>
-                                                    <CCardBody>
-                                                        {/* Get the patterns */}
-                                                        {selectedActivity.aiStructuredAnalysis
-                                                            ? selectedActivity.aiStructuredAnalysis.patterns
-                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).patterns}
-                                                    </CCardBody>
-                                                </CCard>
-                                            </CCol>
-                                            <CCol md="4">
-                                                <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
-                                                    {/* Get the risk level */}
-                                                    {(() => {
-                                                        const riskLevel = selectedActivity.aiStructuredAnalysis
-                                                            ? selectedActivity.aiStructuredAnalysis.riskLevel
-                                                            : parseAIAnalysis(selectedActivity.aiAnalysis).risk;
-                                                        return (
-                                                            <>
-                                                                <CCardHeader className={`bg-${getRiskBadgeColor(riskLevel)} text-white`}>
+                                        {/* Get analysis data */}
+                                        {(() => {
+                                            const analysisData = getAnalysisData(selectedActivity);
+                                            
+                                            return (
+                                                <>
+                                                    <CAccordion activeItemKey={1} className="mt-3">
+                                                        <CAccordionItem itemKey={1}>
+                                                            <CAccordionHeader>Full Analysis</CAccordionHeader>
+                                                            <CAccordionBody>
+                                                                <div 
+                                                                    className={`p-3 ${isDarkMode ? 'bg-secondary bg-opacity-10' : 'bg-light'}`} 
+                                                                    style={{whiteSpace: 'pre-line', borderRadius: '0.25rem'}}
+                                                                >
+                                                                    {analysisData.fullAnalysis}
+                                                                </div>
+                                                            </CAccordionBody>
+                                                        </CAccordionItem>
+                                                    </CAccordion>
+                                                    
+                                                    <CRow className="mt-4">
+                                                        <CCol md="4">
+                                                            <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                                <CCardHeader className="bg-info text-white">
+                                                                    <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
+                                                                    Category
+                                                                </CCardHeader>
+                                                                <CCardBody>
+                                                                    {analysisData.category}
+                                                                </CCardBody>
+                                                            </CCard>
+                                                        </CCol>
+                                                        <CCol md="4">
+                                                            <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                                <CCardHeader className="bg-primary text-white">
+                                                                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                                                                    Patterns
+                                                                </CCardHeader>
+                                                                <CCardBody>
+                                                                    {analysisData.patterns}
+                                                                </CCardBody>
+                                                            </CCard>
+                                                        </CCol>
+                                                        <CCol md="4">
+                                                            <CCard className={isDarkMode ? "bg-dark text-white border-secondary" : ""}>
+                                                                <CCardHeader className={`bg-${getRiskBadgeColor(analysisData.risk)} text-white`}>
                                                                     <FontAwesomeIcon icon={faShieldAlt} className="me-2" />
                                                                     Risk Level
                                                                 </CCardHeader>
                                                                 <CCardBody className="d-flex justify-content-center align-items-center">
-                                                                <CBadge 
-                                                                    color={getRiskBadgeColor(riskLevel)} 
-                                                                    size="lg"
-                                                                    shape="rounded-pill"
-                                                                    className="px-4 py-2"
-                                                                >
-                                                                    {riskLevel === 'UNKNOWN' ? 'MEDIUM' : riskLevel}
-                                                                </CBadge>
+                                                                    <CBadge 
+                                                                        color={getRiskBadgeColor(analysisData.risk)} 
+                                                                        size="lg"
+                                                                        shape="rounded-pill"
+                                                                        className="px-4 py-2"
+                                                                    >
+                                                                        {analysisData.risk}
+                                                                    </CBadge>
                                                                 </CCardBody>
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </CCard>
-                                            </CCol>
-                                        </CRow>
+                                                            </CCard>
+                                                        </CCol>
+                                                    </CRow>
+                                                </>
+                                            );
+                                        })()}
                                     </>
                                 ) : (
                                     <div className="text-center p-4">
