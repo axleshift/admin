@@ -1,1 +1,0 @@
-import{j as r}from"./index-DGlCYBmm.js";import"./vendor-react-B6URQkMn.js";import"./vendor-redux-C7peqcPR.js";import"./vendor-coreui-DDUzhqJ9.js";const m=()=>r.jsx("div",{children:"LandFreight"});export{m as default};
