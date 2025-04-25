@@ -11,7 +11,7 @@ import Inventory from '../model/Inventory.js';
 // Load environment variables or default values
 const EXTERNAL_CORE = process.env.EXTERNAL_CORE?.replace(/\/$/, '') 
 const CORE_API_TOKEN = process.env.CORE_API_TOKEN   
-const EXTERNAL_HR3 = process.env.EXTERNAL_HR3?.replace(/\/$/, '')  
+const EXTERNAL_HR3 = process.env.EXTERNAL_Hr3?.replace(/\/$/, '')  
 const EXTERNAL_HR2 = process.env.EXTERNAL_Hr2?.replace(/\/$/, '') 
 const HR2_API_KEY = process.env.Hr2_api_key 
 const EXTERNAL_LOG1 = process.env.EXTERNAL_LOG1?.replace(/\/$/, '') 
