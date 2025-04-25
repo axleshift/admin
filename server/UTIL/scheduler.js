@@ -31,7 +31,6 @@ const LOG2_SYNC_INTERVAL = process.env.LOG2_SYNC_INTERVAL
 // Function to sync freight data
 const syncFreightData = async () => {
   try {
-    console.log('Auto-syncing freight data with External Core API...');
     
     const response = await axios.post(
       `${EXTERNAL_CORE}/api/v1/freight/`,
@@ -46,7 +45,6 @@ const syncFreightData = async () => {
 
     const externalData = response.data.results || response.data.data || [];
     if (!Array.isArray(externalData)) {
-      console.error('Invalid API response format', response.data);
       return;
     }
 
@@ -78,7 +76,6 @@ const syncFreightData = async () => {
       await Freight.deleteMany({ _id: { $nin: externalIds } });
     }
 
-    console.log(`Freight auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
    
   } catch (error) {
     console.error('Error in freight auto-sync:', error.message);
@@ -88,8 +85,6 @@ const syncFreightData = async () => {
 // Function to sync payroll data
 const syncPayrollData = async () => {
   try {
-    console.log('Auto-syncing payroll data with HR3 API...');
-    console.log(`Using HR3 endpoint: ${EXTERNAL_HR3}/api/payrolls`);
     
     // Fetch payroll data from the HR3 API
     const response = await axios.get(`${EXTERNAL_HR3}/api/payrolls`, {
@@ -105,7 +100,6 @@ const syncPayrollData = async () => {
 
 
     if (count === 0) {
-      console.log('No payroll entries to sync.');
       return;
     }
 
@@ -142,7 +136,6 @@ const syncPayrollData = async () => {
       await Payroll.deleteMany({ _id: { $nin: payrollIds } });
     }
 
-    console.log(`Payroll auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
 
   } catch (error) {
     console.error('Error in payroll auto-sync:', error.message);
@@ -166,8 +159,6 @@ const syncLeaveRequests = async () => {
       return;
     }
 
-    console.log('Auto-syncing leave requests with HR3 API...');
-    console.log(`Using HR3 endpoint: ${EXTERNAL_HR3}/api/leave-requests`);
 
     // Fetch leave requests from the HR3 API
     const response = await axios.get(`${EXTERNAL_HR3}/api/leave-requests`, {
@@ -183,7 +174,6 @@ const syncLeaveRequests = async () => {
 
 
     if (count === 0) {
-      console.log('No leave requests to sync.');
       return;
     }
 
@@ -221,7 +211,6 @@ const syncLeaveRequests = async () => {
       await LeaveRequest.deleteMany({ _id: { $nin: leaveRequestIds } });
     }
 
-    console.log(`Leave  auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in leave requests auto-sync:', error.message);
 
@@ -253,8 +242,6 @@ const syncJobPostings = async () => {
       return;
     }
 
-    console.log('Auto-syncing job postings with HR2 API...');
-    console.log(`Using HR2 endpoint: ${HR2}request/jobposting/all`);
 
     const response = await axios.get(`${HR2}request/jobposting/all`, {
       headers: {
@@ -267,10 +254,8 @@ const syncJobPostings = async () => {
     const jobPostings = response.data?.data || []; // Correctly extract the `data` field
     const count = Array.isArray(jobPostings) ? jobPostings.length : 0;
 
-    console.log(`Retrieved ${count} job postings from HR2`);
 
     if (count === 0) {
-      console.log('No job postings to sync.');
       return;
     }
 
@@ -303,7 +288,6 @@ const syncJobPostings = async () => {
       await JobPosting.deleteMany({ _id: { $nin: jobPostingIds } });
     }
 
-    console.log(`Job postings auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in job postings auto-sync:', error.message);
 
@@ -335,8 +319,6 @@ const syncVehicleData = async () => {
       return;
     }
 
-    console.log('Auto-syncing vehicle data with LOG1 API...');
-    console.log(`Using LOG1 endpoint: ${LOG1_API}/api/v1/vehicle/all`);
 
     const response = await axios.get(`${LOG1_API}/api/v1/vehicle/all`, {
       headers: {
@@ -349,10 +331,8 @@ const syncVehicleData = async () => {
     const vehicles = response.data?.data || []; // Correctly extract the `data` field
     const count = Array.isArray(vehicles) ? vehicles.length : 0;
 
-    console.log(`Retrieved ${count} vehicles from LOG1`);
 
     if (count === 0) {
-      console.log('No vehicles to sync.');
       return;
     }
 
@@ -390,7 +370,6 @@ const syncVehicleData = async () => {
       await Vehicle.deleteMany({ _id: { $nin: vehicleIds } });
     }
 
-    console.log(`Vehicle data auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in vehicle data auto-sync:', error.message);
 
@@ -413,8 +392,6 @@ const syncMonthlySales = async () => {
       return;
     }
 
-    console.log('Auto-syncing monthly sales and revenue data with Finance API...');
-    console.log(`Using Finance endpoint: ${EXTERNALFinance}/api/salesAndRevenue/monthly-sales-revenue`);
 
     // Add timeout to detect if the external system is down
     const controller = new AbortController();
@@ -450,8 +427,6 @@ const syncMonthlySales = async () => {
           errorCount++;
         }
       }
-
-      console.log(`Monthly sales auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
     } catch (error) {
       if (error.name === 'AbortError') {
         console.error('Request to external finance system timed out');
@@ -466,8 +441,6 @@ const syncMonthlySales = async () => {
 
 const syncCore1ShipmentInsights = async () => {
   try {
-    console.log('Auto-syncing Core1 shipment insights...');
-    console.log(`Using Core1 endpoint: ${core1}/api/v1/insights/shipment-overtime/`);
 
     let response;
     try {
@@ -500,7 +473,6 @@ const syncCore1ShipmentInsights = async () => {
     const data = response.data?.data || [];
 
     if (labels.length === 0 || data.length === 0) {
-      console.log('No shipment insights to sync.');
       return;
     }
 
@@ -528,7 +500,6 @@ const syncCore1ShipmentInsights = async () => {
       }
     }
 
-    console.log(`shipment insights auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in Core1 shipment insights auto-sync:', error.message);
   }
@@ -537,8 +508,6 @@ const syncCore1ShipmentInsights = async () => {
 // Function to sync Core1 Insights (Cost Over Time)
 const syncCore1CostInsights = async () => {
   try {
-    console.log('Auto-syncing Core1 cost insights...');
-    console.log(`Using Core1 endpoint: ${core1}/api/v1/insights/cost-overtime/`);
 
     const response = await axios.get(
       `${core1}/api/v1/insights/cost-overtime/`,
@@ -556,7 +525,6 @@ const syncCore1CostInsights = async () => {
     const data = response.data?.data || [];
 
     if (labels.length === 0 || data.length === 0) {
-      console.log('No cost insights to sync.');
       return;
     }
 
@@ -584,7 +552,6 @@ const syncCore1CostInsights = async () => {
       }
     }
 
-    console.log(`cost insights auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in Core1 cost insights auto-sync:', error.message);
   }
@@ -593,8 +560,6 @@ const syncCore1CostInsights = async () => {
 // Function to sync Core1 Insights (Items Over Time)
 const syncCore1ItemInsights = async () => {
   try {
-    console.log('Auto-syncing Core1 item insights...');
-    console.log(`Using Core1 endpoint: ${core1}/api/v1/insights/items-overtime/`);
 
     const response = await axios.get(
       `${core1}/api/v1/insights/items-overtime/`,
@@ -612,7 +577,6 @@ const syncCore1ItemInsights = async () => {
     const data = response.data?.data || [];
 
     if (labels.length === 0 || data.length === 0) {
-      console.log('No item insights to sync.');
       return;
     }
 
@@ -640,7 +604,6 @@ const syncCore1ItemInsights = async () => {
       }
     }
 
-    console.log(`item insights auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in Core1 item insights auto-sync:', error.message);
   }
@@ -649,8 +612,6 @@ const syncCore1ItemInsights = async () => {
 // Function to sync Core1 Insights (Weight Over Time)
 const syncCore1WeightInsights = async () => {
   try {
-    console.log('Auto-syncing Core1 weight insights...');
-    console.log(`Using Core1 endpoint: ${core1}/api/v1/insights/weight-overtime/`);
 
     const response = await axios.get(
       `${core1}/api/v1/insights/weight-overtime/`,
@@ -668,7 +629,6 @@ const syncCore1WeightInsights = async () => {
     const data = response.data?.data || [];
 
     if (labels.length === 0 || data.length === 0) {
-      console.log('No weight insights to sync.');
       return;
     }
 
@@ -696,7 +656,6 @@ const syncCore1WeightInsights = async () => {
       }
     }
 
-    console.log(`weight insights auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in Core1 weight insights auto-sync:', error.message);
   }
@@ -711,8 +670,6 @@ const syncLog2Inventory = async () => {
       return;
     }
 
-    console.log('Auto-syncing inventory data with LOG2 API...');
-    console.log(`Using LOG2 endpoint: ${LOG2_BASE_URL}/api/v1/inventory`);
 
     const response = await axios.get(`${LOG2_BASE_URL}/api/v1/inventory`, {
       headers: {
@@ -724,10 +681,8 @@ const syncLog2Inventory = async () => {
     const inventoryData = response.data || [];
     const count = Array.isArray(inventoryData) ? inventoryData.length : 0;
 
-    console.log(`Retrieved ${count} inventory records from LOG2`);
 
     if (count === 0) {
-      console.log('No inventory records to sync.');
       return;
     }
 
@@ -748,7 +703,6 @@ const syncLog2Inventory = async () => {
       }
     }
 
-    console.log(`inventory data auto-sync completed: ${successCount} items synced, ${errorCount} errors`);
   } catch (error) {
     console.error('Error in LOG2 inventory data auto-sync:', error.message);
 

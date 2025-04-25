@@ -25,6 +25,19 @@ const loadEnvironment = () => {
 // Load environment variables
 loadEnvironment();
 
+// Check if we're in production mode
+const isProduction = process.env.NODE_ENV === 'production';
+// Check if we should force local analysis (bypass API) regardless of environment
+const forceLocalAnalysis = process.env.FORCE_LOCAL_ANALYSIS === 'true';
+
+if (isProduction) {
+  console.log('🔒 Running in PRODUCTION mode - Using local analysis by default');
+}
+
+if (forceLocalAnalysis) {
+  console.log('🔒 FORCE_LOCAL_ANALYSIS is enabled - All AI API calls will be bypassed');
+}
+
 // Helper function to create a default response
 const createDefaultResponse = (message) => {
   return {
@@ -36,14 +49,99 @@ const createDefaultResponse = (message) => {
 };
 
 const API_KEYS = [
-  process.env.GEMINI_API_KEY1 || 'AIzaSyA3hQsrM4vH-80RUQU-ZJWX7v3QLRhAzA0',
-  process.env.GEMINI_API_KEY2 || 'AIzaSyCM_BMH7vJO29q9J2klSzE2v6RIeQjYIR8',
-  process.env.GEMINI_API_KEY3 || 'AIzaSyBVKhuHIgaCb6G4fakX2YDZydHi4OI9R4U'
+  process.env.GEMINI_API_KEY1,
+  process.env.GEMINI_API_KEY2,
+  process.env.GEMINI_API_KEY3,
+  process.env.GEMINI_API_KEY4, 
+  process.env.GEMINI_API_KEY5, 
+  process.env.GEMINI_API_KEY6, 
 ];
+
+// Create a key status tracking object
+const apiKeyStatus = API_KEYS.map((key, index) => ({
+  key: key ? key.substring(0, 5) + '...' : 'undefined',
+  index,
+  quotaExceeded: false,
+  lastUsed: null
+}));
+
+// Add this function to visualize API key status
+const logApiKeyStatus = () => {
+  console.log('\n=== API Key Status ===');
+  apiKeyStatus.forEach(key => {
+    const status = key.quotaExceeded ? 
+      'QUOTA EXCEEDED' : 
+      'AVAILABLE';
+    const lastUsed = key.lastUsed ? 
+      `Last used: ${key.lastUsed.toLocaleTimeString()}` : 
+      'Not used yet';
+    console.log(`Key ${key.index + 1} (${key.key}): ${status} - ${lastUsed}`);
+  });
+  console.log('=====================\n');
+};
 
 let currentKeyIndex = 0;
 
-export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL) => {
+// Function to perform local activity analysis without using the API
+const performLocalActivityAnalysis = (activityData) => {
+  const { role, action, route } = activityData;
+  
+  // Simple rule-based analysis logic
+  let riskLevel = 'MEDIUM';
+  let category = 'General Activity';
+  
+  // Determine category based on route
+  if (route.includes('/admin')) {
+    category = 'Admin Access';
+  } else if (route.includes('/user')) {
+    category = 'User Management';
+  } else if (route.includes('/data') || route.includes('/report')) {
+    category = 'Data Access';
+  } else if (route.includes('/settings')) {
+    category = 'System Configuration';
+  }
+  
+  // Determine risk level based on role and action
+  if (role === 'Admin' || role === 'Administrator') {
+    // Admin actions are generally lower risk unless destructive
+    if (action === 'DELETE' || action === 'MODIFY') {
+      riskLevel = 'MEDIUM';
+    } else {
+      riskLevel = 'LOW';
+    }
+  } else if (role === 'Guest' || role === 'Anonymous') {
+    // Guest actions are generally higher risk
+    if (action === 'VIEW' || action === 'READ') {
+      riskLevel = 'MEDIUM';
+    } else {
+      riskLevel = 'HIGH';
+    }
+  } else {
+    // Regular users
+    if (action === 'DELETE') {
+      riskLevel = 'HIGH';
+    } else if (action === 'MODIFY' || action === 'UPDATE') {
+      riskLevel = 'MEDIUM';
+    } else {
+      riskLevel = 'LOW';
+    }
+  }
+  
+  // Special high-risk cases
+  if (route.includes('/admin') && role !== 'Admin' && role !== 'Administrator') {
+    riskLevel = 'HIGH';
+  }
+  
+  return {
+    fullAnalysis: `Local analysis performed for ${role} performing ${action} on ${route}. Risk assessed as ${riskLevel}.`,
+    category,
+    patterns: 'Analysis performed locally without AI assistance',
+    riskLevel,
+    isLocalAnalysis: true
+  };
+};
+
+export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL, forceLocal = false) => {
   try {
     const { name, role, department, route, action, description } = activityData;
 
@@ -51,6 +149,12 @@ export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL)
     if (!name || !role || !department || !route || !action || !description) {
       console.error('AI analysis error: Missing required fields');
       return createDefaultResponse('AI analysis unavailable - missing required fields');
+    }
+    
+    // Skip API calls if we're in production, forcing local analysis, or if the override parameter is true
+    if (isProduction || forceLocalAnalysis || forceLocal) {
+      console.log('🔒 Using local activity analysis (API bypassed)');
+      return performLocalActivityAnalysis(activityData);
     }
 
     // Create a structured prompt for the AI to analyze
@@ -89,9 +193,17 @@ export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL)
       const GEMINI_API_KEY = API_KEYS[currentKeyIndex];
       const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-      console.log(`Using API Key ${currentKeyIndex + 1}: ${GEMINI_API_KEY.substring(0, 5)}...`);
+      // Update last used timestamp
+      apiKeyStatus[currentKeyIndex].lastUsed = new Date();
+      
+      console.log(`Using API Key ${currentKeyIndex + 1}: ${GEMINI_API_KEY?.substring(0, 5)}...`);
 
       try {
+        // Skip the API call if the key is undefined or empty
+        if (!GEMINI_API_KEY) {
+          throw new Error('API key is undefined or empty');
+        }
+        
         const response = await axios.post(
           `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
           {
@@ -148,129 +260,178 @@ export const analyzeActivityWithAI = async (activityData, model = DEFAULT_MODEL)
 
       } catch (error) {
         if (error.response && error.response.status === 429) {
-          console.warn(`Quota exceeded for API Key ${currentKeyIndex + 1}. Switching to the next key.`);
+          console.warn(`⚠️ QUOTA EXCEEDED for API Key ${currentKeyIndex + 1}`);
+          // Mark this key as exceeded
+          apiKeyStatus[currentKeyIndex].quotaExceeded = true;
           currentKeyIndex++;
+          // Log the updated status of all keys
+          logApiKeyStatus();
         } else {
           console.error('AI analysis error:', error.message);
-          return createDefaultResponse(`AI analysis error: ${error.message || 'Unknown error'}`);
+          // If we encounter a non-quota error, fall back to local analysis
+          console.log('Falling back to local activity analysis');
+          return performLocalActivityAnalysis(activityData);
         }
       }
     }
 
-    console.error('All API keys have exceeded their quotas.');
-    return createDefaultResponse('AI analysis unavailable - all API keys exceeded their quotas');
+    console.error('❌ ALERT: All API keys have exceeded their quotas!');
+    logApiKeyStatus();
+    console.log('Falling back to local activity analysis');
+    return performLocalActivityAnalysis(activityData);
   } catch (error) {
     console.error('Unexpected error:', error.message);
-    return createDefaultResponse(`AI analysis error: ${error.message || 'Unknown error'}`);
+    console.log('Falling back to local activity analysis due to unexpected error');
+    return performLocalActivityAnalysis(activityData);
   }
 };
 
+// Function to perform local password analysis without using the API
+const performLocalPasswordAnalysis = (password) => {
+  return createDefaultPasswordAnalysis(password);
+};
+
 // Export any other functions needed for the geminiService
-export const analyzePasswordWithAI = async (password, model = DEFAULT_MODEL) => {
+export const analyzePasswordWithAI = async (password, model = DEFAULT_MODEL, forceLocal = false) => {
   try {
     // Perform basic validation before sending to API
     if (!password || password.length < 4) {
       return createDefaultPasswordAnalysis(password);
     }
     
-    // Direct retrieval of API key
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY;
-    
-    // Define API URL inside the function
-    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-    
-    // Check if API key is available
-    if (!GEMINI_API_KEY) {
-      console.error('Password analysis: Missing API key');
-      return createDefaultPasswordAnalysis(password);
+    // Skip API calls if we're in production, forcing local analysis, or if the override parameter is true
+    if (isProduction || forceLocalAnalysis || forceLocal) {
+      console.log('🔒 Using local password analysis (API bypassed)');
+      return performLocalPasswordAnalysis(password);
     }
     
-    // Create a structured prompt for the AI to analyze
-    const prompt = `
-      You are a password security expert. Analyze this password (shown between triple quotes) to determine its strength:
+    // Use the API key rotation system for password analysis as well
+    while (currentKeyIndex < API_KEYS.length) {
+      const GEMINI_API_KEY = API_KEYS[currentKeyIndex];
       
-      """${password}"""
+      // Update last used timestamp
+      apiKeyStatus[currentKeyIndex].lastUsed = new Date();
       
-      Provide:
-      1. A numeric score from 0-100 (with 100 being strongest)
-      2. A categorical strength assessment (Very Weak, Weak, Moderate, Strong, Very Strong)
-      3. Specific feedback on how to improve this password
-      4. A brief explanation of your assessment
+      // Define API URL inside the function
+      const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       
-      Format your response as JSON:
-      {
-        "score": number between 0-100,
-        "strength": "categorical assessment",
-        "feedback": ["suggestion1", "suggestion2", ...],
-        "explanation": "brief explanation of assessment"
+      // Check if API key is available
+      if (!GEMINI_API_KEY) {
+        console.error('Password analysis: Missing API key');
+        currentKeyIndex++;
+        continue;
       }
-    `;
-    
-    const response = await axios.post(
-      `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              { text: prompt }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 800
+      
+      console.log(`Password analysis using API Key ${currentKeyIndex + 1}: ${GEMINI_API_KEY.substring(0, 5)}...`);
+      
+      // Create a structured prompt for the AI to analyze
+      const prompt = `
+        You are a password security expert. Analyze this password (shown between triple quotes) to determine its strength:
+        
+        """${password}"""
+        
+        Provide:
+        1. A numeric score from 0-100 (with 100 being strongest)
+        2. A categorical strength assessment (Very Weak, Weak, Moderate, Strong, Very Strong)
+        3. Specific feedback on how to improve this password
+        4. A brief explanation of your assessment
+        
+        Format your response as JSON:
+        {
+          "score": number between 0-100,
+          "strength": "categorical assessment",
+          "feedback": ["suggestion1", "suggestion2", ...],
+          "explanation": "brief explanation of assessment"
         }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 5000 // 5 seconds timeout - shorter for better UX
-      }
-    );
-    
-    // Extract and parse the JSON response from the AI
-    const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!rawText) {
-      return createDefaultPasswordAnalysis(password);
-    }
-    
-    // Improved JSON extraction - handle potential text before/after JSON
-    let parsedResponse;
-    try {
-      // First try to parse the entire response as JSON
-      parsedResponse = JSON.parse(rawText);
-    } catch (parseError) {
-      // If that fails, try to extract JSON from the text
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        return createDefaultPasswordAnalysis(password);
-      }
+      `;
       
       try {
-        parsedResponse = JSON.parse(jsonMatch[0]);
-      } catch (nestedParseError) {
-        return createDefaultPasswordAnalysis(password);
+        const response = await axios.post(
+          `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+          {
+            contents: [
+              {
+                parts: [
+                  { text: prompt }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 800
+            }
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 5000 // 5 seconds timeout - shorter for better UX
+          }
+        );
+        
+        // Extract and parse the JSON response from the AI
+        const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!rawText) {
+          throw new Error('Empty response from AI API');
+        }
+        
+        // Improved JSON extraction - handle potential text before/after JSON
+        let parsedResponse;
+        try {
+          // First try to parse the entire response as JSON
+          parsedResponse = JSON.parse(rawText);
+        } catch (parseError) {
+          // If that fails, try to extract JSON from the text
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            throw new Error('No valid JSON found in AI response');
+          }
+          
+          try {
+            parsedResponse = JSON.parse(jsonMatch[0]);
+          } catch (nestedParseError) {
+            throw new Error('Failed to parse JSON from AI response');
+          }
+        }
+        
+        // Validate the parsed response has the required fields
+        if (!parsedResponse.score || !parsedResponse.strength || 
+            !Array.isArray(parsedResponse.feedback) || !parsedResponse.explanation) {
+          throw new Error('Incomplete analysis data from AI');
+        }
+        
+        // Ensure score is a number between 0-100
+        parsedResponse.score = parseInt(parsedResponse.score);
+        if (isNaN(parsedResponse.score) || parsedResponse.score < 0 || parsedResponse.score > 100) {
+          parsedResponse.score = 50; // Default to middle if invalid
+        }
+        
+        console.log('Successfully received and parsed password analysis');
+        return parsedResponse;
+        
+      } catch (error) {
+        if (error.response && error.response.status === 429) {
+          console.warn(`⚠️ QUOTA EXCEEDED for API Key ${currentKeyIndex + 1} during password analysis`);
+          // Mark this key as exceeded
+          apiKeyStatus[currentKeyIndex].quotaExceeded = true;
+          currentKeyIndex++;
+          // Log the updated status of all keys
+          logApiKeyStatus();
+        } else {
+          console.error('Password analysis error:', error.message);
+          return performLocalPasswordAnalysis(password);
+        }
       }
     }
     
-    // Validate the parsed response has the required fields
-    if (!parsedResponse.score || !parsedResponse.strength || 
-        !Array.isArray(parsedResponse.feedback) || !parsedResponse.explanation) {
-      return createDefaultPasswordAnalysis(password);
-    }
-    
-    // Ensure score is a number between 0-100
-    parsedResponse.score = parseInt(parsedResponse.score);
-    if (isNaN(parsedResponse.score) || parsedResponse.score < 0 || parsedResponse.score > 100) {
-      parsedResponse.score = 50; // Default to middle if invalid
-    }
-    
-    return parsedResponse;
+    // If we've exhausted all keys
+    console.error('❌ ALERT: All API keys have exceeded their quotas during password analysis!');
+    logApiKeyStatus();
+    return performLocalPasswordAnalysis(password);
   } catch (error) {
-    console.error('Password analysis error:', error.message || 'Unknown error');
-    return createDefaultPasswordAnalysis(password);
+    console.error('Unexpected password analysis error:', error.message || 'Unknown error');
+    return performLocalPasswordAnalysis(password);
   }
 };
 
@@ -312,6 +473,57 @@ const createDefaultPasswordAnalysis = (password) => {
     strength,
     feedback,
     explanation: 'This is a basic analysis generated locally. AI analysis was unavailable.',
-    isDefaultAnalysis: true
+    isLocalAnalysis: true
   };
+};
+
+// Export a function to get the current API key status
+export const getApiKeyStatus = () => {
+  return {
+    totalKeys: API_KEYS.length,
+    availableKeys: API_KEYS.length - apiKeyStatus.filter(key => key.quotaExceeded).length,
+    keyStatus: apiKeyStatus,
+    currentKeyIndex,
+    isProduction,
+    forceLocalAnalysis
+  };
+};
+
+// Reset a specific API key's quota exceeded status (useful if keys reset after time period)
+export const resetApiKeyQuota = (keyIndex) => {
+  if (keyIndex >= 0 && keyIndex < apiKeyStatus.length) {
+    apiKeyStatus[keyIndex].quotaExceeded = false;
+    console.log(`Reset quota status for API Key ${keyIndex + 1}`);
+    logApiKeyStatus();
+    return true;
+  }
+  return false;
+};
+
+// Reset all API keys' quota exceeded status
+export const resetAllApiKeyQuotas = () => {
+  apiKeyStatus.forEach(key => {
+    key.quotaExceeded = false;
+  });
+  currentKeyIndex = 0;
+  console.log('Reset quota status for all API keys');
+  logApiKeyStatus();
+  return true;
+};
+
+// Toggle force local analysis mode - allows you to switch modes at runtime
+export const setForceLocalAnalysis = (force) => {
+  const oldValue = forceLocalAnalysis;
+  // Update the forceLocalAnalysis value with the environment variable or the passed value
+  // Only update if the passed value is a boolean or the strings 'true'/'false'
+  if (typeof force === 'boolean' || force === 'true' || force === 'false') {
+    process.env.FORCE_LOCAL_ANALYSIS = String(force);
+    if (force === 'true' || force === true) {
+      console.log('🔒 Enabled force local analysis mode - All AI API calls will be bypassed');
+    } else {
+      console.log('🔓 Disabled force local analysis mode - AI API calls will be allowed (subject to environment)');
+    }
+    return { previous: oldValue, current: force === 'true' || force === true };
+  }
+  return { previous: oldValue, current: oldValue, unchanged: true };
 };

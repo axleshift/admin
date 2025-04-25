@@ -3,19 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import StatBox from '../pages/scene/statbox';
 import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol, CCard } from '@coreui/react';
-import Monthly from '../pages/sales/monthly';
+import MonthlySalesChart from '../pages/integrate/finance/scene/monthchart';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine, faMoneyBillWave, faCalendarAlt,  faUsers  } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../utils/axiosInstance';
-
+import logActivity from '../../utils/activityLogger'
 const FinanceDash = () => {
   const navigate = useNavigate();
   const [isNonMediumScreens, setIsNonMediumScreens] = useState(window.innerWidth > 768);
   const [currentMonthData, setCurrentMonthData] = useState(null);
   const [previousMonthData, setPreviousMonthData] = useState(null);
+  const [yearlyData, setYearlyData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isYearlyLoading, setIsYearlyLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [userData, setUsers] = useState([]);
+  const userName = localStorage.getItem('name'); 
+  const userRole = localStorage.getItem('role');
+ const userDepartment = localStorage.getItem('department');
+  const userUsername = localStorage.getItem('username');
+  logActivity({
+    name: userName,
+    role: userRole,
+    department: userDepartment,
+    route: 'Finance Dashboard',
+    action: 'Navigate',
+    description: `${userName} Navigate to Finance Dashboard`
+  }).catch(console.warn);
+  
   useEffect(() => {
     const handleResize = () => setIsNonMediumScreens(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
@@ -80,7 +95,43 @@ const FinanceDash = () => {
       }
     };
 
+    // Fetch yearly sales/revenue data
+    const fetchYearlyData = async () => {
+      try {
+        setIsYearlyLoading(true);
+        
+        const yearlyResponse = await axiosInstance.get('/finance/yearlysalesrevenue');
+        
+        if (yearlyResponse.data) {
+          setYearlyData(yearlyResponse.data);
+        }
+        
+        setIsYearlyLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch yearly data:', err);
+        setError(err.message || 'An error occurred while fetching yearly data');
+        setIsYearlyLoading(false);
+      }
+    };
+
+    const fetchFinanceDepartmentUsers = async () => {
+      try {
+        const response = await axiosInstance.get('/hr/worker');
+        
+        // Filter for Finance department users only
+        const financeUsers = response.data.filter(user => 
+          user.department === 'Finance' 
+        );
+        
+        setUsers(financeUsers);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch Finance department users');
+        console.error('Error fetching Finance users:', err);
+      }
+    };
     fetchDashboardData();
+    fetchYearlyData();
+    fetchFinanceDepartmentUsers();
   }, []);
 
   // Calculate month-over-month changes
@@ -89,6 +140,9 @@ const FinanceDash = () => {
     const percentChange = ((current - previous) / previous) * 100;
     return percentChange.toFixed(1);
   };
+
+  // Get the current year
+  const currentYear = new Date().getFullYear();
 
   return (
    <CContainer fluid className="p-3">
@@ -100,27 +154,45 @@ const FinanceDash = () => {
       
       {/* StatBoxes layout */}
       <CRow>
-        <CCol xs={12} md={6} lg={3}>
+      <CCol xs={12} md={6} lg={3}>
+          <StatBox
+            title="Finance Department Employees"
+            value={userData.length}
+            icon={<FontAwesomeIcon icon={faUsers} style={{ fontSize: '20px', color: '#0d6efd' }} />}
+            description="Total Finance personnel"
+          />
+        </CCol>
+        <CCol xs={12} md={6} lg={4}>
           <StatBox
             title={`Current Sales (${currentMonthData?.month || 'Loading...'})`}
             value={currentMonthData?.totalSales?.toLocaleString() || 0}
             increase={previousMonthData ? 
               `${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalSales || 0, previousMonthData?.totalSales || 0)}%` : 
               "0"}
-            description="vs. last month"
+          
             icon={<FontAwesomeIcon icon={faChartLine} style={{ fontSize: '20px', color: '#0d6efd' }} />}
           />
         </CCol>
         
-        <CCol xs={12} md={6} lg={3}>
+        <CCol xs={12} md={6} lg={4}>
           <StatBox
             title={`Current Revenue (${currentMonthData?.month || 'Loading...'})`}
             value={`$${currentMonthData?.totalRevenue?.toLocaleString() || 0}`}
             increase={previousMonthData ? 
               `${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0) > 0 ? '+' : ''}${calculateChange(currentMonthData?.totalRevenue || 0, previousMonthData?.totalRevenue || 0)}%` : 
               "0"}
-            description="vs. last month"
+          
             icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: '20px', color: '#198754' }} />}
+          />
+        </CCol>
+
+        <CCol xs={12} md={6} lg={4}>
+          <StatBox
+            title={`Yearly Sales (${currentYear})`}
+            value={yearlyData ? yearlyData.totalSales.toLocaleString() : 'Loading...'}
+            description="Annual performance"
+            icon={<FontAwesomeIcon icon={faCalendarAlt} style={{ fontSize: '20px', color: '#dc3545' }} />}
+            loading={isYearlyLoading}
           />
         </CCol>
       </CRow>
@@ -130,15 +202,7 @@ const FinanceDash = () => {
         <CCol xs={12}>
           <CCard className="mb-4">
             <div className="p-3">
-              <Monthly 
-                view="sales" 
-                onDataLoaded={(data) => {
-                  if (data && Array.isArray(data) && data.length > 0) {
-                    // This callback can be used to update other state if needed
-                    // But we already have the current month data from our initial fetch
-                  }
-                }} 
-              />
+            <MonthlySalesChart />
             </div>
           </CCard>
         </CCol>

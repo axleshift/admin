@@ -10,9 +10,11 @@ import {
   faMoneyBillWave,
   faBoxOpen,
   faChartLine,
-  faBoxes
-} from '@fortawesome/free-solid-svg-icons';
+  faBoxes,
+  faUsers
 
+} from '@fortawesome/free-solid-svg-icons';
+import logActivity from '../../utils/activityLogger'
 const CoreDash = () => {
   const [shipmentData, setShipmentData] = useState([]);
   const [costData, setCostData] = useState(null);
@@ -20,12 +22,21 @@ const CoreDash = () => {
   const [itemData, setItemData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userData, setUsers] = useState([]);
 
   // Retrieve user information from localStorage
   const userName = localStorage.getItem('name');
   const userRole = localStorage.getItem('role');
   const userDepartment = localStorage.getItem('department');
-
+  logActivity({
+    name: userName,
+    role: userRole,
+    department: userDepartment,
+    route: 'Core Dashboard',
+    action: 'Navigate',
+    description: `${userName} Navigate to Core Dashboard`
+  }).catch(console.warn);
+  
   // Auto-detect and format currency function
   const autoDetectAndFormatCurrency = (amount) => {
     if (amount === undefined || amount === null) return 'N/A';
@@ -141,7 +152,23 @@ const CoreDash = () => {
         setLoading(false);
       }
     };
-    
+    const fetchCoreDepartmentUsers = async () => {
+      try {
+        const response = await axiosInstance.get('/hr/worker');
+        
+        // Filter for Core department users only
+        const coreUsers = response.data.filter(user => 
+          user.department === 'Core' 
+        );
+        
+        setUsers(coreUsers);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch Core department users');
+        console.error('Error fetching Core users:', err);
+      }
+    };
+
+    fetchCoreDepartmentUsers();
     fetchWeightData();
     fetchCostData();
     fetchFreightData();
@@ -211,6 +238,15 @@ const CoreDash = () => {
       <CustomHeader title="Core Dashboard" />
       <CContainer fluid>
         <CRow className="mb-4">
+        <CCol xs={12} md={6} lg={3}>
+          <StatBox
+            title="Core Department Employees"
+            value={loading ? '...' : userData.length}
+            icon={<FontAwesomeIcon icon={faUsers} style={{ fontSize: '20px', color: '#0d6efd' }} />}
+            description="Total Core personnel"
+            loading={loading}
+          />
+        </CCol>
           <CCol sm={6} lg={3}>
             <StatBox 
               title="Total Shipments"

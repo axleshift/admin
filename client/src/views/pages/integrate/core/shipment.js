@@ -50,6 +50,15 @@ const FreightTable = () => {
   const userUsername = localStorage.getItem('username');
   const userPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
 
+
+   logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: 'Shipment Table',
+      action: 'Page Visit',
+      description: `${userName} visit the Shipment Table page`
+    }).catch(console.warn);
   // Function to add toast
   const addToast = (title, message, color) => {
     setToast(

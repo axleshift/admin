@@ -589,22 +589,22 @@ export const getDashboardStats = async (req, res) => {
           // If `aiAnalysis` is an object, ensure all fields are properly included
           if (typeof plainActivity.aiAnalysis === 'object') {
             plainActivity.aiStructuredAnalysis = {
-              category: plainActivity.aiAnalysis.category || 'General activity',
-              patterns: plainActivity.aiAnalysis.patterns || 'No unusual patterns detected',
-              riskLevel: plainActivity.aiAnalysis.riskLevel || 'UNKNOWN',
+              category: plainActivity.aiAnalysis.category ,
+              patterns: plainActivity.aiAnalysis.patterns ,
+              riskLevel: plainActivity.aiAnalysis.riskLevel ,
             };
-            plainActivity.aiAnalysis = plainActivity.aiAnalysis.fullAnalysis || 'AI analysis unavailable';
+            plainActivity.aiAnalysis = plainActivity.aiAnalysis.fullAnalysis ;
           }
           // If `aiAnalysis` is a string that appears to be JSON, parse it
           else if (typeof plainActivity.aiAnalysis === 'string' && plainActivity.aiAnalysis.startsWith('{')) {
             try {
               const parsed = JSON.parse(plainActivity.aiAnalysis);
               plainActivity.aiStructuredAnalysis = {
-                category: parsed.category || 'General activity',
-                patterns: parsed.patterns || 'No unusual patterns detected',
-                riskLevel: parsed.riskLevel || 'UNKNOWN',
+                category: parsed.category ,
+                patterns: parsed.patterns ,
+                riskLevel: parsed.riskLevel ,
               };
-              plainActivity.aiAnalysis = parsed.fullAnalysis || 'AI analysis unavailable';
+              plainActivity.aiAnalysis = parsed.fullAnalysis ;
             } catch (e) {
               console.error('Error parsing AI analysis:', e);
               plainActivity.aiAnalysis = 'AI analysis unavailable';
@@ -612,7 +612,7 @@ export const getDashboardStats = async (req, res) => {
           }
           // If `aiAnalysis` is a plain string, treat it as the full analysis
           else {
-            plainActivity.aiAnalysis = plainActivity.aiAnalysis || 'AI analysis unavailable';
+            plainActivity.aiAnalysis = plainActivity.aiAnalysis ;
             plainActivity.aiStructuredAnalysis = {
               category: 'General activity',
               patterns: 'No unusual patterns detected',

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import FlexBetween from './FlexBetween';
 import PropTypes from 'prop-types';
-
+import { CCard, CCardBody, CCardHeader, CCardFooter, CRow, CCol } from '@coreui/react';
 
 const StatBox = ({ title, value, increase, icon, description }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-
   
   useEffect(() => {
     const darkModeStatus = localStorage.getItem('darkMode') === 'true' || document.body.classList.contains('dark-mode');
@@ -13,37 +11,29 @@ const StatBox = ({ title, value, increase, icon, description }) => {
   }, []);
 
   return (
-    <div
-      style={{
-        flex: '1 1 100%',
-        padding: '1.5rem',
-        borderRadius: '0.55rem',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        backgroundColor: isDarkMode ? '#000' : '#d3d3d3', 
-        color: isDarkMode ? '#808080' : 'black', 
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        margin: '10px',
-        minWidth: '250px',
-        height: '100%',
-      }}
+    <CCard 
+      className={`mb-4 ${isDarkMode ? 'bg-dark text-white' : ''}`}
     >
-      <FlexBetween>
-        <h1 style={{ fontSize: '1.25rem', margin: 0 }}>{title}</h1>
-        {icon}
-      </FlexBetween>
-
-      <h1 style={{ fontWeight: '600', fontSize: '2rem', margin: '0.5rem 0' }}>{value}</h1>
-
-      <FlexBetween style={{ gap: '1rem' }}>
-        <h1 style={{ fontStyle: 'italic', fontSize: '1.1rem', margin: 0 }}>{increase}</h1>
-        <h1 style={{ fontSize: '1rem', margin: 0 }}>{description}</h1>
-      </FlexBetween>
-    </div>
+      <CCardHeader className="d-flex justify-content-between align-items-center">
+        <div>{title}</div>
+        <div>{icon}</div>
+      </CCardHeader>
+      <CCardBody className="d-flex align-items-center justify-content-center">
+        <h2 className="display-4 fw-bold">{value}</h2>
+      </CCardBody>
+      <CCardFooter>
+        <CRow>
+          <CCol className="text-medium-emphasis fst-italic">
+            {increase}
+          </CCol>
+          <CCol className="text-end">
+            {description}
+          </CCol>
+        </CRow>
+      </CCardFooter>
+    </CCard>
   );
 };
-
 
 StatBox.propTypes = {
   title: PropTypes.string.isRequired,

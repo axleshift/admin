@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope, faFileInvoice, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faEnvelope, faFileInvoice, faSearch, faUser } from "@fortawesome/free-solid-svg-icons";
 import StatBox from "../pages/scene/statbox";
 import CustomHeader from "../../components/header/customhead";
 import { 
@@ -25,7 +25,7 @@ import {
 } from "@coreui/react";
 import { useGethrdashQuery, useGetJobPostingsQuery } from "../../state/hrApi";
 import axiosInstance from '../../utils/axiosInstance';
-
+import logActivity from '../../utils/activityLogger'
 const Hrdash = () => {
   const { data: dashboardData, error: dashboardError, isLoading: dashboardLoading } = useGethrdashQuery();
   const { data: jobPostingsResponse, error: jobPostingsError, isLoading: jobPostingsLoading } = useGetJobPostingsQuery();
@@ -35,7 +35,22 @@ const Hrdash = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [userData, setUsers] = useState([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userError, setUserError] = useState(null);
+  const userName = localStorage.getItem('name'); 
+  const userRole = localStorage.getItem('role');
+ const userDepartment = localStorage.getItem('department');
+  const userUsername = localStorage.getItem('username');
+  logActivity({
+    name: userName,
+    role: userRole,
+    department: userDepartment,
+    route: 'Hr Dashboard',
+    action: 'Navigate',
+    description: `${userName} Navigate to Hr Dashboard`
+  }).catch(console.warn);
+  
   // Extract the jobPostings array properly from the response
   const jobPostings = jobPostingsResponse?.data || [];
 
@@ -54,6 +69,25 @@ const Hrdash = () => {
       })
       .catch(err => setError(err))
       .finally(() => setLoading(false));
+  }, []);
+
+  // Fetch all users
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        setUserLoading(true);
+        const response = await axiosInstance.get('/hr/worker');
+        const userData = response.data || [];
+        setUsers(userData);
+        setUserLoading(false);
+      } catch (err) {
+        setUserError(err.message || 'Failed to fetch user data');
+        setUserLoading(false);
+        console.error('Error fetching users:', err);
+      }
+    };
+    
+    fetchAllUsers();
   }, []);
 
   // Auto-detect and format currency
@@ -135,6 +169,8 @@ const Hrdash = () => {
     }
   };
 
+  const totalEmployees = userData.length;
+  
   // Filter payroll data based on search term
   const filteredPayroll = payroll.filter(item => {
     return Object.values(item).some(
@@ -142,8 +178,8 @@ const Hrdash = () => {
     );
   });
 
-  if (dashboardLoading || jobPostingsLoading || loading) return <p>Loading...</p>;
-  if (dashboardError || jobPostingsError || error) return <p>Error fetching data</p>;
+  if (dashboardLoading || jobPostingsLoading || loading || userLoading) return <p>Loading...</p>;
+  if (dashboardError || jobPostingsError || error || userError) return <p>Error fetching data</p>;
 
   return (
     <CContainer fluid className="p-3">
@@ -154,16 +190,16 @@ const Hrdash = () => {
       </CRow>
 
       <CRow className="my-3">
-        <CCol xs={12} lg={6} className="mb-3">
+        <CCol xs={12} md={6} lg={3}>
           <StatBox 
-            title="Total Employees" 
-            value={dashboardData?.totalWorkers} 
-            description="Since last month" 
-            icon={<FontAwesomeIcon icon={faEnvelope} />}
-            increase={0} // Adding the required increase prop
+            title="Total Employees"
+            value={totalEmployees}
+            icon={<FontAwesomeIcon icon={faUser} />}
+            color="primary"
+            description="Total registered employees"
           />
         </CCol>
-        <CCol xs={12} lg={6} className="mb-3">
+        <CCol xs={12} md={6} lg={3}>
           <StatBox 
             title="Leave Requests" 
             value={leaveRequestCount} 
@@ -268,7 +304,6 @@ const Hrdash = () => {
                           <CTableDataCell>{item.name || '—'}</CTableDataCell>
                           <CTableDataCell className="text-end">{autoDetectAndFormatCurrency(item.gross_salary)}</CTableDataCell>
                           <CTableDataCell className="text-end">{autoDetectAndFormatCurrency(item.net_salary)}</CTableDataCell>
-                         
                         </CTableRow>
                       ))}
                     </CTableBody>

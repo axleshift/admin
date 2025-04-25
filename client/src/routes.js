@@ -44,7 +44,9 @@ const Land = React.lazy(() => import('./views/pages/freight/land'));
 
 const Sales = React.lazy(() => import('./views/pages/sales/oversales'));
 const Daily = React.lazy(() => import('./views/pages/sales/daily.js'));
-const Monthly = React.lazy(() => import('./views/pages/sales/monthly'));
+const Monthly = React.lazy(() => import('./views/pages/integrate/finance/monthly'));
+const MonthChart = React.lazy(() => import('./views/pages/integrate/finance/scene/monthchart'));
+const Yearly = React.lazy(() => import('./views/pages/integrate/finance/yearly'));
 const Breakdown = React.lazy(() => import('./views/pages/sales/breakdown'));
 
 const Activity = React.lazy(() => import('./views/pages/useractivity/index'));
@@ -100,6 +102,8 @@ const routes = [
   { path: '/changepass', name: 'ChangePassword', element: <ProtectedRoute><Changepass /></ProtectedRoute> },
   { path: '/oversales', name: 'Oversales', element: <ProtectedRoute><Sales /></ProtectedRoute> },
   { path: '/monthly', name: 'Monthly', element: <ProtectedRoute><Monthly /></ProtectedRoute> },
+  { path: '/monthchart', name: 'Monthly', element: <ProtectedRoute><MonthChart /></ProtectedRoute> },
+  { path: '/yearly', name: 'Yearly', element: <ProtectedRoute><Yearly /></ProtectedRoute> },
   { path: '/daily', name: 'Daily', element: <ProtectedRoute><Daily /></ProtectedRoute> },
   { path: '/breakdown', name: 'Breakdown ', element: <ProtectedRoute><Breakdown /></ProtectedRoute> },
   { path: '/logistic1/index', name: 'OPERATIONAL', element: <ProtectedRoute><Logistic1 /></ProtectedRoute> },

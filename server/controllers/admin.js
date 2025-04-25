@@ -55,11 +55,6 @@ const normalizePath = (filepath) => {
 };
 
 
-
-
-
-
-
 // Fix for setBackupDirectory function
 export const backupDatabase = async (req, res) => {
   const collectionsToBackup = process.env.BACKUP_COLLECTIONS
@@ -306,6 +301,7 @@ export const restoreDatabase = async (req, res) => {
     }
   }
 };
+
 //announcement .js
 
 

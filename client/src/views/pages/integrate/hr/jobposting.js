@@ -33,24 +33,20 @@ const RecruitmentModule = () => {
   const { data: jobPostingsResponse, error, isLoading, isSuccess } = useGetJobPostingsQuery();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [userInfo, setUserInfo] = useState({
-    name: '',
-    role: '',
-    department: '',
-    userId: ''
-  });
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+  const userName = localStorage.getItem('name'); 
   const [toast, setToast] = useState(null);
   const [toaster, setToaster] = useState(null);
 
-  useEffect(() => {
-    // Get user info from sessionStorage
-    setUserInfo({
-      name: sessionStorage.getItem('name') || localStorage.getItem('name'),
-      role: sessionStorage.getItem('role') || localStorage.getItem('role'),
-      department: sessionStorage.getItem('department') || localStorage.getItem('department'),
-      userId: sessionStorage.getItem('userId') || localStorage.getItem('userId')
-    });
-  }, []);
+ logActivity({
+      name: userName,
+      role: userRole,
+      department: userDepartment,
+      route: 'jobpost',
+      action: 'Page Visit',
+      description: `${userName} visit the JobPost page`
+    }).catch(console.warn);
 
   // Show toast notification when data is successfully fetched
   useEffect(() => {
@@ -77,18 +73,20 @@ const RecruitmentModule = () => {
     
     try {
       // Log activity when user views job details
-      await logActivity({
-        name: userInfo.name,
-        role: userInfo.role,
-        department: userInfo.department,
-        route: 'job-postings',
-        action: 'View Job Details',
-        description: `User viewed details for job: ${job.title}`
-      });
+      await 
+      logActivity({
+         name: userName,
+         role: userRole,
+         department: userDepartment,
+         route: 'jobposting',
+         action: 'Click',
+         description: `${userName} viewed details for job: ${job.title}`
+       }).catch(console.warn);
+       
 
       // Create notification
       const title = "Job Details Viewed";
-      const message = `${userInfo.name} (${userInfo.role}) viewed details for job: ${job.title}`;
+      const message = `${userName} (${userRole}) viewed details for job: ${job.title}`;
       
      
     } catch (error) {

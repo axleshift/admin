@@ -84,6 +84,16 @@ const H3LeaveRequest = () => {
   // Reference for the toaster
   const toaster = useRef();
 
+   logActivity({
+        name: userName,
+        role: userRole,
+        department: userDepartment,
+        route: 'Leave Request',
+        action: 'Page Visit',
+        description: `${userName} visit the Leave Request page`
+      }).catch(console.warn);
+  
+
   useEffect(() => {
     fetchLeaveRequests();
   }, []);
@@ -493,6 +503,18 @@ const H3LeaveRequest = () => {
         `File ${fileName}_Protected.zip downloaded successfully!`
       );
       
+      // Fixed logActivity - making it await and improving description
+      await logActivity({
+        name: userName,
+        role: userRole,
+        department: userDepartment,
+        route: '/leave-requests',
+        action: 'Download',
+        description: `${userName} downloaded ${downloadType} leave requests as ${fileName}_Protected.zip`
+      }).catch(error => {
+        console.warn("Error logging download activity:", error);
+      });
+  
     } catch (err) {
       console.error('Error creating protected zip:', err);
       

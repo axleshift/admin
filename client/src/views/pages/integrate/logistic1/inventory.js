@@ -28,6 +28,15 @@ const InventoryList = () => {
   const [toast, setToast] = useState(null);
   const [showToastNotification, setShowToastNotification] = useState(false);
   
+  logActivity({
+    name: userName,
+    role: userRole,
+    department: userDepartment,
+    route: '/inventory',
+    action: 'Page Visit',
+    description: `${userName} visit the Inventory page`
+  }).catch(console.warn);
+  
   // Check if system is in dark mode
   const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   
@@ -121,15 +130,7 @@ const InventoryList = () => {
     
     const statusConfig = statusMap[status] || statusMap.default;
     
-    logActivity({
-      name: userName,
-      role: userRole,
-      department: userDepartment,
-      route: '/inventory',
-      action: 'Page Visit',
-      description: `${userName} visit the Inventory page`
-    }).catch(console.warn);
-    
+  
     return (
       <span 
         className="ms-2 px-2 py-1 rounded"

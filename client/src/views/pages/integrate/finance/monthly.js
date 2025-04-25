@@ -11,9 +11,9 @@ import {
   CButton
 } from '@coreui/react';
 import { CChartLine } from '@coreui/react-chartjs';
-import CustomHeader from '../../../components/header/customhead';
-import logActivity from './../../../utils/activityLogger';
-import axiosInstance from '../../../utils/axiosInstance';
+import CustomHeader from '../../../../components/header/customhead';
+import logActivity from '../../../../utils/activityLogger';
+import axiosInstance from '../../../../utils/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine, faMoneyBillWave, faExclamationTriangle, faCalendarAlt, faSync } from '@fortawesome/free-solid-svg-icons';
 
@@ -24,10 +24,19 @@ const Monthly = () => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Get user information from session storage
-  const userName = sessionStorage.getItem('name');
-  const userRole = sessionStorage.getItem('role');
-  const userDepartment = sessionStorage.getItem('department');
+  // Get user information from local storage
+  const userName = localStorage.getItem('name');
+  const userRole = localStorage.getItem('role');
+  const userDepartment = localStorage.getItem('department');
+
+  logActivity({
+    name: userName,
+    role: userRole,
+    department: userDepartment,
+    route: 'Monthly',
+    action: 'Page Visit',
+    description: `${userName} visit the Monthly page`
+  }).catch(console.warn);
 
   const fetchData = async () => {
     try {

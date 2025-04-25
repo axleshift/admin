@@ -227,7 +227,7 @@ const _nav = () => {
         '/breakdown',
       ],
       Administrative: [
-        '/employeedash',
+        ,
         '/useractivity/index',
         '/restore',
       ]
@@ -304,18 +304,18 @@ const _nav = () => {
       navItems.push(
         { component: CNavTitle, name: 'Admin', className: 'custom-nav-title' },
     
-        {
-          component: CNavItem, 
-          name: 'Button', 
-          icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
-          to: '/button'
-        },
-        {
-          component: CNavItem, 
-          name: 'PendingRequest', 
-          icon: <FontAwesomeIcon icon={faHand} style={{ marginRight: '8px' }} />, 
-          to: '/PendingRequest'
-        },
+        // {
+        //   component: CNavItem, 
+        //   name: 'Button', 
+        //   icon: <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px' }} />, 
+        //   to: '/button'
+        // },
+        // {
+        //   component: CNavItem, 
+        //   name: 'PendingRequest', 
+        //   icon: <FontAwesomeIcon icon={faHand} style={{ marginRight: '8px' }} />, 
+        //   to: '/PendingRequest'
+        // },
         {
           component: CNavItem, 
           name: 'AccessReview', 
@@ -372,30 +372,36 @@ const _nav = () => {
       navItems.push(
         { component: CNavTitle, name: 'Finance', className: 'custom-nav-title' },
     
-        { 
-          component: CNavItem, 
-          name: 'Financial Analytics', 
-          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-          to: '/financialanalytics' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Invoice', 
-          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-          to: '/invoice' 
-        },
-        { 
-          component: CNavItem, 
-          name: 'Freight Audit', 
-          icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
-          to: '/freightaudit' 
-        },
+        // { 
+        //   component: CNavItem, 
+        //   name: 'Financial Analytics', 
+        //   icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+        //   to: '/financialanalytics' 
+        // },
+        // { 
+        //   component: CNavItem, 
+        //   name: 'Invoice', 
+        //   icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+        //   to: '/invoice' 
+        // },
+        // { 
+        //   component: CNavItem, 
+        //   name: 'Freight Audit', 
+        //   icon: <FontAwesomeIcon icon={faCoins} style={{ marginRight: '8px' }} />, 
+        //   to: '/freightaudit' 
+        // },
         { 
           component: CNavItem, 
           name: 'Monthly', 
           icon: <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px' }} />, 
           to: '/monthly' 
         },
+        // { 
+        //   component: CNavItem, 
+        //   name: 'Yearly', 
+        //   icon: <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px' }} />, 
+        //   to: '/Yearly' 
+        // },
       );
     }
 
@@ -432,12 +438,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faTruck} style={{ marginRight:'8px' }}/>,
           to: '/vehicles'
         },
-        {
-          component: CNavItem,
-          name: 'Procurement',
-          icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
-          to: '/procurement'
-        },
+        // {
+        //   component: CNavItem,
+        //   name: 'Procurement',
+        //   icon: <FontAwesomeIcon icon={faGlobe} style={{ marginRight:'8px' }}/>,
+        //   to: '/procurement'
+        // },
         {
           component: CNavItem,
           name: 'Inventory',
