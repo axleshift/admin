@@ -1,0 +1,1 @@
+import{j as r}from"./index-ala_1vvM.js";import{u as e,r as o}from"./vendor-react-BHxUanFt.js";import"./vendor-redux-CSji-Y9p.js";import"./vendor-coreui-C1kAWlgm.js";const m=()=>{const t=e();return o.useEffect(()=>{t("/login")},[t]),r.jsx("div",{children:"Redirecting to login..."})};export{m as default};
