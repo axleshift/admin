@@ -1,0 +1,1 @@
+import{j as r}from"./index-CJJ1ocKz.js";import"./vendor-react-BHxUanFt.js";import"./vendor-redux-CSji-Y9p.js";import"./vendor-coreui-DaIzHuu_.js";const m=()=>r.jsx("div",{children:"AI?"});export{m as default};
