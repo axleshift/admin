@@ -383,14 +383,7 @@ const ActivityTracker = () => {
                             <FontAwesomeIcon icon={faSync} spin={refreshing} className="me-1" />
                             {refreshing ? 'Refreshing...' : 'Refresh'}
                         </CButton>
-                        <CButton 
-                            color={isDarkMode ? "light" : "secondary"} 
-                            size="sm"
-                            className={isDarkMode ? 'text-dark' : ''}
-                        >
-                            <FontAwesomeIcon icon={faFileDownload} className="me-1" />
-                            Export
-                        </CButton>
+                        
                     </div>
                 </CCardHeader>
                 <CCardBody>
