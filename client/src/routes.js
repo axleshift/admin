@@ -26,6 +26,7 @@ const LeaveRequest = React.lazy(() => import('./views/pages/integrate/hr/h3leave
 
 
 const Shipment = React.lazy(() => import("./views/pages/integrate/core/shipment"));
+const ShipmentTable = React.lazy(() => import("./views/pages/integrate/core/scene/shipmentTable"));
 const Insight = React.lazy(() => import ('./views/pages/integrate/core/insight'))
 const Shipment_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightShipment'))
 const Cost_insight = React.lazy(() => import('./views/pages/integrate/core/core analysys overtime/insightCost'))
@@ -60,6 +61,7 @@ const Changepass = React.lazy(() => import('./views/pages/profile/changepass'));
 const Logistic1 = React.lazy(() => import('./views/pages/integrate/logistic1/index'));
 const Pin = React.lazy(() => import('./views/pages/integrate/logistic1/pin.js'));
 const Vehicles = React.lazy (()=> import('./views/pages/integrate/logistic1/vehicles'))
+const VehicleTable = React.lazy (()=> import('./views/pages/integrate/logistic1/component/vehicletable'))
 const Procurement = React.lazy (()=> import ('./views/pages/integrate/logistic1/procurement'))
 const Inventory = React.lazy(() => import ("./views/pages/integrate/logistic1/inventory"))
 
@@ -123,10 +125,12 @@ const routes = [
   { path: '/invoicelist', name:'InvoiceChart', element: <ProtectedRoute><InvoiceList /></ProtectedRoute> },
 
   { path: '/vehicles', name:'Vehicles' , element: <ProtectedRoute><Vehicles/></ProtectedRoute>},
+  { path: '/vehicletable', name:'Vehicles' , element: <ProtectedRoute><VehicleTable/></ProtectedRoute>},
   { path: '/procurement', name:'Procurement', element: <ProtectedRoute><Procurement/></ProtectedRoute>},
   { path: '/inventory', name: 'Inventory', element: <ProtectedRoute> <Inventory/></ProtectedRoute>},
 
   { path: '/shipment', name: 'Shipment', element: <ProtectedRoute><Shipment /></ProtectedRoute> },
+  { path: '/shipmentTable', name: 'Shipment', element: <ProtectedRoute><ShipmentTable /></ProtectedRoute> },
   { path: '/insight', name: 'Insight', element: <ProtectedRoute><Insight/></ProtectedRoute>},
   { path: '/insShipment', name: 'Insight', element: <ProtectedRoute><Shipment_insight/></ProtectedRoute>},
   { path: '/insCost', name: 'Insight', element: <ProtectedRoute><Cost_insight/></ProtectedRoute>},

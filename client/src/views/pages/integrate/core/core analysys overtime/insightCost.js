@@ -122,45 +122,35 @@ const InsightCost = () => {
   };
 
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
+    <div className="bg-body min-vh-100 d-flex flex-column">
       <div className="py-4">
         <CRow>
           <CCol md={12}>
-            <CCard className="mb-4 shadow-sm border-0">
-              <CCardHeader className="bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
-                <div>
-                  <h3 className="mb-0 text-primary">
-                    <FontAwesomeIcon icon={faMoneyBillWave} className="me-2" /> 
-                    Cost Insights
-                  </h3>
-                  <small className="text-medium-emphasis">Track and analyze your monthly expenditures</small>
-                </div>
+            <CCard className="mb-4 shadow-sm">
+              <CCardHeader className="d-flex justify-content-between align-items-center py-3 border-bottom text-body-emphasis">
+              <div>
+  <h3 className="mb-0 text-body-emphasis">
+    <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-success" />
+    Cost Insights
+  </h3>
+  <small className="text-body-secondary">
+    Track and analyze your monthly expenditures
+  </small>
+</div>
+
+
                 <div className="d-flex gap-2">
-                  <CDropdown>
-                    <CDropdownToggle color="light" className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faFilter} className="me-2" />
-                      {timeframe === "6months" && "Last 6 Months"}
-                      {timeframe === "12months" && "Last 12 Months"}
-                      {timeframe === "ytd" && "Year to Date"}
-                    </CDropdownToggle>
-                    <CDropdownMenu>
-                      <CDropdownItem onClick={() => setTimeframe("6months")}>Last 6 Months</CDropdownItem>
-                      <CDropdownItem onClick={() => setTimeframe("12months")}>Last 12 Months</CDropdownItem>
-                      <CDropdownItem onClick={() => setTimeframe("ytd")}>Year to Date</CDropdownItem>
-                    </CDropdownMenu>
-                  </CDropdown>
+            
                   <CButton 
-                    color="light" 
-                    onClick={refreshData}
-                    disabled={loading}
-                  >
-                    <FontAwesomeIcon icon={faSync} className={loading ? "fa-spin me-2" : "me-2"} />
-                    Refresh
-                  </CButton>
-                  <CButton color="light">
-                    <FontAwesomeIcon icon={faDownload} className="me-2" />
-                    Export
-                  </CButton>
+                      color="primary" 
+                      onClick={refreshData}
+                      disabled={loading}
+                    >
+                      <FontAwesomeIcon icon={faSync} className={loading ? "fa-spin me-2" : "me-2"} />
+                      Refresh
+                    </CButton>
+
+                  
                 </div>
               </CCardHeader>
               <CCardBody className="p-4">
@@ -168,7 +158,7 @@ const InsightCost = () => {
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "300px" }}>
                     <div className="text-center">
                       <CSpinner color="primary" style={{ width: "3rem", height: "3rem" }} />
-                      <p className="mt-3 text-medium-emphasis">Loading cost data...</p>
+                      <p className="mt-3 text-body-secondary">Loading cost data...</p>
                     </div>
                   </div>
                 )}
@@ -196,8 +186,8 @@ const InsightCost = () => {
                               <FontAwesomeIcon icon={faMoneyBillWave} size="2x" className="text-info" />
                             </div>
                             <div>
-                              <div className="text-medium-emphasis small">Total Cost</div>
-                              <div className="fs-3 fw-bold">₱{totalCosts.toFixed(2)}</div>
+                              <div className="text-body-secondary small">Total Cost</div>
+                              <div className="fs-3 fw-bold text-body-emphasis">₱{totalCosts.toFixed(2)}</div>
                             </div>
                           </div>
                         </CCallout>
@@ -210,8 +200,8 @@ const InsightCost = () => {
                               <FontAwesomeIcon icon={faChartPie} size="2x" className="text-primary" />
                             </div>
                             <div>
-                              <div className="text-medium-emphasis small">Average Monthly Cost</div>
-                              <div className="fs-3 fw-bold">
+                              <div className="text-body-secondary small">Average Monthly Cost</div>
+                              <div className="fs-3 fw-bold text-body-emphasis">
                               ₱{chartData.data.length > 0 ? (totalCosts / chartData.data.length).toFixed(2) : "0.00"}
                               </div>
                             </div>
@@ -234,11 +224,11 @@ const InsightCost = () => {
                                 />
                               </div>
                               <div>
-                                <div className="text-medium-emphasis small">Month-over-Month Change</div>
-                                <div className="fs-3 fw-bold">
+                                <div className="text-body-secondary small">Month-over-Month Change</div>
+                                <div className="fs-3 fw-bold text-body-emphasis">
                                   {calculateChange(chartData.data.length - 1) !== null 
                                     ? `${calculateChange(chartData.data.length - 1) > 0 ? '+' : ''}${calculateChange(chartData.data.length - 1).toFixed(1)}%` 
-                                    : "N/A"}
+                                    : ""}
                                 </div>
                               </div>
                             </div>
@@ -249,15 +239,13 @@ const InsightCost = () => {
 
                     <CRow className="mb-4">
                       <CCol md={12}>
-                        <CCard className="border-0 shadow-sm">
-                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                        <CCard className="shadow-sm">
+                          <CCardHeader className="border-bottom d-flex justify-content-between align-items-center py-3 text-body-emphasis">
                             <h4 className="mb-0">
                               <FontAwesomeIcon icon={faChartBar} className="me-2 text-primary" />
                               Monthly Cost Breakdown
                             </h4>
-                            <CButton color="light" size="sm">
-                              <FontAwesomeIcon icon={faInfoCircle} className="me-1" /> Cost Analysis
-                            </CButton>
+                          
                           </CCardHeader>
                           <CCardBody className="p-4">
                             <div className="px-3">
@@ -265,7 +253,7 @@ const InsightCost = () => {
                                 {chartData.data.map((value, index) => (
                                   <CCol key={index} className="px-1 text-center">
                                     <div className="d-flex flex-column align-items-center">
-                                      <small className="mb-2 fw-bold">${value.toFixed(2)}</small>
+                                      <small className="mb-2 fw-bold text-body-emphasis">${value.toFixed(2)}</small>
                                       <div style={{ width: "100%", height: `${(value / maxValue) * 80}%`, minHeight: value > 0 ? "20px" : "4px" }}>
                                         <CProgress 
                                           value={100} 
@@ -274,7 +262,7 @@ const InsightCost = () => {
                                           style={{ minWidth: "30px", borderRadius: "4px" }}
                                         />
                                       </div>
-                                      <small className="mt-2 text-medium-emphasis">
+                                      <small className="mt-2 text-body-secondary">
                                         <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
                                         {chartData.labels[index]}
                                       </small>
@@ -291,7 +279,7 @@ const InsightCost = () => {
                                             className="me-1" 
                                             size="xs" 
                                           />
-                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : ""}
                                         </CBadge>
                                       )}
                                     </div>
@@ -306,19 +294,17 @@ const InsightCost = () => {
 
                     <CRow>
                       <CCol md={12}>
-                        <CCard className="border-0 shadow-sm">
-                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                        <CCard className="shadow-sm">
+                          <CCardHeader className="border-bottom d-flex justify-content-between align-items-center py-3 text-body-emphasis">
                             <h4 className="mb-0">
                               <FontAwesomeIcon icon={faTable} className="me-2 text-primary" />
                               Cost Details
                             </h4>
-                            <CButton color="primary" size="sm" variant="outline">
-                              <FontAwesomeIcon icon={faDownload} className="me-1" /> Export Data
-                            </CButton>
+                            
                           </CCardHeader>
                           <CCardBody className="p-0">
                             <CTable hover responsive className="mb-0 border-0">
-                              <CTableHead className="bg-light">
+                              <CTableHead>
                                 <CTableRow>
                                   <CTableHeaderCell>Month</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">Cost (₱)</CTableHeaderCell>
@@ -331,16 +317,16 @@ const InsightCost = () => {
                                   <CTableRow key={index}>
                                     <CTableDataCell>
                                       <div className="d-flex align-items-center">
-                                        <div className="p-2 me-2 bg-light rounded">
+                                        <div className="p-2 me-2 bg-body-tertiary rounded">
                                           <FontAwesomeIcon icon={faCalendarAlt} className="text-primary" />
                                         </div>
-                                        <span className="fw-medium">{month}</span>
+                                        <span className="fw-medium text-body-emphasis">{month}</span>
                                       </div>
                                     </CTableDataCell>
-                                    <CTableDataCell className="text-end fw-bold">₱{chartData.data[index].toFixed(2)}</CTableDataCell>
+                                    <CTableDataCell className="text-end fw-bold text-body-emphasis">₱{chartData.data[index].toFixed(2)}</CTableDataCell>
                                     <CTableDataCell className="text-end">
                                       <div className="d-flex align-items-center justify-content-end">
-                                        <span className="me-2">
+                                        <span className="me-2 text-body-emphasis">
                                           {totalCosts > 0 ? `${((chartData.data[index] / totalCosts) * 100).toFixed(1)}%` : '0%'}
                                         </span>
                                         <CProgress 
@@ -361,7 +347,7 @@ const InsightCost = () => {
                                             icon={getChangeIcon(calculateChange(index))} 
                                             className="me-1" 
                                           />
-                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : ""}
                                         </CBadge>
                                       ) : (
                                         <CBadge color="secondary" shape="rounded-pill">
@@ -372,11 +358,11 @@ const InsightCost = () => {
                                   </CTableRow>
                                 ))}
                               </CTableBody>
-                              <CTableFoot className="bg-light">
+                              <CTableFoot>
                                 <CTableRow>
-                                  <CTableDataCell className="fw-bold">Total</CTableDataCell>
-                                  <CTableDataCell className="fw-bold text-end">₱{totalCosts.toFixed(2)}</CTableDataCell>
-                                  <CTableDataCell className="fw-bold text-end">100%</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-body-emphasis">Total</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-end text-body-emphasis">₱{totalCosts.toFixed(2)}</CTableDataCell>
+                                  <CTableDataCell className="fw-bold text-end text-body-emphasis">100%</CTableDataCell>
                                   <CTableDataCell className="text-end">
                                     {chartData.data.length >= 2 && (
                                       <CBadge 
@@ -395,7 +381,7 @@ const InsightCost = () => {
                                         />
                                         {chartData.data[0] !== 0 ? 
                                           `${(((chartData.data[chartData.data.length - 1] - chartData.data[0]) / chartData.data[0]) * 100).toFixed(1)}%` : 
-                                          "N/A"
+                                          ""
                                         }
                                       </CBadge>
                                     )}

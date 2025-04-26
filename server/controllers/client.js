@@ -17,7 +17,7 @@ import {
     createAccountLockoutAlert,
     createLogger
 } from '../UTIL/securityUtils.js';
-import { sendOTPEmail } from "../services/emailService.js";
+import { sendOTPEmail,sendAccountLockedEmail } from "../services/emailService.js";
 import OTP from '../model/OTP.js'; // Ensure the correct path
 import {resetFailedAttempts} from '../UTIL/resetFailedattempts.js'
 const OTP_EXPIRY = 10 * 60 * 1000; 

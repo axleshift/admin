@@ -47,6 +47,37 @@ const InsightShipment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeframe, setTimeframe] = useState("6months");
+  // Add a state to detect if dark mode is active
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Detect dark mode on component mount and when theme changes
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const isDark = darkModeMediaQuery.matches || 
+                    document.body.classList.contains('dark-mode') || 
+                    document.body.classList.contains('dark-theme') ||
+                    document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+      setIsDarkMode(isDark);
+    };
+
+    // Initial check
+    checkDarkMode();
+
+    // Listen for system theme changes
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    darkModeMediaQuery.addEventListener('change', checkDarkMode);
+
+    // Listen for DOM changes that might indicate theme toggle
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => {
+      darkModeMediaQuery.removeEventListener('change', checkDarkMode);
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchShipmentData = async () => {
@@ -170,46 +201,54 @@ const InsightShipment = () => {
     fetchShipmentData();
   };
 
+  // Dark mode adaptive styles
+  const cardStyle = isDarkMode ? 
+    "mb-4 shadow-sm border-0 text-light" : 
+    "mb-4 shadow-sm border-0";
+  
+  const headerStyle = isDarkMode ? 
+    "d-flex justify-content-between align-items-center py-3 border-bottom text-light" : 
+    "bg-white d-flex justify-content-between align-items-center py-3 border-bottom";
+  
+  const containerStyle = isDarkMode ? 
+    "min-vh-100 d-flex flex-column" : 
+    "bg-light min-vh-100 d-flex flex-column";
+  
+  const tableHeaderStyle = isDarkMode ? 
+    "border-bottom" : 
+    "bg-light";
+  
+  const iconTextClass = isDarkMode ? "text-light" : "text-body-emphasis";
+  
+  const chartBackgroundClass = isDarkMode ? "" : "bg-white";
+  
+  const badgeTextClass = isDarkMode ? "text-dark" : "";
+
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
+    <div className={containerStyle}>
       <div className="py-4">
         <CRow>
           <CCol md={12}>
-            <CCard className="mb-4 shadow-sm border-0">
-              <CCardHeader className="bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
+            <CCard className={cardStyle}>
+              <CCardHeader className={headerStyle}>
                 <div>
-                  <h3 className="mb-0 text-primary">
-                    <FontAwesomeIcon icon={faMoneyBillWave} className="me-2" /> 
+                  <h3 className="mb-0">
+                    <FontAwesomeIcon icon={faMoneyBillWave} className="me-2 text-success" /> 
                     Shipment Insights
                   </h3>
-                  <small className="text-medium-emphasis">Track and analyze your monthly shipment distribution</small>
+                  <small className={isDarkMode ? "text-light-emphasis" : "text-body-secondary"}>Track and analyze your monthly shipment distribution</small>
                 </div>
                 <div className="d-flex gap-2">
-                  <CDropdown>
-                    <CDropdownToggle color="light" className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faFilter} className="me-2" />
-                      {timeframe === "6months" && "Last 6 Months"}
-                      {timeframe === "12months" && "Last 12 Months"}
-                      {timeframe === "ytd" && "Year to Date"}
-                    </CDropdownToggle>
-                    <CDropdownMenu>
-                      <CDropdownItem onClick={() => setTimeframe("6months")}>Last 6 Months</CDropdownItem>
-                      <CDropdownItem onClick={() => setTimeframe("12months")}>Last 12 Months</CDropdownItem>
-                      <CDropdownItem onClick={() => setTimeframe("ytd")}>Year to Date</CDropdownItem>
-                    </CDropdownMenu>
-                  </CDropdown>
+                
                   <CButton 
-                    color="light" 
+                    color={isDarkMode ? "dark" : "light"} 
                     onClick={refreshData}
                     disabled={loading}
                   >
                     <FontAwesomeIcon icon={faSync} className={loading ? "fa-spin me-2" : "me-2"} />
                     Refresh
                   </CButton>
-                  <CButton color="light">
-                    <FontAwesomeIcon icon={faDownload} className="me-2" />
-                    Export
-                  </CButton>
+                 
                 </div>
               </CCardHeader>
               <CCardBody className="p-4">
@@ -217,7 +256,7 @@ const InsightShipment = () => {
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "300px" }}>
                     <div className="text-center">
                       <CSpinner color="primary" style={{ width: "3rem", height: "3rem" }} />
-                      <p className="mt-3 text-medium-emphasis">Loading shipment data...</p>
+                      <p className={`mt-3 ${isDarkMode ? "text-light-emphasis" : "text-medium-emphasis"}`}>Loading shipment data...</p>
                     </div>
                   </div>
                 )}
@@ -258,7 +297,7 @@ const InsightShipment = () => {
                               <FontAwesomeIcon icon={faShippingFast} size="2x" className="text-primary" />
                             </div>
                             <div>
-                              <div className="text-medium-emphasis small">Total Shipments</div>
+                              <div className={isDarkMode ? "text-light-emphasis small" : "text-medium-emphasis small"}>Total Shipments</div>
                               <div className="fs-3 fw-bold">{totalShipments.toFixed(0)}</div>
                             </div>
                           </div>
@@ -272,7 +311,7 @@ const InsightShipment = () => {
                               <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info" />
                             </div>
                             <div>
-                              <div className="text-medium-emphasis small">Average Monthly Shipments</div>
+                              <div className={isDarkMode ? "text-light-emphasis small" : "text-medium-emphasis small"}>Average Monthly Shipments</div>
                               <div className="fs-3 fw-bold">
                                 {calculateAverageShipments().toFixed(1)}
                               </div>
@@ -296,11 +335,11 @@ const InsightShipment = () => {
                                 />
                               </div>
                               <div>
-                                <div className="text-medium-emphasis small">Month-over-Month Change</div>
+                                <div className={isDarkMode ? "text-light-emphasis small" : "text-medium-emphasis small"}>Month-over-Month Change</div>
                                 <div className="fs-3 fw-bold">
                                   {calculateChange(chartData.data.length - 1) !== null 
                                     ? `${calculateChange(chartData.data.length - 1) > 0 ? '+' : ''}${calculateChange(chartData.data.length - 1).toFixed(1)}%` 
-                                    : "N/A"}
+                                    : ""}
                                 </div>
                               </div>
                             </div>
@@ -312,12 +351,12 @@ const InsightShipment = () => {
                     <CRow className="mb-4">
                       <CCol md={12}>
                         <CCard className="border-0 shadow-sm">
-                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                          <CCardHeader className={`${chartBackgroundClass} border-bottom d-flex justify-content-between align-items-center py-3 ${isDarkMode ? "text-light" : ""}`}>
                             <h4 className="mb-0">
                               <FontAwesomeIcon icon={faChartBar} className="me-2 text-primary" />
                               Monthly Shipment Distribution
                             </h4>
-                            <CButton color="light" size="sm">
+                            <CButton color={isDarkMode ? "dark" : "light"} size="sm">
                               <FontAwesomeIcon icon={faInfoCircle} className="me-1" /> Shipment Analysis
                             </CButton>
                           </CCardHeader>
@@ -336,7 +375,7 @@ const InsightShipment = () => {
                                           style={{ minWidth: "30px", borderRadius: "4px" }}
                                         />
                                       </div>
-                                      <small className="mt-2 text-medium-emphasis">
+                                      <small className={`mt-2 ${isDarkMode ? "text-light-emphasis" : "text-medium-emphasis"}`}>
                                         <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
                                         {chartData.labels[index] || `Month ${index + 1}`}
                                       </small>
@@ -346,14 +385,14 @@ const InsightShipment = () => {
                                         <CBadge 
                                           color={getChangeColor(calculateChange(index))}
                                           shape="rounded-pill" 
-                                          className="mt-1"
+                                          className={`mt-1 ${badgeTextClass}`}
                                         >
                                           <FontAwesomeIcon 
                                             icon={getChangeIcon(calculateChange(index))} 
                                             className="me-1" 
                                             size="xs" 
                                           />
-                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : ""}
                                         </CBadge>
                                       )}
                                     </div>
@@ -369,18 +408,16 @@ const InsightShipment = () => {
                     <CRow>
                       <CCol md={12}>
                         <CCard className="border-0 shadow-sm">
-                          <CCardHeader className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                          <CCardHeader className={`${chartBackgroundClass} border-bottom d-flex justify-content-between align-items-center py-3 ${isDarkMode ? "text-light" : ""}`}>
                             <h4 className="mb-0">
                               <FontAwesomeIcon icon={faTable} className="me-2 text-primary" />
                               Shipment Details
                             </h4>
-                            <CButton color="primary" size="sm" variant="outline">
-                              <FontAwesomeIcon icon={faDownload} className="me-1" /> Export Data
-                            </CButton>
+                            
                           </CCardHeader>
                           <CCardBody className="p-0">
                             <CTable hover responsive className="mb-0 border-0">
-                              <CTableHead className="bg-light">
+                              <CTableHead className={tableHeaderStyle}>
                                 <CTableRow>
                                   <CTableHeaderCell>Month</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">Shipments</CTableHeaderCell>
@@ -393,7 +430,7 @@ const InsightShipment = () => {
                                   <CTableRow key={index}>
                                     <CTableDataCell>
                                       <div className="d-flex align-items-center">
-                                        <div className="p-2 me-2 bg-light rounded">
+                                        <div className={`p-2 me-2 ${isDarkMode ? "bg-dark" : "bg-light"} rounded`}>
                                           <FontAwesomeIcon icon={faCalendarAlt} className="text-primary" />
                                         </div>
                                         <span className="fw-medium">{chartData.labels[index] || `Month ${index + 1}`}</span>
@@ -418,15 +455,16 @@ const InsightShipment = () => {
                                         <CBadge 
                                           color={getChangeColor(calculateChange(index))}
                                           shape="rounded-pill"
+                                          className={badgeTextClass}
                                         >
                                           <FontAwesomeIcon 
                                             icon={getChangeIcon(calculateChange(index))} 
                                             className="me-1" 
                                           />
-                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : "N/A"}
+                                          {calculateChange(index) !== null ? `${calculateChange(index).toFixed(1)}%` : ""}
                                         </CBadge>
                                       ) : (
-                                        <CBadge color="secondary" shape="rounded-pill">
+                                        <CBadge color="secondary" shape="rounded-pill" className={badgeTextClass}>
                                           <FontAwesomeIcon icon={faEquals} className="me-1" /> Base
                                         </CBadge>
                                       )}
@@ -434,7 +472,7 @@ const InsightShipment = () => {
                                   </CTableRow>
                                 ))}
                               </CTableBody>
-                              <CTableFoot className="bg-light">
+                              <CTableFoot className={tableHeaderStyle}>
                                 <CTableRow>
                                   <CTableDataCell className="fw-bold">Total</CTableDataCell>
                                   <CTableDataCell className="fw-bold text-end">{totalShipments.toFixed(0)}</CTableDataCell>
@@ -447,6 +485,7 @@ const InsightShipment = () => {
                                           Number(chartData.data[chartData.data.length - 1]) < Number(chartData.data[0]) ? "danger" : "info"
                                         }
                                         shape="rounded-pill"
+                                        className={badgeTextClass}
                                       >
                                         <FontAwesomeIcon 
                                           icon={
@@ -457,7 +496,7 @@ const InsightShipment = () => {
                                         />
                                         {Number(chartData.data[0]) !== 0 ? 
                                           `${(((Number(chartData.data[chartData.data.length - 1]) - Number(chartData.data[0])) / Number(chartData.data[0])) * 100).toFixed(1)}%` : 
-                                          "N/A"
+                                          ""
                                         }
                                       </CBadge>
                                     )}

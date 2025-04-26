@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StatBox from '../pages/scene/statbox';
 import CustomHeader from '../../components/header/customhead';
 import { CContainer, CRow, CCol } from '@coreui/react';
-import FreightTable from '../pages/integrate/core/shipment';
+import FreightTable from '../pages/integrate/core/scene/shipmentTable';
 import axiosInstance from '../../utils/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 

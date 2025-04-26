@@ -213,24 +213,6 @@ const VehicleDataPage = () => {
     }
   };
 
-  // Function to handle printing
-  // const handlePrint = () => {
-  //   window.print();
-    
-  //   // Log activity for print action
-  //   logActivity({
-  //     name: userName,
-  //     role: userRole,
-  //     department: userDepartment,
-  //     route: '/vehicles',
-  //     action: 'Print Vehicle List',
-  //     description: `Printed vehicle fleet list (${vehicles.filter(v => !v.deleted).length} vehicles)`
-  //   }).catch(console.warn);
-  // };
-
-  // Function to handle adding a new vehicle
- 
-
   // Function to handle vehicle actions (view, edit, delete)
   const handleVehicleAction = (action, vehicle) => {
     // Implement action handling based on your app's requirements
@@ -348,16 +330,15 @@ const VehicleDataPage = () => {
       )}
       
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-          <FontAwesomeIcon icon={faCar} className="me-3 text-primary" />
+        <h1 className="text-light">
+          <FontAwesomeIcon icon={faCar} className="me-3 text-info" />
           Vehicle Fleet Management
         </h1>
-    
       </div>
       
       {loading && (
         <div className="d-flex justify-content-center py-5">
-          <CSpinner color="primary" />
+          <CSpinner color="info" />
         </div>
       )}
       
@@ -376,34 +357,29 @@ const VehicleDataPage = () => {
       
       {!loading && !error && vehicles && vehicles.length > 0 && (
         <>
-          <CCard className="shadow mb-4">
-            <CCardHeader className="bg-light">
+          <CCard className="shadow mb-4 bg-dark text-light border-dark">
+            <CCardHeader className="bg-dark border-secondary">
               <div className="d-flex justify-content-between align-items-center">
                 <span className="fw-bold">
-                  <FontAwesomeIcon icon={faCar} className="me-2 text-primary" />
+                  <FontAwesomeIcon icon={faCar} className="me-2 text-info" />
                   Total Vehicles: {vehicles.filter(v => !v.deleted).length}
                 </span>
                 <div className="d-flex gap-2">
                   {/* Dropdown for secure downloads */}
                   <CDropdown>
-                    <CDropdownToggle disabled={isDownloading}>
+                    <CDropdownToggle color="dark" disabled={isDownloading}>
                       <FontAwesomeIcon icon={faLock} className="me-2" color="success" />
                       Secure Download
                       {isDownloading && <CSpinner size="sm" className="ms-2" />}
                     </CDropdownToggle>
-                    <CDropdownMenu>
-                      <CDropdownItem onClick={() => handleDownloadSecureZip('all')}>All Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownloadSecureZip('available')}>Available Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownloadSecureZip('in_use')}>In-Use Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownloadSecureZip('maintenance')}>Maintenance Vehicles</CDropdownItem>
-                      <CDropdownItem onClick={() => handleDownloadSecureZip('forRegistration')}>For Registration Vehicles</CDropdownItem>
+                    <CDropdownMenu className="bg-dark">
+                      <CDropdownItem className="text-light" onClick={() => handleDownloadSecureZip('all')}>All Vehicles</CDropdownItem>
+                      <CDropdownItem className="text-light" onClick={() => handleDownloadSecureZip('available')}>Available Vehicles</CDropdownItem>
+                      <CDropdownItem className="text-light" onClick={() => handleDownloadSecureZip('in_use')}>In-Use Vehicles</CDropdownItem>
+                      <CDropdownItem className="text-light" onClick={() => handleDownloadSecureZip('maintenance')}>Maintenance Vehicles</CDropdownItem>
+                      <CDropdownItem className="text-light" onClick={() => handleDownloadSecureZip('forRegistration')}>For Registration Vehicles</CDropdownItem>
                     </CDropdownMenu>
                   </CDropdown>
-                  
-                  {/* <CButton color="light" size="sm" onClick={handlePrint}>
-                    <FontAwesomeIcon icon={faPrint} className="me-2 text-primary" />
-                    Print List
-                  </CButton> */}
                 </div>
               </div>
             </CCardHeader>
@@ -413,18 +389,18 @@ const VehicleDataPage = () => {
             {vehicles.filter(vehicle => !vehicle.deleted).map((vehicle) => (
               <CCol key={vehicle._id} sm={12} className="mb-4">
                 <CCard 
-                  className="shadow-sm border-top-0 border-left-0 border-right-0 border-bottom border-primary" 
+                  className="shadow-sm border-dark bg-dark text-light border-top-0 border-left-0 border-right-0 border-bottom border-info" 
                   style={{ cursor: 'pointer', borderWidth: '3px' }}
                 >
                   <div className="d-flex flex-row">
-                    <div className="bg-light d-flex align-items-center justify-content-center" style={{ width: '120px', minHeight: '100%' }}>
-                      <FontAwesomeIcon icon={faCar} size="3x" className="text-primary" />
+                    <div className="bg-secondary d-flex align-items-center justify-content-center" style={{ width: '120px', minHeight: '100%' }}>
+                      <FontAwesomeIcon icon={faCar} size="3x" className="text-info" />
                     </div>
                     <div className="flex-grow-1">
-                      <CCardHeader className="d-flex justify-content-between align-items-center bg-white border-0">
+                      <CCardHeader className="d-flex justify-content-between align-items-center bg-dark border-0">
                         <div>
                           <h5 className="mb-0">
-                            <FontAwesomeIcon icon={faClipboard} className="me-2 text-primary" />
+                            <FontAwesomeIcon icon={faClipboard} className="me-2 text-info" />
                             {vehicle.regisNumber || 'No Registration'}
                           </h5>
                         </div>
@@ -432,7 +408,7 @@ const VehicleDataPage = () => {
                           {renderStatusBadge(vehicle.status || 'unknown')}
                           <CButton 
                             color="link" 
-                            className="p-0 ms-3"
+                            className="p-0 ms-3 text-info"
                             onClick={() => toggleCard(vehicle._id)}
                           >
                             <FontAwesomeIcon 
@@ -442,10 +418,10 @@ const VehicleDataPage = () => {
                           </CButton>
                         </div>
                       </CCardHeader>
-                      <CCardBody className="py-2">
+                      <CCardBody className="py-2 bg-dark text-light">
                         <div className="d-flex justify-content-between">
                           <div className="me-3">
-                            <div className="text-muted small mb-1">Driver</div>
+                            <div className="text-info small mb-1">Driver</div>
                             <div>
                               <FontAwesomeIcon icon={faUser} className="me-2 text-info" />
                               <strong>{vehicle.driver || 'Not Assigned'}</strong>
@@ -453,7 +429,7 @@ const VehicleDataPage = () => {
                           </div>
                           
                           <div className="me-3">
-                            <div className="text-muted small mb-1">Registration Expiry</div>
+                            <div className="text-info small mb-1">Registration Expiry</div>
                             <div>
                               <FontAwesomeIcon icon={faCalendarAlt} className="me-2 text-warning" />
                               <strong>{formatDate(vehicle.regisExprationDate)}</strong>
@@ -461,25 +437,25 @@ const VehicleDataPage = () => {
                           </div>
                           
                           <div>
-                            <div className="text-muted small mb-1">Brand & Model</div>
+                            <div className="text-info small mb-1">Brand & Model</div>
                             <div>
-                              <FontAwesomeIcon icon={faTag} className="me-2 text-secondary" />
+                              <FontAwesomeIcon icon={faTag} className="me-2 text-light" />
                               <strong>{(vehicle.brand || '') + ' ' + (vehicle.model || '')}</strong>
                             </div>
                           </div>
                         </div>
                         
                         <CCollapse visible={expandedCard === vehicle._id}>
-                          <hr className="my-3" />
+                          <hr className="my-3 border-secondary" />
                           
                           <div className="row">
                             {allFields.filter(field => 
                               !['regisNumber', 'driver', 'regisExprationDate', 'status', 'brand', 'model'].includes(field.key)
                             ).map(field => (
                               <div key={field.key} className="col-md-4 mb-3">
-                                <div className="text-muted small mb-1">{field.label}</div>
+                                <div className="text-info small mb-1">{field.label}</div>
                                 <div>
-                                  {field.icon && <FontAwesomeIcon icon={field.icon} className="me-2 text-primary" />}
+                                  {field.icon && <FontAwesomeIcon icon={field.icon} className="me-2 text-info" />}
                                   <strong>{vehicle[field.key] || 'N/A'}</strong>
                                 </div>
                               </div>
@@ -488,7 +464,7 @@ const VehicleDataPage = () => {
                         </CCollapse>
                       </CCardBody>
                       {expandedCard === vehicle._id && (
-                        <CCardFooter className="bg-white d-flex justify-content-end gap-2 py-2">
+                        <CCardFooter className="bg-dark border-secondary d-flex justify-content-end gap-2 py-2">
                           <CButton 
                             color="info" 
                             size="sm"
@@ -522,20 +498,20 @@ const VehicleDataPage = () => {
       )}
       
       {/* Password Modal */}
-      <CModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
-        <CModalHeader closeButton>
+      <CModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)} dark>
+        <CModalHeader closeButton className="bg-dark text-light border-secondary">
           <CModalTitle>Password Protected File</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody className="bg-dark text-light">
           <p>Your file <strong>{downloadFileName}</strong> has been downloaded successfully.</p>
           <p>Use the following password to unlock the ZIP file:</p>
-          <CAlert color="info" className="d-flex align-items-center">
+          <CAlert color="info" className="d-flex align-items-center bg-secondary">
             <FontAwesomeIcon icon={faLock} className="me-3 fs-4" />
             <div className="font-monospace fw-bold">{downloadPassword}</div>
           </CAlert>
           <p className="text-muted small">This password is unique to your account. Please keep it secure.</p>
         </CModalBody>
-        <CModalFooter>
+        <CModalFooter className="bg-dark border-secondary">
           <CButton color="secondary" onClick={() => setShowPasswordModal(false)}>
             Close
           </CButton>

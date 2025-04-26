@@ -15,7 +15,13 @@ import CustomHeader from '../../../../components/header/customhead';
 import logActivity from '../../../../utils/activityLogger';
 import axiosInstance from '../../../../utils/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faMoneyBillWave, faExclamationTriangle, faCalendarAlt, faSync } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faChartLine, 
+  faMoneyBillWave, 
+  faExclamationTriangle, 
+  faCalendarAlt, 
+  faSync,
+  faClock } from '@fortawesome/free-solid-svg-icons';
 
 const Monthly = () => {
   const [data, setData] = useState([]);
@@ -408,21 +414,23 @@ const Monthly = () => {
                   </CCardBody>
                 </CCard>
               </CCardBody>
-              <CCardFooter className="bg-light d-flex justify-content-between align-items-center">
-                <div className="small text-muted">
-                  Data last updated: {new Date().toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
-                <CButton color="primary" size="sm" onClick={handleRefresh}>
-                  <FontAwesomeIcon icon={faSync} className="me-1" />
-                  Refresh Data
-                </CButton>
-              </CCardFooter>
+              <CCardFooter className="bg-light border-top d-flex justify-content-between align-items-center py-2 px-3">
+                      <div className="text-dark small fw-medium">
+                        <FontAwesomeIcon icon={faClock} className="me-2 text-secondary" />
+                        Last updated: {new Date().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      <CButton color="primary" size="sm" variant="outline" onClick={handleRefresh}>
+                        <FontAwesomeIcon icon={faSync} className="me-2" />
+                        Refresh
+                      </CButton>
+                    </CCardFooter>
+
             </>
           )}
         </CCard>
