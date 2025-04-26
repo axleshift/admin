@@ -126,7 +126,7 @@ const NewUsersPage = () => {
                     <CTableHeaderCell>Email</CTableHeaderCell>
                     <CTableHeaderCell>Role</CTableHeaderCell>
                     <CTableHeaderCell>Department</CTableHeaderCell>
-                    <CTableHeaderCell>Password</CTableHeaderCell>
+                    {/* <CTableHeaderCell>Password</CTableHeaderCell> */}
                     <CTableHeaderCell>Registration Date</CTableHeaderCell>
                     <CTableHeaderCell>Status</CTableHeaderCell>
                   </CTableRow>
@@ -141,7 +141,7 @@ const NewUsersPage = () => {
                         <CTableDataCell>{user.email}</CTableDataCell>
                         <CTableDataCell>{user.role}</CTableDataCell>
                         <CTableDataCell>{user.department}</CTableDataCell>
-                        <CTableDataCell>
+                        {/* <CTableDataCell>
                           {user.generatedPassword ? (
                             <div className="d-flex align-items-center">
                               <span className="bg-light px-2 py-1 rounded">
@@ -161,7 +161,7 @@ const NewUsersPage = () => {
                           ) : (
                             <span className="text-muted">Not available</span>
                           )}
-                        </CTableDataCell>
+                        </CTableDataCell> */}
                         <CTableDataCell>
                           {formatDate(user.registrationDate)}
                         </CTableDataCell>
