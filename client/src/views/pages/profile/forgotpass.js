@@ -39,7 +39,7 @@ const ForgotPass = () => {
     }
 
     axiosInstance
-      .post('/client/forgot-password-client', { email }, { withCredentials: true })
+      .post('/general/forgot-password', { email }, { withCredentials: true })
       .then((res) => {
         if (res.data.message === 'Reset link sent to your email') {
           setMessage('Reset link sent successfully! Check your email.')

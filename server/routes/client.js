@@ -11,7 +11,7 @@ import {
     saveUser, 
     processPendingRegistrations,
     getNewlyRegisteredUsers,
-    forgotPassword,
+
 
     refreshToken
 } from "../controllers/client.js";
@@ -55,5 +55,5 @@ router.put("/change-password", changePassword);
 router.post("/unlock-request", generateOTP);
 router.post("/unlock-verify", verifyOTP);
 
-router.post("/forgot-password-client", forgotPassword);
+
 export default router;

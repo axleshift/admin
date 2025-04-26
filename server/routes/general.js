@@ -26,7 +26,7 @@ router.post("/initiate-review", initiateAccessReview);
 
 
 router.get("/user/:id", getUser);
-router.post("/forgot-password", authenticateAdmin,forgotPassword);
+router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:id/:token", resetPassword);
 
 router.get("/validate-reset-token/:id/:token", validateResetToken);
