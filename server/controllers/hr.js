@@ -343,50 +343,50 @@ export const getAllUsers = async (req, res) => {
       });
     }
   };
-  
-  export const updateLeaveRequest = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { status, comments } = req.body;
-      
-      if (!id) {
-        return res.status(400).json({ error: "Request ID is required" });
+    
+    export const updateLeaveRequest = async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { status, comments } = req.body;
+        
+        if (!id) {
+          return res.status(400).json({ error: "Request ID is required" });
+        }
+        
+        if (!status) {
+          return res.status(400).json({ error: "Status is required" });
+        }
+        
+        if (!HR3) {
+          console.error("Error: EXTERNAL_HR3 is not defined in the environment variables.");
+          return res.status(500).json({ error: "Server configuration error: Missing HR3 API URL" });
+        }
+        
+        console.log(`Updating leave request ${id} status to ${status}`);
+        
+        // Make the PUT request to update the status
+        const response = await axios.put(
+          `${HR3}/api/leave-requests/${id}`,
+          { status, comments }
+        );
+        
+        console.log("Update Response:", JSON.stringify(response.data, null, 2));
+        
+        return res.status(200).json({
+          success: true,
+          message: `Leave request has been ${status.toLowerCase()} successfully`,
+          data: response.data
+        });
+      } catch (error) {
+        console.error(`Error updating leave request:`, error.message);
+        
+        return res.status(500).json({
+          error: "Failed to update leave request",
+          details: error.response?.data || error.message
+        });
       }
-      
-      if (!status) {
-        return res.status(400).json({ error: "Status is required" });
-      }
-      
-      if (!HR3) {
-        console.error("Error: EXTERNAL_HR3 is not defined in the environment variables.");
-        return res.status(500).json({ error: "Server configuration error: Missing HR3 API URL" });
-      }
-      
-      console.log(`Updating leave request ${id} status to ${status}`);
-      
-      // Make the PUT request to update the status
-      const response = await axios.put(
-        `${HR3}/api/leave-requests/${id}`,
-        { status, comments }
-      );
-      
-      console.log("Update Response:", JSON.stringify(response.data, null, 2));
-      
-      return res.status(200).json({
-        success: true,
-        message: `Leave request has been ${status.toLowerCase()} successfully`,
-        data: response.data
-      });
-    } catch (error) {
-      console.error(`Error updating leave request:`, error.message);
-      
-      return res.status(500).json({
-        error: "Failed to update leave request",
-        details: error.response?.data || error.message
-      });
-    }
-  };
-  
+    };
+    
   export const getpayroll = async (req, res) => {
     try {
       const response = await fetch(`${HR3}/api/payrolls`);
