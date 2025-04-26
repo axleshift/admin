@@ -23,9 +23,6 @@ const ForgotPass = () => {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-  // Admin token
-  const ADMIN_TOKEN = 'admin1229102'
-
   const handleSubmit = (e) => {
     e.preventDefault()
     setIsLoading(true)
@@ -42,15 +39,7 @@ const ForgotPass = () => {
     }
 
     axiosInstance
-      .post('/general/forgot-password', 
-        { email }, 
-        { 
-          headers: {
-            'Authorization': `Bearer ${ADMIN_TOKEN}`
-          },
-          withCredentials: true 
-        }
-      )
+      .post('/client/forgot-password-client', { email }, { withCredentials: true })
       .then((res) => {
         if (res.data.message === 'Reset link sent to your email') {
           setMessage('Reset link sent successfully! Check your email.')

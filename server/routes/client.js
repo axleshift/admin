@@ -11,7 +11,7 @@ import {
     saveUser, 
     processPendingRegistrations,
     getNewlyRegisteredUsers,
-
+    forgotPassword,
 
     refreshToken
 } from "../controllers/client.js";
@@ -27,6 +27,7 @@ router.post('/process-registrations', processPendingRegistrations);
 
 // New endpoint to get all newly registered users
 router.get('/new-users', getNewlyRegisteredUsers);
+
 
 router.get('/customers', getCustomers);
 
@@ -54,4 +55,5 @@ router.put("/change-password", changePassword);
 router.post("/unlock-request", generateOTP);
 router.post("/unlock-verify", verifyOTP);
 
+router.post("/forgot-password-client", forgotPassword);
 export default router;
