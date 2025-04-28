@@ -1,7 +1,8 @@
 import LoginAttempt from "../model/LoginAttempt.js";
 import SecurityAlert from "../model/SecurityAlert.js";
 import Anomaly from "../model/Anomaly.js";
-import User from "../model/User.js";
+import User from '../model/User.js'
+
 import PasswordResetEvent from "../model/PasswordResetEvent.js";
 
 import zxcvbn from 'zxcvbn';

@@ -15,7 +15,7 @@ const Page500 = React.lazy(() => import("./views/pages/page500/Page500"));
 const Forgotpass = React.lazy(() => import("./views/pages/profile/forgotpass"));
 const Resetpass = React.lazy(() => import("./views/pages/profile/resetpass"));
 const OTP = React.lazy(()=> import ("./views/pages/profile/OTP"));
-
+const TermsAccept = React.lazy(()=> import('./views/pages/LegalPanel/agreement/termandaccept'));
 
 const AppContent = () => {
   const { isColorModeSet, setColorMode } = useColorModes("coreui-free-react-admin-template-theme");
@@ -24,15 +24,16 @@ const AppContent = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.href.split("?")[1]);
     const theme = urlParams.get("theme")?.match(/^[A-Za-z0-9\s]+/)?.[0];
-
+  
     if (theme) {
       setColorMode(theme);
     }
-
+  
     if (!isColorModeSet()) {
       setColorMode(storedTheme);
     }
   }, [isColorModeSet, setColorMode, storedTheme]);
+  
 
   const userLog = ()  =>{
     const keys = ['accesstoken', 'refresh', 'userid', 'username', 'userrole', 'department'];
@@ -57,6 +58,7 @@ const AppContent = () => {
         <Route path="/logout" element={<Logout />} />
         <Route path="/forgotpass" element={<Forgotpass />} />
         <Route path="/resetpass/:id/:token" element={<Resetpass />} />
+        <Route path="/termsaccept/:id/:token" element={<TermsAccept />} />
         <Route path="/register" element={<Register />} />
         <Route path="/404" element={<Page404 />} />
         <Route path="/500" element={<Page500 />} />

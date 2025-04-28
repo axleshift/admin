@@ -1,7 +1,5 @@
 import nodemailer from 'nodemailer';
 
-// Use a test email service like Ethereal or Mailtrap for easier testing
-// Alternatively, use a more straightforward Gmail config
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com", // Default to Gmail
@@ -17,7 +15,7 @@ const createTransporter = () => {
     connectionTimeout: 10000, // Increase timeout to 10 seconds
   });
 };
-
+export default createTransporter;
 export const sendOTPEmail = async (email, otp) => {
   // For debugging - log credentials (safely)
   console.log(`Email config: User: ${process.env.EMAIL_USER}, Password length: ${process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0}`);
@@ -64,3 +62,4 @@ export const sendAccountLockedEmail = async (email, lockDuration) => {
     throw error;
   }
 };
+

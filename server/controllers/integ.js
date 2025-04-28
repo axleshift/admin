@@ -1,11 +1,11 @@
-import User from "../model/User.js";
+import User from '../model/User.js';
 import axios from 'axios';
 import jwt from 'jsonwebtoken'
 import bcryptjs from 'bcryptjs' 
 import fs from 'fs';
 import path from 'path';
 
-import dotenv from 'dotenv'
+import Agreement from '../model/Agreement.js';
 
 
 export const getUsersByDepartment = async (req, res) => {
@@ -59,6 +59,120 @@ export const getUsersByDepartment = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// controllers/authController.js
+
+
+export const externaltest = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const { department } = req.params;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email and password are required" 
+      });
+    }
+
+    // Validate department
+    const validDepartments = ["HR", "Core", "Logistics", "Finance","Administrative"];
+    if (!validDepartments.includes(department)) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid department" 
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Incorrect email" 
+      });
+    }
+
+    // Verify department
+    if (user.department !== department) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found in this department" 
+      });
+    }
+
+    // Compare password
+    const isPasswordMatch = await bcryptjs.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({ 
+        success: false,
+        message: "Incorrect password" 
+      });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        role: user.role, 
+        department: user.department 
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    // Send Webhook Notification
+    const webhookUrl = process.env.WEBHOOK_URL;
+    if (webhookUrl) {
+      const webhookPayload = {
+        eventType: "user_logged_in",
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          department: user.department,
+        },
+      };
+
+      try {
+        await axios.post(webhookUrl, webhookPayload, {
+          headers: {
+            "x-event-type": "user_logged_in",
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Webhook sent successfully.");
+      } catch (webhookError) {
+        console.error("Webhook failed:", webhookError.response?.data || webhookError.message);
+      }
+    }
+
+    // Successful login response
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+      },
+    });
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal Server Error",
+      error: error.message 
+    });
+  }
+};
+
+
 
 export const external = async (req, res) => {
   try {

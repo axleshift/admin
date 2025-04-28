@@ -25,6 +25,7 @@ import {
   faPlus
 } from '@fortawesome/free-solid-svg-icons';
 import { FaWatchmanMonitoring } from 'react-icons/fa';
+import { icon } from 'leaflet';
 
 
 const _nav = () => {
@@ -447,13 +448,37 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faTv} style={{ marginRight: '8px' }} />,
           to:'/monitoring'
         },
-        // {
-        //   component: CNavItem,
-        //   name:'Ai Assistant',
-        //   icon: <FontAwesomeIcon icon={faShield} style={{ marginRight: '8px' }} />,
-        //   to:'/aiAssistant'
-        // },
 
+        {
+          component: CNavItem,
+          name:'Agreement',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/agreement'
+        },
+        
+        {
+          component: CNavItem,
+          name:'AgreementDetails',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/agreementdetail'
+        },
+        
+        {
+          component: CNavItem,
+          name:'AgreementSuccess',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/agreementsuccess'
+        },
+      
+       
+        
+        {
+          component: CNavItem,
+          name:'Admin Agreement Creation',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/adminagreementcreation'
+        },
+        
         
        
       )

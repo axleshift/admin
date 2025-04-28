@@ -1,4 +1,5 @@
-import User from "../model/User.js";
+import User from '../model/User.js'
+
 import Overall from '../model/overall.js';
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";

@@ -1,6 +1,6 @@
 import SecurityAlert from "../model/SecurityAlert.js";
 import LoginAttempt from "../model/LoginAttempt.js";
-import User from "../model/User.js";
+import User from "../model/user.js";
 
 export const logLoginAttempt = async (attemptData) => {
     try {

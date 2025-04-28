@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
-    
+   
     profileImage: {
       type: String,
       default: '', // 👈 empty by default
@@ -111,8 +111,7 @@ const userSchema = new mongoose.Schema(
 
 );
 
-// Removed pre-save hook for password hashing
-// Removed comparePassword method
 
-const User = mongoose.model("User", userSchema);
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;

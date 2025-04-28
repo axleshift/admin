@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { verifyAccess } from "../middleware/verifySignature.js";
-import User from '../model/User.js';
+import User from '../model/user.js';
 import dotenv from 'dotenv';
 dotenv.config();
 

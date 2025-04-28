@@ -8,9 +8,11 @@ import {
     getExternalUsersByDepartment,
     getUsersByDepartment,
     updateProfileImage,
-    changePasswordSimple
+    changePasswordSimple,
+    externaltest
  } from '../controllers/integ.js'
 import { authenticateAdmin } from '../middleware/authMiddleware.js';
+import { checkUserTermsAcceptance } from '../middleware/agreementcheck.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -58,6 +60,8 @@ router.get('/user/:department',authenticateAdmin,getUsersByDepartment)
 router.post('/external-login/:department',authenticateAdmin, external);
 router.put('/external-login/:username', authenticateAdmin, upload.single('profileImage'), updateProfileImage);
 
+//test
+router.post('/external-test/:department',checkUserTermsAcceptance ,externaltest)
 
 router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
 

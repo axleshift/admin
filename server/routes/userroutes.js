@@ -1,5 +1,6 @@
 import express from 'express';
-import User from "../model/User.js";
+import User from ".'./model/User.js'
+";
 import axios from 'axios'
 import {verifyToken} from '../middleware/verifyToken'
 

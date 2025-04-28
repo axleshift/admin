@@ -70,6 +70,14 @@ const Toast = React.lazy(() => import('./views/notifications/toasts/Toasts'));
 
 const PendingRequest = React.lazy(()=>import ('./views/pages/scene/PendingRequest'))
 
+
+//legal
+const Agreement = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreement'));
+const AdminAgreementCreate = React.lazy(() => import('./views/pages/LegalPanel/agreement/adminagreementCreate'));
+const AgreementDetail = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementdetail'));
+const Agreementsuccess = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementsuccess'));
+
+
 const routes = [
   { path: '/', exact: true, name: 'Home' },
 
@@ -90,7 +98,7 @@ const routes = [
   { path: '/cron', name: 'Cron', element: <ProtectedRoute><Cron/> </ProtectedRoute>},
 
   { path: '/customer', name: 'Customer', element: <ProtectedRoute><Customers /></ProtectedRoute> },
-   { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },
+  { path: '/worker', name: 'Employees', element: <ProtectedRoute><Worker /></ProtectedRoute> },
   { path: '/jobposting', name: 'Job Posting', element: <ProtectedRoute><Jobpost /></ProtectedRoute> },
   { path: '/payroll', name: 'Payroll', element: <ProtectedRoute><Payroll /></ProtectedRoute> },
   { path: '/hr3leaverequest', name: 'Leave Request', element: <ProtectedRoute><LeaveRequest /></ProtectedRoute> },
@@ -140,6 +148,12 @@ const routes = [
   
   { path: '/button', name:'button', element: <ProtectedRoute><Button /></ProtectedRoute>},
   { path: '/Toasts', name: 'Toasts', element: <ProtectedRoute><Toast /></ProtectedRoute> },
+
+  //legal
+  { path: '/agreement', name: 'Agreement', element: <ProtectedRoute><Agreement /></ProtectedRoute> },
+  { path: '/adminagreementCreate', name: 'Agreement Create', element: <ProtectedRoute><AdminAgreementCreate /></ProtectedRoute> },
+  { path: '/agreementdetail/', name: 'Agreement Detail', element: <ProtectedRoute><AgreementDetail /></ProtectedRoute> },
+  { path: '/agreementsuccess', name: 'Agreement Success', element: <ProtectedRoute><Agreementsuccess /></ProtectedRoute> },
 ];
 
 export default routes;

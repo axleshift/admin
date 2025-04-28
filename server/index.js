@@ -20,6 +20,9 @@ import webhookRoutes from './routes/webhook.js'
 import integRoutes from './routes/integ.js'
 import  aiAssistantRoutes  from "./routes/aiAssistant.js";
 
+//legal
+import agreementRoutes from './routes/legal/agreement.js';
+
 import { startAutoSync } from "./UTIL/scheduler.js";
 
 import session from 'express-session';
@@ -99,6 +102,8 @@ app.use("/sales", salesRoutes);
 app.use("/admin", adminRoutes);
 app.use('/security', securityRoutes)
 app.use('/aiAssistant', aiAssistantRoutes);
+//legal
+app.use('/agreement', agreementRoutes);
 // ✅ 8. Integration routes
 app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);

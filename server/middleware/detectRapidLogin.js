@@ -1,5 +1,6 @@
 // middleware/detectRapidLogin.js
-import User from '../model/User.js';
+import User from '../model/User.js'
+
 import LoginAttempt from '../model/LoginAttempt.js';
 import Anomaly from '../model/Anomaly.js';
 import { createSecurityAlert } from '../UTIL/securityUtils.js';

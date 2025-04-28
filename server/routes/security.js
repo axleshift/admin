@@ -7,7 +7,8 @@ import {
     checkPasswordStrength, 
     checkPasswordBreach ,
 } from "../controllers/security.js";
-import User from '../model/User.js';
+import User from '../model/User.js'
+
 
 const router = express.Router();
 
