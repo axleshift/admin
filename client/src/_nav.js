@@ -478,6 +478,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
           to:'/adminagreementcreation'
         },
+        {
+          component: CNavItem,
+          name:'Complains',
+          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+          to:'/complains'
+        },
         
         
        

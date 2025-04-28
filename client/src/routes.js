@@ -77,6 +77,7 @@ const AdminAgreementCreate = React.lazy(() => import('./views/pages/LegalPanel/a
 const AgreementDetail = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementdetail'));
 const Agreementsuccess = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementsuccess'));
 
+const Complains = React.lazy(() => import('./views/pages/LegalPanel/complains'));
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -154,6 +155,8 @@ const routes = [
   { path: '/adminagreementCreate', name: 'Agreement Create', element: <ProtectedRoute><AdminAgreementCreate /></ProtectedRoute> },
   { path: '/agreementdetail/', name: 'Agreement Detail', element: <ProtectedRoute><AgreementDetail /></ProtectedRoute> },
   { path: '/agreementsuccess', name: 'Agreement Success', element: <ProtectedRoute><Agreementsuccess /></ProtectedRoute> },
+
+  { path: '/complains', name: 'Complains', element: <ProtectedRoute><Complains /></ProtectedRoute> },
 ];
 
 export default routes;

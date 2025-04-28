@@ -101,9 +101,14 @@ const userSchema = new mongoose.Schema(
       },
       reviewerName: String,
       notes: String,
+      
+      
+      //term & acceptance
       approvedPermissions: [String],
       rejectedPermissions: [String]
-    }]
+    }],
+
+
   
   },
   
