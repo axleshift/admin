@@ -8,6 +8,6 @@ const router = express.Router();
 
 router.post('/postComplains', createComplaint);
 router.get('/get-complains', getComplaints);
-router.patch('/ai-resolve', resolveComplaintWithAI);
+router.post('/ai-resolve', resolveComplaintWithAI);
 
 export default router;
