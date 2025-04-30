@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../../utils/axiosInstance';
 import { 
@@ -162,7 +162,7 @@ const TermsAccept = () => {
                 {/* Terms and conditions content - same as your original component */}
                 <h4 className="border-bottom pb-2 mb-3">Acceptance of Terms and Conditions</h4>
                 <p className="mb-4">
-                  By accessing and using the Freight Management System ("the System"), you acknowledge that you have read, understood, and agree to be bound by the following terms and conditions:
+                  By accessing and using the Freight Management System (&quot;the System&quot;), you acknowledge that you have read, understood, and agree to be bound by the following terms and conditions:
                 </p>
 
                 <h5 className="text-primary">1. Compliance with Laws</h5>
@@ -182,7 +182,7 @@ const TermsAccept = () => {
 
                 <h5 className="text-primary">4. User Conduct</h5>
                 <p className="mb-4">
-                  You agree to use the System responsibly, and not engage in activities that could result in violations, misconduct, or harm to the organization's operations, reputation, or legal standing.
+                  You agree to use the System responsibly, and not engage in activities that could result in violations, misconduct, or harm to the organization&apos;s operations, reputation, or legal standing.
                 </p>
 
                 <h5 className="text-primary">5. Risk and Compliance Monitoring</h5>
@@ -197,7 +197,7 @@ const TermsAccept = () => {
 
                 <h5 className="text-primary">7. Legal Holds and Investigations</h5>
                 <p className="mb-4">
-                  You acknowledge that your access may be restricted ("legal hold") in the event of an internal investigation, legal dispute, regulatory inquiry, or other legal matters, as determined by the Administrative Department.
+                  You acknowledge that your access may be restricted (&quot;legal hold&quot;) in the event of an internal investigation, legal dispute, regulatory inquiry, or other legal matters, as determined by the Administrative Department.
                 </p>
 
                 <h5 className="text-primary">8. Amendments to Terms</h5>
@@ -206,7 +206,7 @@ const TermsAccept = () => {
                 </p>
 
                 <p className="mt-4">
-                  By clicking "I Accept", you affirm that you have read, understood, and agree to these Terms and Conditions, and you consent to abide by all policies and procedures set forth herein.
+                  By clicking &quot;I Accept&quot;, you affirm that you have read, understood, and agree to these Terms and Conditions, and you consent to abide by all policies and procedures set forth herein.
                 </p>
               </div>
 

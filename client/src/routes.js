@@ -78,6 +78,8 @@ const AgreementDetail = React.lazy(() => import('./views/pages/LegalPanel/agreem
 const Agreementsuccess = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementsuccess'));
 
 const Complains = React.lazy(() => import('./views/pages/LegalPanel/complains'));
+const ComplainsEmployees = React.lazy(() => import('./views/pages/LegalPanel/complains/employeescomplains'));
+const HrComplains = React.lazy(() => import('./views/pages/LegalPanel/complains/hrComplains'));
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -157,6 +159,8 @@ const routes = [
   { path: '/agreementsuccess', name: 'Agreement Success', element: <ProtectedRoute><Agreementsuccess /></ProtectedRoute> },
 
   { path: '/complains', name: 'Complains', element: <ProtectedRoute><Complains /></ProtectedRoute> },
+  { path: '/employeescomplains', name: 'Complains', element: <ProtectedRoute><ComplainsEmployees /></ProtectedRoute> },
+  { path: '/hrcomplains', name: 'Complains', element: <ProtectedRoute><HrComplains /></ProtectedRoute> },
 ];
 
 export default routes;

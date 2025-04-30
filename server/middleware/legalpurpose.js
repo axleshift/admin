@@ -1,7 +1,6 @@
 // middleware/auth.js
 import jwt from 'jsonwebtoken';
-import User from '.'./model/User.js'
-';
+import User from '../model/User.js';
 
 // For routes that need store verification
 export const storeAuth = async (req, res, next) => {

@@ -39,7 +39,7 @@ export const checkUserTermsAcceptance = async (req, res, next) => {
     
     // Generate acceptance link - FIXED TO MATCH ROUTE PATH
     // Make sure to use the user ID correctly in the URL
-    const acceptTermsUrl = `${process.env.ClIENT_URL}/termsaccept/${user._id}/${token}`;
+    const acceptTermsUrl = `${process.env.CLIENT_URL}/termsaccept/${user._id}/${token}`;
     console.log("Terms acceptance link:", acceptTermsUrl);
     
     // Create email transporter

@@ -5,11 +5,11 @@ const accessPermissions = {
       Core: ['/coredash', '/shipment', '/insight', ],
       Finance: ['/financedash', '/monthly'  ],
       Logistics: ['/logisticdash', '/vehicles'],
-      Administrative: ['/employeedash', '/restore', '/registernew', '/PendingRequest', '/AccessReview',]
+      Administrative: ['/employeedash', '/restore', '/registernew', '/PendingRequest', '/AccessReview','/employeescomplains',]
     }
   };
   
   // Pages that are always permitted
-  const alwaysPermitted = ['/profile', '/Settings', '/changepass', '/button', '/request'];
+  const alwaysPermitted = ['/profile', '/Settings', '/changepass', '/button', '/request',"/employeescomplains"];
   
   export { accessPermissions, alwaysPermitted };

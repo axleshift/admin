@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CCard,
   CCardBody,
@@ -32,6 +33,7 @@ const Profile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   
   // Using RTK Query hooks
@@ -53,6 +55,7 @@ const Profile = () => {
     skip: !userId,
     credentials: 'include'
   });
+  
   useEffect(() => {
     // Retrieve user data from localStorage
     const permissions = localStorage.getItem("permissions");
@@ -98,6 +101,10 @@ const Profile = () => {
     .map(formatActivityLog)
     .filter(log => log !== null);
 
+  const handleCreateComplaint = () => {
+    navigate("/employeescomplains"); // Adjust the path as per your route
+  };
+
   return (
     <div className="profile-container">
       <CRow className="profile-row">
@@ -114,6 +121,9 @@ const Profile = () => {
                 >
                   <FontAwesomeIcon icon={faRecordVinyl} />
                 </CButton>
+                <CButton 
+                color='success'
+                onClick={handleCreateComplaint}>Create A Complaint</CButton>
               </div>
               <div className="text-center profile-avatar-section">
                 <CAvatar
@@ -144,6 +154,7 @@ const Profile = () => {
                 </CListGroupItem>
               </CListGroup>
 
+       
               <div className="permissions-section mt-4">
                 <h4 className="mb-3">Permissions</h4>
                 {permissionsLoading ? (

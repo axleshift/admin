@@ -63,3 +63,54 @@ export const sendAccountLockedEmail = async (email, lockDuration) => {
   }
 };
 
+
+
+
+export const sendResolutionNotification = async (employeeEmail, employeeName, refNumber, resolutionText) => {
+  try {
+      console.log(`Sending resolution notification to employee ${employeeName} at ${employeeEmail}`);
+      
+      // Create a transporter using the helper function
+      let transporter = createTransporter();
+      
+      // Email content
+      const emailContent = `
+          Dear ${employeeName},
+          
+          Your complaint (Reference: ${refNumber}) has been reviewed and resolved.
+          
+          Resolution details:
+          ${resolutionText}
+          
+          A formal document with these details is available from your HR representative.
+          
+          If you have any questions or concerns about this resolution, please contact HR.
+          
+          Regards,
+          HR Department
+      `;
+      
+      // Setup email data - use the actual employee email
+      let mailOptions = {
+          from: `"HR Department" <${process.env.EMAIL_USER || 'hr@yourcompany.com'}>`,
+          to: process.env.EMAIL_TEST_MODE === 'true' ? 
+              (process.env.EMAIL_TEST_RECIPIENT || 'test@example.com') : 
+              employeeEmail,
+          subject: `Resolution of Your Complaint (Ref: ${refNumber})`,
+          text: emailContent,
+          html: emailContent.replace(/\n/g, '<br>')
+      };
+      
+      // Log the email being sent for debugging
+      console.log('Sending email with options:', JSON.stringify(mailOptions, null, 2));
+      
+      // Send email
+      let info = await transporter.sendMail(mailOptions);
+      console.log('Email sent: %s', info.messageId);
+      
+      return true;
+  } catch (error) {
+      console.error("Error sending resolution notification:", error);
+      throw error; // Rethrow to handle in the calling function
+  }
+};

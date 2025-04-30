@@ -449,35 +449,35 @@ const _nav = () => {
           to:'/monitoring'
         },
 
-        {
-          component: CNavItem,
-          name:'Agreement',
-          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
-          to:'/agreement'
-        },
+        // {
+        //   component: CNavItem,
+        //   name:'Agreement',
+        //   icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+        //   to:'/agreement'
+        // },
         
-        {
-          component: CNavItem,
-          name:'AgreementDetails',
-          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
-          to:'/agreementdetail'
-        },
+        // {
+        //   component: CNavItem,
+        //   name:'AgreementDetails',
+        //   icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+        //   to:'/agreementdetail'
+        // },
         
-        {
-          component: CNavItem,
-          name:'AgreementSuccess',
-          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
-          to:'/agreementsuccess'
-        },
+        // {
+        //   component: CNavItem,
+        //   name:'AgreementSuccess',
+        //   icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+        //   to:'/agreementsuccess'
+        // },
       
        
         
-        {
-          component: CNavItem,
-          name:'Admin Agreement Creation',
-          icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
-          to:'/adminagreementcreation'
-        },
+        // {
+        //   component: CNavItem,
+        //   name:'Admin Agreement Creation',
+        //   icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
+        //   to:'/adminagreementcreation'
+        // },
         {
           component: CNavItem,
           name:'Complains',
