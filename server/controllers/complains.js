@@ -1,11 +1,11 @@
-import Complaint from "../../model/Complains.js";
-import EmployeeComplaint from "../../model/employeeComplaint.js";
+import Complaint from "../model/Complains.js";
+import EmployeeComplaint from "../model/employeeComplaint.js";
 import axios from "axios";
 import nodemailer from "nodemailer";
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import { sendResolutionNotification } from "../../services/emailService.js";
+import { sendResolutionNotification } from "../services/emailService.js";
 const assessComplaintComplexity = async (complaintText, complaintType) => {
     // Criteria for complex complaints that require AI intervention
     const complexKeywords = [

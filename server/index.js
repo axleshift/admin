@@ -21,8 +21,8 @@ import integRoutes from './routes/integ.js'
 import  aiAssistantRoutes  from "./routes/aiAssistant.js";
 
 //legal
-import agreementRoutes from './routes/legal/agreement.js';
-import complainsRoutes from './routes/legal/complains.js';
+import agreementRoutes from './routes/agreement.js';
+import complainsRoutes from './routes/complains.js';
 
 import { startAutoSync } from "./UTIL/scheduler.js";
 

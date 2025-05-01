@@ -9,7 +9,7 @@ import {
     sendNotification,
     generateResolutionDocument,
     createEmployeeExternalComplaint
- } from '../../controllers/legal/complains.js';
+ } from '../controllers/complains.js';
 
 const router = express.Router();
 

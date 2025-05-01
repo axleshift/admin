@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import Agreement from "../../model/agreement.js";
-import User from "../../model/User.js";
+import Agreement from "../model/agreement.js";
+import User from "../model/User.js";
 import jwt from "jsonwebtoken";
 
 export const termandaccept = async (req, res) => {

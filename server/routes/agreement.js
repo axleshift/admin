@@ -3,7 +3,7 @@ import {
   termandaccept,
   termandreject,
 
-} from '../../controllers/legal/agreement.js';
+} from '../controllers/agreement.js';
 
 const router = express.Router();
 router.post('/accept', termandaccept);
