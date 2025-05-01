@@ -231,7 +231,7 @@ export const deleteUser = async (req, res) => {
   };
   
 
-
+  const HR1 = 'https://backend-hr1.axleshift.com';
 //hr1
 export const getAllUsers = async (req, res) => {
   try {
@@ -245,6 +245,83 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+// controllers/attendanceController.js
+
+// Main controller to fetch all attendance records
+export const getAllAttendance = async (req, res) => {
+  try {
+    // You might want to add authentication headers here if needed
+    const response = await axios.get(`${HR1}/api/attendance/all`);
+    
+    // Return the data from the external API
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error fetching attendance data:', error);
+    
+    // Forward the status code from the API if available
+    const statusCode = error.response ? error.response.status : 500;
+    const errorMessage = error.response && error.response.data 
+      ? error.response.data.message 
+      : 'Failed to fetch attendance data';
+    
+    res.status(statusCode).json({ 
+      success: false, 
+      message: errorMessage 
+    });
+  }
+};
+
+// Get attendance for a specific employee (if the API supports it)
+export const getEmployeeAttendance = async (req, res) => {
+  try {
+    const employeeId = req.params.id;
+    
+    // Assuming the API supports filtering by employee ID
+    const response = await axios.get(`${HR1}/api/attendance/employee/${employeeId}`);
+    
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error(`Error fetching attendance for employee ${req.params.id}:`, error);
+    
+    const statusCode = error.response ? error.response.status : 500;
+    const errorMessage = error.response && error.response.data 
+      ? error.response.data.message 
+      : 'Failed to fetch employee attendance data';
+    
+    res.status(statusCode).json({ 
+      success: false, 
+      message: errorMessage 
+    });
+  }
+};
+
+// Get attendance for a specific date range (if the API supports it)
+export const getAttendanceByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    // Assuming the API supports date range filtering
+    const response = await axios.get(`${HR1}/api/attendance/all`, {
+      params: { startDate, endDate }
+    });
+    
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error fetching attendance by date range:', error);
+    
+    const statusCode = error.response ? error.response.status : 500;
+    const errorMessage = error.response && error.response.data 
+      ? error.response.data.message 
+      : 'Failed to fetch attendance data for date range';
+    
+    res.status(statusCode).json({ 
+      success: false, 
+      message: errorMessage 
+    });
+  }
+};
+
 
 
 //hr2

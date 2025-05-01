@@ -12,8 +12,8 @@ import {
     externaltest
  } from '../controllers/integ.js'
 import { authenticateAdmin } from '../middleware/authMiddleware.js';
-//import { checkUserTermsAcceptance } from '../middleware/agreementcheck.js';
 import { sendEmployeeComplaint } from '../middleware/employeecomplain.js';
+import { checkAttendanceRecord } from '../middleware/checkattendance.js';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads/profile-images';

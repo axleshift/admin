@@ -12,7 +12,11 @@ import {
     leave, 
     updateLeaveRequest,
     getpayroll,
-    getAllUsers 
+    getAllUsers, 
+    getAllAttendance,
+    getEmployeeAttendance,
+    getAttendanceByDateRange
+    
   } from "../controllers/hr.js";
 
 const router = express.Router();
@@ -40,6 +44,11 @@ router.post('/revoke-access',revokeAccess);
 
 //hr1
 router.get('/newUsers', getAllUsers);
+router.get('/attendance',getAllAttendance);
+// Route to get attendance for a specific employee
+router.get('/attendance/employee/:id',getEmployeeAttendance);
+// Route to get attendance by date range
+router.get('/attendance/daterange',getAttendanceByDateRange);
 
 //hr2
 router.get('/job-posting',getJobPostings)

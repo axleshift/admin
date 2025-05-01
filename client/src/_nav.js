@@ -336,6 +336,12 @@ const _nav = () => {
           name:'Employee Leaves',
           icon: <FontAwesomeIcon icon={faSquarePersonConfined} style={{ marginRight: '8px' }} />,
           to:'/hr3leaverequest'
+         },
+         {
+          component: CNavItem,
+          name:'Employee Attendance',
+          icon: <FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />,
+          to:'/attendance'
          }
         
       );
