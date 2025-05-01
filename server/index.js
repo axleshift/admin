@@ -129,7 +129,7 @@ if (fs.existsSync(clientBuildPath)) {
 }
 
 // ✅ 10. Connect to MongoDB and start the server
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT ;
 
 mongoose
     .connect(process.env.MONGO_URL)

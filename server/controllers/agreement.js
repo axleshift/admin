@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Agreement from "../model/agreement.js";
+import Agreement from "../model/Agreement.js";
 import User from "../model/User.js";
 import jwt from "jsonwebtoken";
 
