@@ -1,6 +1,6 @@
 import openai from 'openai';
 import ActivityTracker from '../model/Activitytracker.js';
-import User from '../model/user.js';
+import User from '../model/User.js';
 // Set the API key
 openai.apiKey = process.env.OPENAI_API_KEY;
 
