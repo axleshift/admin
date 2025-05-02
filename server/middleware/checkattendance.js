@@ -97,7 +97,7 @@ export const checkAttendanceRecord = async (req, res, next) => {
         const token = jwt.sign({id: user._id}, process.env.JWT_SECRET_KEY, {expiresIn: '24h'});
         
         // Create incident report upload URL
-        const uploadIrUrl = `${process.env.DEV_URL}/uploadIncident/${user._id}/${token}`;
+        const uploadIrUrl = `${process.env.CLIENT_URL}/uploadIncident/${user._id}/${token}`;
         console.log('UploadIR link:', uploadIrUrl);
         
         // Set up email transporter
