@@ -69,3 +69,105 @@ export const checkAttendanceRecord = async (req, res, next) => {
     next();
   }
 };
+
+
+export const checkIncidentReport = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+    
+    // Skip check if id is not provided
+    if (!id) {
+      return next();
+    }
+    
+    // First, check if the user has excessive absences
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    const startOfMonth = new Date(currentYear, currentMonth, 1);
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+    
+    const startDateStr = startOfMonth.toISOString().split('T')[0];
+    const endDateStr = endOfMonth.toISOString().split('T')[0];
+    
+    // Fetch user's attendance records for the current month
+    const attendanceResponse = await axios.get(`${process.env.HR1}/api/attendance/all`, {
+      params: {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        id: id
+      }
+    });
+    
+    const attendanceData = attendanceResponse.data;
+    
+    // If no attendance data or fewer than 3 absences, proceed normally
+    if (!attendanceData || !Array.isArray(attendanceData)) {
+      return next();
+    }
+    
+    // Count absences in the current month
+    const absences = attendanceData.filter(record => record.status === 'Absent');
+    
+    // If user doesn't have excessive absences, proceed normally
+    if (absences.length < 3) {
+      return next();
+    }
+    
+    console.log(`User ID ${id} has ${absences.length} absences this month. Checking for incident report...`);
+    
+    // User has excessive absences, check if they've submitted an incident report
+    const incidentReportResponse = await axios.get(`${process.env.HR1}/api/incident-report`, {
+      params: {
+        userId: id,
+        type: 'Absence',
+        startDate: startDateStr,
+        endDate: endDateStr,
+        status: 'Submitted'
+      }
+    });
+    
+    const incidentReports = incidentReportResponse.data;
+    
+    // If incident report exists and is in submitted state, allow access
+    if (incidentReports && Array.isArray(incidentReports) && incidentReports.length > 0) {
+      console.log(`User ID ${id} has submitted an incident report for absences. Access granted.`);
+      return next();
+    }
+    
+    // If no incident report found, check if one is in progress (draft state)
+    const draftReportResponse = await axios.get(`${process.env.HR1}/api/incident-report`, {
+      params: {
+        userId: id,
+        type: 'Absence',
+        startDate: startDateStr,
+        endDate: endDateStr,
+        status: 'Draft'
+      }
+    });
+    
+    const draftReports = draftReportResponse.data;
+    
+    // If there's a draft report, provide a different message
+    if (draftReports && Array.isArray(draftReports) && draftReports.length > 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Please complete and submit your incident report about absences to regain access."
+      });
+    }
+    
+    // No incident report found at all, deny access
+    return res.status(403).json({
+      success: false,
+      message: "Access denied due to excessive absences. Please create and submit an incident report to regain access."
+    });
+    
+  } catch (error) {
+    console.error('Error checking incident report:', error);
+    
+    // Don't block login due to failure in incident report check, but log the error
+    console.error('Continuing to login process despite incident report check failure');
+    next();
+  }
+};

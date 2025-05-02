@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema(
     },
     passwordHistory: [
       {
-        password: String, // Hashed password
-        date: Date       // Date when the password was set
+        password: String,
+        date: Date
       }
     ],
     phoneNumber: {
@@ -29,18 +29,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: [
-        "admin", 
-        "manager", 
-        "superadmin",
-        'employee',
-        "user",
-        "inpector",
-        "driver",
-        "chief mechanic",
-        "user"
-      ], 
-      lowercase: true, 
+      lowercase: true,
     },
     username: {
       type: String,
@@ -49,21 +38,18 @@ const userSchema = new mongoose.Schema(
     department: {
       type: String,
       required: true,
-      enum: ["HR", "Core", "Logistics", "Finance", "Administrative"], // Restrict departments to these options
+      enum: ["HR", "Core", "Logistics", "Finance", "Administrative"],
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
-   
     profileImage: {
       type: String,
-      default: '', // 👈 empty by default
+      default: '',
     },
-  
-
     refreshToken: { type: String },
-    backupDirectory: { type: String},
-    permissions: { type: [String], default: [] }, // Store only permission names
-    expiryMap: { type: Map, of: Date, default: {} }, // Map permission name → expiry date
+    backupDirectory: { type: String },
+    permissions: { type: [String], default: [] },
+    expiryMap: { type: Map, of: Date, default: {} },
     accountLocked: {
       type: Boolean,
       default: false
@@ -78,8 +64,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
-    otp:{type:String},
-    otpExpires:{type:Date},
+    otp: { type: String },
+    otpExpires: { type: Date },
     lastReviewDate: {
       type: Date,
       default: null
@@ -93,27 +79,40 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-    reviewHistory: [{
-      date: Date,
-      reviewerId: {
-        type: mongoose.Schema.Types.Mixed,
-        ref: 'User'
-      },
-      reviewerName: String,
-      notes: String,
-      
-      
-      //term & acceptance
-      approvedPermissions: [String],
-      rejectedPermissions: [String]
-    }],
+    reviewHistory: [
+      {
+        date: Date,
+        reviewerId: {
+          type: mongoose.Schema.Types.Mixed,
+          ref: 'User'
+        },
+        reviewerName: String,
+        notes: String,
+        approvedPermissions: [String],
+        rejectedPermissions: [String]
+      }
+    ],
 
+    // ➕ New Fields for Government ID & Employee Info
+    governmentIds: {
+      sss: String,
+      philhealth: String,
+      pagibig: String,
+      tin: String
+    },
+    employeeId: String,
+    firstName: String,
+    lastName: String,
+    middleName: String,
 
-  
+    employmentStatus: String,
+    dateHired: Date,
+    address: String,
+    birthdate: Date,
+    gender: String,
+    civilStatus: String,
   },
-  
   { timestamps: true }
-
 );
 
 

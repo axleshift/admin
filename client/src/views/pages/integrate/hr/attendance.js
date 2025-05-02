@@ -13,6 +13,7 @@ const AttendanceDashboard = () => {
   const [filterActive, setFilterActive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage] = useState(10);
+  const [showingAbsences, setShowingAbsences] = useState(false);
 
   // Fetch all attendance data when component mounts
   useEffect(() => {
@@ -24,6 +25,7 @@ const AttendanceDashboard = () => {
     try {
       setLoading(true);
       setFilterActive(false);
+      setShowingAbsences(false);
       const response = await axiosInstance.get('/hr/attendance');
       setAttendanceData(response.data);
       setLoading(false);
@@ -44,6 +46,7 @@ const AttendanceDashboard = () => {
     try {
       setLoading(true);
       setFilterActive(true);
+      setShowingAbsences(false);
 
       const response = await axiosInstance.get(`/hr/attendance/employee/${employeeId}`);
       setAttendanceData(response.data);
@@ -65,6 +68,7 @@ const AttendanceDashboard = () => {
     try {
       setLoading(true);
       setFilterActive(true);
+      setShowingAbsences(false);
       const response = await axiosInstance.get('/hr/attendance/daterange', {
         params: { startDate, endDate }
       });
@@ -77,12 +81,29 @@ const AttendanceDashboard = () => {
     }
   };
 
+  // Function to filter and show only absences
+  const showOnlyAbsences = () => {
+    setLoading(true);
+    setShowingAbsences(true);
+    
+    // Filter the current data to show only absences
+    // This avoids making another API call if we already have the data
+    const filteredData = attendanceData.filter(record => 
+      record.status === 'Absent'
+    );
+    
+    setAttendanceData(filteredData);
+    setCurrentPage(1); // Reset to first page
+    setLoading(false);
+  };
+
   // Function to reset filters
   const resetFilters = () => {
     setStartDate('');
     setEndDate('');
     setEmployeeId('');
     setError(null);
+    setShowingAbsences(false);
     fetchAllAttendance();
   };
 
@@ -96,6 +117,46 @@ const AttendanceDashboard = () => {
   const formatTime = (timeString) => {
     if (!timeString) return 'N/A';
     return timeString;
+  };
+
+  // Function to generate pagination numbers with ellipses
+  const getPaginationNumbers = (currentPage, totalPages) => {
+    // Always show first page, last page, current page, and pages adjacent to current page
+    const pageNumbers = [];
+    
+    if (totalPages <= 7) {
+      // If we have 7 or fewer pages, show all page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Always add first page
+      pageNumbers.push(1);
+      
+      // Determine start and end of page numbers around current page
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Add ellipsis if needed before the middle pages
+      if (startPage > 2) {
+        pageNumbers.push('ellipsis-start');
+      }
+      
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+      
+      // Add ellipsis if needed after the middle pages
+      if (endPage < totalPages - 1) {
+        pageNumbers.push('ellipsis-end');
+      }
+      
+      // Always add last page
+      pageNumbers.push(totalPages);
+    }
+    
+    return pageNumbers;
   };
 
   // Pagination calculation
@@ -125,6 +186,15 @@ const AttendanceDashboard = () => {
     <div className="attendance-dashboard">
       <header className="dashboard-header">
         <h1>Attendance Dashboard</h1>
+        <div className="action-buttons">
+          <button 
+            className={`absence-button ${showingAbsences ? 'active' : ''}`}
+            onClick={showOnlyAbsences}
+            disabled={loading || attendanceData.length === 0}
+          >
+            Show Absences Only
+          </button>
+        </div>
       </header>
 
       <div className="filter-section">
@@ -182,7 +252,7 @@ const AttendanceDashboard = () => {
           </div>
         </div>
 
-        {filterActive && (
+        {(filterActive || showingAbsences) && (
           <button className="reset-button" onClick={resetFilters}>
             Reset Filters
           </button>
@@ -192,12 +262,21 @@ const AttendanceDashboard = () => {
       {error && <div className="error-message">{error}</div>}
 
       <div className="attendance-data">
-        <h2>Attendance Records</h2>
+        <h2>
+          {showingAbsences 
+            ? 'Absence Records' 
+            : 'Attendance Records'}
+          {showingAbsences && <span className="record-count"> ({attendanceData.length})</span>}
+        </h2>
         
         {loading ? (
           <div className="loading">Loading attendance data...</div>
         ) : attendanceData.length === 0 ? (
-          <div className="no-data">No attendance records found</div>
+          <div className="no-data">
+            {showingAbsences 
+              ? 'No absence records found' 
+              : 'No attendance records found'}
+          </div>
         ) : (
           <>
             <div className="table-container">
@@ -248,14 +327,20 @@ const AttendanceDashboard = () => {
                   Previous
                 </button>
                 <div className="pagination-pages">
-                  {[...Array(totalPages).keys()].map(number => (
-                    <button
-                      key={number + 1}
-                      onClick={() => paginate(number + 1)}
-                      className={`pagination-number ${currentPage === number + 1 ? 'active' : ''}`}
-                    >
-                      {number + 1}
-                    </button>
+                  {getPaginationNumbers(currentPage, totalPages).map((number, index) => (
+                    number === 'ellipsis-start' || number === 'ellipsis-end' ? (
+                      <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={number}
+                        onClick={() => paginate(number)}
+                        className={`pagination-number ${currentPage === number ? 'active' : ''}`}
+                      >
+                        {number}
+                      </button>
+                    )
                   ))}
                 </div>
                 <button 

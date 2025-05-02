@@ -233,18 +233,133 @@ export const deleteUser = async (req, res) => {
 
   const HR1 = 'https://backend-hr1.axleshift.com';
 //hr1
-export const getAllUsers = async (req, res) => {
+
+export const getNewhires = async (req, res) => {
   try {
-    const users = await NewUser.find().select('-password');
-    res.status(200).json(users);
+    const response = await axios.get(`${HR1}/api/newhires`);
+    
+    // Mark already registered users in the response
+    // You can either do this here or leave it to the frontend
+    // This assumes your User model is imported
+    if (response.data && Array.isArray(response.data)) {
+      // Optional: Check which hires are already registered in your system
+      // by comparing emails
+      const emails = response.data.map(hire => hire.email);
+      
+      if (emails.length > 0) {
+        try {
+          const existingUsers = await User.find({
+            email: { $in: emails }
+          }, 'email');
+          
+          const existingEmails = new Set(existingUsers.map(user => user.email));
+          
+          // Mark existing users as registered
+          response.data = response.data.map(hire => ({
+            ...hire,
+            registered: existingEmails.has(hire.email)
+          }));
+        } catch (dbErr) {
+          console.warn('Could not check registration status:', dbErr.message);
+        }
+      }
+    }
+    
+    res.status(200).json(response.data);
   } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({
-      message: 'Error fetching users',
-      error: err.message || JSON.stringify(err) || 'Unknown error'
+    res.status(500).json({ 
+      error: 'Error fetching new hires', 
+      details: err.message 
     });
   }
 };
+export const incidentreport = async(req,res)=>{try {
+  // Optional query parameters for filtering
+  const { status, type, startDate, endDate } = req.query;
+  
+  // Check if user has HR role
+  if (!req.user || !req.user.roles.includes('HR')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. HR permissions required.'
+    });
+  }
+  
+  // Build query parameters for HR1 API
+  const params = {};
+  if (status) params.status = status;
+  if (type) params.type = type;
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
+  
+  // Fetch incident reports from HR1 API
+  const response = await axios.get(`${HR1_API}/api/incident-report`, { params });
+  
+  // Enhance the data with additional information if needed
+  const enhancedReports = await Promise.all(response.data.map(async (report) => {
+    // If report doesn't have employee name, fetch it
+    if (!report.employeeName && report.userId) {
+      try {
+        const userResponse = await axios.get(`${HR1_API}/api/users/${report.userId}`);
+        report.employeeName = `${userResponse.data.firstName} ${userResponse.data.lastName}`;
+      } catch (error) {
+        console.error(`Failed to fetch user info for ID ${report.userId}:`, error);
+        report.employeeName = 'Unknown';
+      }
+    }
+    
+    return report;
+  }));
+  
+  return res.json(enhancedReports);
+} catch (error) {
+  console.error('Error fetching incident reports:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Failed to fetch incident reports.',
+    error: error.message
+  });
+}
+}
+export const incidentId = async(req,res) =>{
+  
+  try {
+    const { id } = req.params;
+    
+    // Check if user has HR role or is the owner of the report
+    const response = await axios.get(`${HR1_API}/api/incident-report/${id}`);
+    const report = response.data;
+    
+    if (!req.user || (req.user.id !== report.userId && !req.user.roles.includes('HR'))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only view your own reports or need HR permissions.'
+      });
+    }
+    
+    // Enhance with user information if needed
+    if (!report.employeeName && report.userId) {
+      try {
+        const userResponse = await axios.get(`${HR1_API}/api/users/${report.userId}`);
+        report.employeeName = `${userResponse.data.firstName} ${userResponse.data.lastName}`;
+      } catch (userError) {
+        console.error(`Failed to fetch user info for ID ${report.userId}:`, userError);
+        report.employeeName = 'Unknown';
+      }
+    }
+    
+    return res.json(report);
+  } catch (error) {
+    console.error(`Error fetching incident report ${req.params.id}:`, error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch incident report.',
+      error: error.message
+    });
+  }
+}
+
+
 
 // controllers/attendanceController.js
 

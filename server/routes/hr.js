@@ -12,10 +12,13 @@ import {
     leave, 
     updateLeaveRequest,
     getpayroll,
-    getAllUsers, 
     getAllAttendance,
     getEmployeeAttendance,
-    getAttendanceByDateRange
+    getAttendanceByDateRange,
+    getNewhires,
+    incidentreport,
+    incidentId,
+
     
   } from "../controllers/hr.js";
 
@@ -43,7 +46,9 @@ router.post('/revoke-access',revokeAccess);
 // Route to save payroll data to MongoDB
 
 //hr1
-router.get('/newUsers', getAllUsers);
+router.get('/newhires', getNewhires);
+router.get('/incidentall',incidentreport )
+router.get('/incident/:id',incidentId)
 router.get('/attendance',getAllAttendance);
 // Route to get attendance for a specific employee
 router.get('/attendance/employee/:id',getEmployeeAttendance);
