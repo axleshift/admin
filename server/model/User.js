@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+
+
 const userSchema = new mongoose.Schema(
   {
     githubId: String,
@@ -104,7 +106,11 @@ const userSchema = new mongoose.Schema(
     firstName: String,
     lastName: String,
     middleName: String,
-
+    position: {
+      type: String,
+      required: true,
+      lowercase: true,
+    },
     employmentStatus: String,
     dateHired: Date,
     address: String,
@@ -115,7 +121,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.pre('save', function (next) {
+  if (this.position && this.isModified('position')) {
+    this.role = this.position.toLowerCase();
+  }
+  next();
+});
 
-
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;
