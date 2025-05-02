@@ -23,6 +23,7 @@ import  aiAssistantRoutes  from "./routes/aiAssistant.js";
 //legal
 import agreementRoutes from './routes/agreement.js';
 import complainsRoutes from './routes/complains.js';
+import incidentreportRoutes from './routes/incidentreport.js'
 
 import { startAutoSync } from "./UTIL/scheduler.js";
 
@@ -106,6 +107,7 @@ app.use('/aiAssistant', aiAssistantRoutes);
 //legal
 app.use('/agreement', agreementRoutes);
 app.use('/complains', complainsRoutes);
+app.use('/incidentreport',incidentreportRoutes)
 // ✅ 8. Integration routes
 app.use("/hr", hrRoutes);
 app.use("/core", coreRoutes);

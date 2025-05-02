@@ -16,8 +16,6 @@ import {
     getEmployeeAttendance,
     getAttendanceByDateRange,
     getNewhires,
-    incidentreport,
-    incidentId,
 
     
   } from "../controllers/hr.js";
@@ -47,8 +45,6 @@ router.post('/revoke-access',revokeAccess);
 
 //hr1
 router.get('/newhires', getNewhires);
-router.get('/incidentall',incidentreport )
-router.get('/incident/:id',incidentId)
 router.get('/attendance',getAllAttendance);
 // Route to get attendance for a specific employee
 router.get('/attendance/employee/:id',getEmployeeAttendance);

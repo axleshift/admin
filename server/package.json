@@ -41,6 +41,7 @@
         "joi-password-complexity": "^5.2.0",
         "jsonwebtoken": "^9.0.2",
         "jwt-decode": "^4.0.0",
+        "langchain": "^0.3.24",
         "lint": "^1.1.2",
         "ml-kmeans": "^6.0.0",
         "mongodb": "^6.12.0",

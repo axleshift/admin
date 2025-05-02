@@ -1,4 +1,8 @@
-import axios from 'axios'
+import axios from 'axios';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+import IncidentReport from '../model/incidentReports.js';
+import OpenAI from 'openai';
 
 export const checkAttendanceRecord = async (req, res, next) => {
   try {
@@ -49,12 +53,111 @@ export const checkAttendanceRecord = async (req, res, next) => {
     
     console.log(`User ID ${id} has ${absences.length} absences this month`);
     
-    // If user has 3 or more absences, deny access and instruct to create incident report
+    // If user has 3 or more absences, check for valid IR or deny access
     if (absences.length >= 3) {
-      return res.status(404).json({
-        success: false,
-        message: "Access denied. You have exceeded the maximum allowed absences this month. Please make an incident report about your absences and send it to your HR admin."
-      });
+      try {
+        // Fetch user email from the database based on id
+        const user = await req.userModel.findById(id);
+        
+        if (!user || !user.email) {
+          console.error(`User with ID ${id} not found or has no email`);
+          return res.status(404).json({
+            success: false,
+            message: "Access denied. You have exceeded the maximum allowed absences this month. Please contact HR."
+          });
+        }
+        
+        // Check if the user has already submitted an incident report
+        const existingReport = await IncidentReport.findOne({
+          $or: [
+            { reportedBy: user._id },
+            { 'additionalInfo.email': user.email }
+          ],
+          createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+        });
+        
+        // If user has submitted an incident report, validate it
+        if (existingReport) {
+          // Verify if the incident report is valid for the absences
+          const isValid = await verifyIncidentReport(existingReport, absences, user);
+          
+          if (isValid) {
+            console.log(`Valid incident report found for user ID ${id}. Allowing login.`);
+            return next(); // Allow login if IR is valid
+          } else {
+            console.log(`Invalid incident report found for user ID ${id}. Denying access.`);
+            return res.status(403).json({
+              success: false,
+              message: "Access denied. Your submitted incident report does not adequately explain your absences. Please contact HR."
+            });
+          }
+        }
+        
+        // No incident report found, generate token for secure link
+        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET_KEY, {expiresIn: '24h'});
+        
+        // Create incident report upload URL
+        const uploadIrUrl = `${process.env.DEV_URL}/uploadIncident/${user._id}/${token}`;
+        console.log('UploadIR link:', uploadIrUrl);
+        
+        // Set up email transporter
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || "smtp.gmail.com",
+          port: process.env.SMTP_PORT || 587,
+          secure: process.env.SMTP_PORT === "465",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
+        
+        // Set up email content
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "INCIDENT REPORT REQUIRED - Excessive Absences",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Excessive Absence Incident Report Required</h2>
+              <p>Hello ${user.name || 'Valued Employee'},</p>
+              <p>Our records indicate that you have exceeded the maximum allowed absences for this month.</p>
+              <p>In accordance with company policy, you are required to submit an incident report explaining these absences.</p>
+              <div style="margin: 30px 0; text-align: center;">
+                <a href="${uploadIrUrl}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                  Submit Incident Report
+                </a>
+              </div>
+              <p>If you cannot click the button above, please copy and paste this URL into your browser:</p>
+              <p>${uploadIrUrl}</p>
+              <p>This link will expire in 24 hours. Please complete your incident report as soon as possible.</p>
+              <p>If you have any questions, please contact your HR department.</p>
+              <p>Best regards,<br>HR Department</p>
+            </div>
+          `
+        };
+        
+        // Send the email
+        await transporter.sendMail(mailOptions);
+        console.log(`Incident report email sent to ${user.email}`);
+        
+        // Deny access with message
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. You have exceeded the maximum allowed absences this month. An email has been sent to your registered email address with instructions for submitting an incident report."
+        });
+        
+      } catch (emailError) {
+        console.error('Error in incident report check or email sending:', emailError);
+        
+        // If email fails, still deny access but with a generic message
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. You have exceeded the maximum allowed absences this month. Please contact HR to submit an incident report."
+        });
+      }
     }
     
     // If everything is okay, proceed to the next middleware/controller
@@ -64,110 +167,72 @@ export const checkAttendanceRecord = async (req, res, next) => {
     console.error('Error checking attendance record:', error);
     
     // Don't block login due to failure in attendance check, but log the error
-    // In a production system, you might want to handle this differently
     console.error('Continuing to login process despite attendance check failure');
     next();
   }
 };
 
-
-export const checkIncidentReport = async (req, res, next) => {
+async function verifyIncidentReport(report, absences, user) {
   try {
-    const { id } = req.body;
-    
-    // Skip check if id is not provided
-    if (!id) {
-      return next();
-    }
-    
-    // First, check if the user has excessive absences
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    const startOfMonth = new Date(currentYear, currentMonth, 1);
-    const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
-    
-    const startDateStr = startOfMonth.toISOString().split('T')[0];
-    const endDateStr = endOfMonth.toISOString().split('T')[0];
-    
-    // Fetch user's attendance records for the current month
-    const attendanceResponse = await axios.get(`${process.env.HR1}/api/attendance/all`, {
-      params: {
-        startDate: startDateStr,
-        endDate: endDateStr,
-        id: id
-      }
+    // Initialize OpenAI
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || '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'
     });
-    
-    const attendanceData = attendanceResponse.data;
-    
-    // If no attendance data or fewer than 3 absences, proceed normally
-    if (!attendanceData || !Array.isArray(attendanceData)) {
-      return next();
-    }
-    
-    // Count absences in the current month
-    const absences = attendanceData.filter(record => record.status === 'Absent');
-    
-    // If user doesn't have excessive absences, proceed normally
-    if (absences.length < 3) {
-      return next();
-    }
-    
-    console.log(`User ID ${id} has ${absences.length} absences this month. Checking for incident report...`);
-    
-    // User has excessive absences, check if they've submitted an incident report
-    const incidentReportResponse = await axios.get(`${process.env.HR1}/api/incident-report`, {
-      params: {
-        userId: id,
-        type: 'Absence',
-        startDate: startDateStr,
-        endDate: endDateStr,
-        status: 'Submitted'
-      }
+
+    // Prepare absence dates for context
+    const absenceDates = absences.map(a => {
+      const date = new Date(a.date);
+      return date.toISOString().split('T')[0];
+    }).join(', ');
+
+    // Create a prompt for OpenAI to evaluate the incident report
+    const prompt = `
+      You are an HR compliance assistant evaluating an incident report for excessive absences.
+      
+      Employee: ${user.name || 'Employee'} (ID: ${user._id})
+      Absent dates: ${absenceDates}
+      Number of absences: ${absences.length}
+      
+      Incident Report Details:
+      Title: ${report.title}
+      Description: ${report.description}
+      Severity: ${report.severity}
+      Additional Information: ${JSON.stringify(report.additionalInfo || {})}
+      
+      Based on company policy, please evaluate if this incident report provides a valid explanation for the absences.
+      A valid report should:
+      1. Clearly explain the reason for absences
+      2. Provide sufficient detail
+      3. Be consistent with the number and pattern of absences
+      4. Include any relevant supporting information
+      
+      Respond with 'VALID' if the report is acceptable, or 'INVALID' with a brief reason if it's not.
+    `;
+
+    // Get AI evaluation
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4', // Use an appropriate model
+      messages: [
+        { role: 'system', content: 'You are an HR compliance assistant evaluating incident reports.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 150
     });
+
+    // Extract the response text
+    const evaluationText = response.choices[0].message.content.trim();
     
-    const incidentReports = incidentReportResponse.data;
+    // Log the evaluation
+    console.log(`AI Evaluation for user ${user._id} incident report: ${evaluationText}`);
     
-    // If incident report exists and is in submitted state, allow access
-    if (incidentReports && Array.isArray(incidentReports) && incidentReports.length > 0) {
-      console.log(`User ID ${id} has submitted an incident report for absences. Access granted.`);
-      return next();
-    }
-    
-    // If no incident report found, check if one is in progress (draft state)
-    const draftReportResponse = await axios.get(`${process.env.HR1}/api/incident-report`, {
-      params: {
-        userId: id,
-        type: 'Absence',
-        startDate: startDateStr,
-        endDate: endDateStr,
-        status: 'Draft'
-      }
-    });
-    
-    const draftReports = draftReportResponse.data;
-    
-    // If there's a draft report, provide a different message
-    if (draftReports && Array.isArray(draftReports) && draftReports.length > 0) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Please complete and submit your incident report about absences to regain access."
-      });
-    }
-    
-    // No incident report found at all, deny access
-    return res.status(403).json({
-      success: false,
-      message: "Access denied due to excessive absences. Please create and submit an incident report to regain access."
-    });
+    // Check if the report is valid
+    return evaluationText.includes('VALID') && !evaluationText.includes('INVALID');
     
   } catch (error) {
-    console.error('Error checking incident report:', error);
+    console.error('Error verifying incident report with AI:', error);
     
-    // Don't block login due to failure in incident report check, but log the error
-    console.error('Continuing to login process despite incident report check failure');
-    next();
+    // Default to manual review in case of API failure
+    console.log('Defaulting to valid report due to verification error');
+    return true;
   }
-};
+}

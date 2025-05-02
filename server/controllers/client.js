@@ -62,6 +62,28 @@ export const userSchema = Joi.object({
   address: Joi.string().optional().allow(''),
   image: Joi.string().optional().allow('')
 });
+
+// Improved utility function to handle department capitalization
+function formatDepartment(department) {
+  if (!department) return '';
+  
+  // Create a mapping of special department names
+  const specialDepartments = {
+    'hr': 'HR',
+    'it': 'IT',
+    'r&d': 'R&D'
+  };
+  
+  // Check if the department is a special case (case insensitive)
+  const lowerDepartment = department.trim().toLowerCase();
+  if (specialDepartments[lowerDepartment]) {
+    return specialDepartments[lowerDepartment];
+  }
+  
+  // Otherwise use the original capitalize function
+  return capitalizeFirstLetter(department);
+}
+
 // Utility function to capitalize first letter
 function capitalizeFirstLetter(string) {
   if (!string) return '';
@@ -131,8 +153,8 @@ export const processRegistrations = async (req, res) => {
       const saltRounds = 10;
       const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
       
-      // Normalize fields
-      const normalizedDepartment = capitalizeFirstLetter(department.trim());
+      // Normalize fields - use formatDepartment instead of capitalizeFirstLetter
+      const normalizedDepartment = formatDepartment(department);
       const normalizedRole = position.trim(); // Using position as role as requested
       
       // Prepare user data
@@ -290,8 +312,8 @@ export const saveUser = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
     
-    // Normalize and validate department and role
-    const normalizedDepartment = capitalizeFirstLetter(department.trim());
+    // Normalize and validate department and role - use formatDepartment instead of capitalizeFirstLetter
+    const normalizedDepartment = formatDepartment(department);
     const normalizedRole = role.toLowerCase().trim();
     
     // Prepare user data
@@ -384,7 +406,6 @@ export const saveUser = async (req, res) => {
     });
   }
 };
-
   
 export const loginUser = async (req, res) => {
     const { identifier, password } = req.body;

@@ -79,6 +79,7 @@ const Agreementsuccess = React.lazy(() => import('./views/pages/LegalPanel/agree
 
 const Complains = React.lazy(() => import('./views/pages/LegalPanel/complains'));
 const ComplainsEmployees = React.lazy(() => import('./views/pages/LegalPanel/complains/employeescomplains'));
+const IncidentReport = React.lazy(()=> import ("./views/pages/LegalPanel/incidentreport"))
 const HrComplains = React.lazy(() => import('./views/pages/LegalPanel/complains/hrComplains'));
 
 const routes = [
@@ -162,6 +163,7 @@ const routes = [
   { path: '/complains', name: 'Complains', element: <ProtectedRoute><Complains /></ProtectedRoute> },
   { path: '/employeescomplains', name: 'Complains', element: <ProtectedRoute><ComplainsEmployees /></ProtectedRoute> },
   { path: '/hrcomplains', name: 'Complains', element: <ProtectedRoute><HrComplains /></ProtectedRoute> },
+  { path: '/incidentreport', name:'IncidentReport', element: <ProtectedRoute><IncidentReport/></ProtectedRoute>}
 ];
 
 export default routes;

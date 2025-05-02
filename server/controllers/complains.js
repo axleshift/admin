@@ -641,36 +641,3 @@ export const forwardToAI = async (req, res) => {
         res.status(500).json({ message: 'Error forwarding complaint', error: error.message });
     }
 };
-
-
-
-//still unintegrated
-export const getHRComplaints = async (req, res) => {
-    try {
-        // Only fetch complaints that DON'T require AI intervention
-        const complaints = await Complaint.find({ requiresAI: false }).sort({ createdAt: -1 });
-        const employeeComplaints = await EmployeeComplaint.find({ requiresAI: false }).sort({ createdAt: -1 });
-
-        // Add source label to each item
-        const labeledComplaints = complaints.map(c => ({
-            ...c.toObject(),
-            source: 'General Complaint'
-        }));
-
-        const labeledEmployeeComplaints = employeeComplaints.map(ec => ({
-            ...ec.toObject(),
-            source: 'Employee Complaint'
-        }));
-
-        // Combine and sort by creation date (newest first)
-        const hrComplaints = [...labeledComplaints, ...labeledEmployeeComplaints]
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        res.status(200).json({ complaints: hrComplaints });
-    } catch (error) {
-        console.error('Error in getHRComplaints:', error);
-        res.status(500).json({ message: 'Error fetching HR complaints', error: error.message });
-    }
-};
-
-//

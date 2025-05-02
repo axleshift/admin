@@ -22,7 +22,8 @@ import {
   faTruckRampBox,
   faChartDiagram,
   faTv,
-  faPlus
+  faPlus,
+  faNewspaper
 } from '@fortawesome/free-solid-svg-icons';
 import { FaWatchmanMonitoring } from 'react-icons/fa';
 import { icon } from 'leaflet';
@@ -490,6 +491,12 @@ const _nav = () => {
           icon: <FontAwesomeIcon icon={faBullhorn} style={{ marginRight: '8px' }} />,
           to:'/complains'
         },
+        {
+          component: CNavItem,
+          name:"Incident Reports",
+          icon:<FontAwesomeIcon icon  ={faNewspaper} style={{marginRight:"8px"}}/>,
+          to:'/incidentreport'
+        }
         
         
        

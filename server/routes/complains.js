@@ -5,7 +5,6 @@ import {
     createComplaint,
     createEmployeeComplaint,
     forwardToAI,
-    getHRComplaints,
     sendNotification,
     generateResolutionDocument,
     createEmployeeExternalComplaint
@@ -22,7 +21,6 @@ router.post('/send-notification', sendNotification); // Add the missing route
 router.get('/resolution-document/:complaintId', generateResolutionDocument); // Add route for downloading resolution document
 
 // HR admin system routes
-router.get('/hr-complains', getHRComplaints);
 router.post('/forward-to-ai', forwardToAI);
 
 export default router;

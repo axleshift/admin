@@ -17,6 +17,7 @@ const Resetpass = React.lazy(() => import("./views/pages/profile/resetpass"));
 const OTP = React.lazy(()=> import ("./views/pages/profile/OTP"));
 const TermsAccept = React.lazy(()=> import('./views/pages/LegalPanel/agreement/termandaccept'));
 const ComplainsExternalEmployees = React.lazy(() => import('./views/pages/LegalPanel/complains/employeesexternalcomplain'));
+const UploadIR = React.lazy(()=> import ('./views/pages/LegalPanel/uploadIncident'))
 const AppContent = () => {
   const { isColorModeSet, setColorMode } = useColorModes("coreui-free-react-admin-template-theme");
   const storedTheme = useSelector((state) => state.changeState.theme);
@@ -60,6 +61,7 @@ const AppContent = () => {
         <Route path="/resetpass/:id/:token" element={<Resetpass />} />
         <Route path="/termsaccept/:id/:token" element={<TermsAccept />} />
         <Route path="/employeesExternalComplain/:id/:token" element={<ComplainsExternalEmployees/>} />
+        <Route path='/uploadIncident/:id/:token'element={<UploadIR/>}/>
         <Route path="/register" element={<Register />} />
         <Route path="/404" element={<Page404 />} />
         <Route path="/500" element={<Page500 />} />

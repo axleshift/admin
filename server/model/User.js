@@ -106,11 +106,7 @@ const userSchema = new mongoose.Schema(
     firstName: String,
     lastName: String,
     middleName: String,
-    position: {
-      type: String,
-      required: true,
-      lowercase: true,
-    },
+
     employmentStatus: String,
     dateHired: Date,
     address: String,
