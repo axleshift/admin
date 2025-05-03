@@ -61,7 +61,7 @@ router.post('/external-login/:department',authenticateAdmin, external);
 router.put('/external-login/:username', authenticateAdmin, upload.single('profileImage'), updateProfileImage);
 
 //test ,checkUserTermsAcceptance 
-router.post('/external-test/:department', sendEmployeeComplaint ,externaltest)
+router.post('/external-test/:department',authenticateAdmin,checkAttendanceRecord, sendEmployeeComplaint ,externaltest)
 
 router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
 

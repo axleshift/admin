@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-
-
 const userSchema = new mongoose.Schema(
   {
     githubId: String,
@@ -13,6 +11,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    position: {
+      type: String,
+      required: true,
     },
     password: {
       type: String,
@@ -28,6 +30,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // Removed duplicate position field
     role: {
       type: String,
       required: true,
@@ -95,7 +98,7 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-    // ➕ New Fields for Government ID & Employee Info
+    // Government ID & Employee Info
     governmentIds: {
       sss: String,
       philhealth: String,

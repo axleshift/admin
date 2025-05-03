@@ -164,4 +164,11 @@ export const requireAgreementAcceptance = async (req, res, next) => {
     res.status(500).json({ error: "Server error during agreement verification" });
   }
 };
-
+export const getAllAgreements = async (req, res) => {
+  try {
+    const agreements = await Agreement.find(); // Fetch all agreements
+    res.status(200).json(agreements);          // Respond with data
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

@@ -496,6 +496,13 @@ const _nav = () => {
           name:"Incident Reports",
           icon:<FontAwesomeIcon icon  ={faNewspaper} style={{marginRight:"8px"}}/>,
           to:'/incidentreport'
+        },
+        
+        {
+          component: CNavItem,
+          name:"Users Accepted",
+          icon:<FontAwesomeIcon icon  ={faNewspaper} style={{marginRight:"8px"}}/>,
+          to:'/accepted'
         }
         
         

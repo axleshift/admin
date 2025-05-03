@@ -423,7 +423,7 @@ export const loginUser = async (req, res) => {
       }
   
       // Step 1: Find user by email or username
-      const user = await User.findOne({
+      let user = await User.findOne({
         $or: [
           { email: identifier },
           { username: identifier }
@@ -432,6 +432,24 @@ export const loginUser = async (req, res) => {
   
       // RAPID LOGIN DETECTION - Direct implementation
       if (user) {
+        // IMPORTANT: Fix for missing position field - Directly update before validation happens
+        if (!user.position && user.role) {
+          try {
+            // Use updateOne to bypass schema validation temporarily
+            await User.updateOne(
+              { _id: user._id },
+              { $set: { position: user.role } }
+            );
+            console.log(`Updated missing position for user: ${user._id}`);
+            
+            // Refresh user object with updated data
+            user = await User.findById(user._id);
+          } catch (updateError) {
+            console.error("Error fixing user position:", updateError);
+            // Continue with login process anyway - we'll handle errors later
+          }
+        }
+        
         const userId = user._id;
         const currentTime = new Date();
         
@@ -766,8 +784,7 @@ export const loginUser = async (req, res) => {
         message: "An error occurred during login."
       });
     }
-  };
-
+  }
   
   // Helper function for the delay
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));

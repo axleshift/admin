@@ -76,6 +76,7 @@ const Agreement = React.lazy(() => import('./views/pages/LegalPanel/agreement/ag
 const AdminAgreementCreate = React.lazy(() => import('./views/pages/LegalPanel/agreement/adminagreementCreate'));
 const AgreementDetail = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementdetail'));
 const Agreementsuccess = React.lazy(() => import('./views/pages/LegalPanel/agreement/agreementsuccess'));
+const Accepted = React.lazy(()=> import ('./views/pages/LegalPanel/agreement/accepted'))
 
 const Complains = React.lazy(() => import('./views/pages/LegalPanel/complains'));
 const ComplainsEmployees = React.lazy(() => import('./views/pages/LegalPanel/complains/employeescomplains'));
@@ -159,6 +160,7 @@ const routes = [
   { path: '/adminagreementCreate', name: 'Agreement Create', element: <ProtectedRoute><AdminAgreementCreate /></ProtectedRoute> },
   { path: '/agreementdetail/', name: 'Agreement Detail', element: <ProtectedRoute><AgreementDetail /></ProtectedRoute> },
   { path: '/agreementsuccess', name: 'Agreement Success', element: <ProtectedRoute><Agreementsuccess /></ProtectedRoute> },
+  { path: '/accepted', name: 'UserAccepted', element: <ProtectedRoute><Accepted /></ProtectedRoute> },
 
   { path: '/complains', name: 'Complains', element: <ProtectedRoute><Complains /></ProtectedRoute> },
   { path: '/employeescomplains', name: 'Complains', element: <ProtectedRoute><ComplainsEmployees /></ProtectedRoute> },
