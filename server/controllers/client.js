@@ -127,7 +127,7 @@ export const processRegistrations = async (req, res) => {
         firstName, 
         lastName, 
         email, 
-        position, // This will be used as role
+        position, // This will be used as role and position
         department,
         phoneNumber: phone = '',
         address = '',
@@ -153,9 +153,9 @@ export const processRegistrations = async (req, res) => {
       const saltRounds = 10;
       const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
       
-      // Normalize fields - use formatDepartment instead of capitalizeFirstLetter
+      // Normalize fields
       const normalizedDepartment = formatDepartment(department);
-      const normalizedRole = position.trim(); // Using position as role as requested
+      const normalizedRole = position.trim().toLowerCase(); // Using position as role
       
       // Prepare user data
       const userData = {
@@ -165,6 +165,7 @@ export const processRegistrations = async (req, res) => {
         email,
         password: hashedPassword,
         role: normalizedRole,
+        position: position.trim(), // Set position explicitly
         department: normalizedDepartment,
         phoneNumber: phone || '0000000000',
         username: generateUsername(normalizedRole),
@@ -312,7 +313,7 @@ export const saveUser = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcryptjs.hash(generatedPassword, saltRounds);
     
-    // Normalize and validate department and role - use formatDepartment instead of capitalizeFirstLetter
+    // Normalize and validate department and role
     const normalizedDepartment = formatDepartment(department);
     const normalizedRole = role.toLowerCase().trim();
     
@@ -324,6 +325,7 @@ export const saveUser = async (req, res) => {
       email,
       password: hashedPassword, // Store hashed password
       role: normalizedRole,
+      position: role.trim(), // Add position field with the original role value
       department: normalizedDepartment,
       phoneNumber: phone || '0000000000',
       username: generateUsername(normalizedRole),

@@ -120,9 +120,15 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Updated pre-save hook to handle both position and role updates
 userSchema.pre('save', function (next) {
+  // If position is modified, update role
   if (this.position && this.isModified('position')) {
     this.role = this.position.toLowerCase();
+  }
+  // If position is missing but role exists, set position from role
+  else if (!this.position && this.role) {
+    this.position = this.role;
   }
   next();
 });
