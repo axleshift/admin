@@ -368,7 +368,9 @@ export const getExternalUsersByDepartment = async (req, res) => {
   };
 
   export const changePasswordSimple = async (req, res) => {
-    const { email, currentPassword, newPassword } = req.body;
+    // Trim the email to remove any leading or trailing spaces
+    const { email: rawEmail, currentPassword, newPassword } = req.body;
+    const email = rawEmail.trim();
   
     try {
       // Find the user by email
@@ -382,7 +384,7 @@ export const getExternalUsersByDepartment = async (req, res) => {
       if (!isMatch) {
         return res.status(400).json({ 
           success: false, 
-          message: "Authentication failed. The current password you entered is incorrect." 
+          message: "Current password is incorrect" 
         });
       }
   
@@ -419,7 +421,8 @@ export const getExternalUsersByDepartment = async (req, res) => {
         message: "Server error" 
       });
     }
-  };
+};
+
   export const getHRUsers = async (req, res) => {
     try {
       // Find all users with department "HR"
