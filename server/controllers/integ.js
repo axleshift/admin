@@ -420,3 +420,32 @@ export const changePasswordSimple = async (req, res) => {
       });
     }
   };
+
+  export const getHRUsers = async (req, res) => {
+    try {
+      // Find all users with department "HR"
+      const hrUsers = await User.find({ department: "HR" });
+      
+      // Check if any HR users were found
+      if (hrUsers.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "No HR department users found" 
+        });
+      }
+      
+      // Return HR users
+      return res.status(200).json({
+        success: true,
+        count: hrUsers.length,
+        data: hrUsers
+      });
+    } catch (error) {
+      console.error("Error fetching HR users:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Server error while fetching HR users",
+        error: error.message
+      });
+    }
+  };

@@ -9,7 +9,8 @@ import {
     getUsersByDepartment,
     updateProfileImage,
     changePasswordSimple,
-    externaltest
+    externaltest,
+    getHRUsers
  } from '../controllers/integ.js'
 import { authenticateAdmin } from '../middleware/authMiddleware.js';
 import { sendEmployeeComplaint } from '../middleware/employeecomplain.js';
@@ -66,4 +67,6 @@ router.post('/external-test/:department',authenticateAdmin,checkAttendanceRecord
 router.get('/external-login/:department/all',authenticateAdmin, getExternalUsersByDepartment);
 
 router.post('/change-password',authenticateAdmin, changePasswordSimple);
+
+router.get("/hruser",getHRUsers)
 export default router
