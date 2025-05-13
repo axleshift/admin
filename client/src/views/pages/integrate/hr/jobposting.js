@@ -45,7 +45,8 @@ import {
   faTag,
   faClipboardList,
   faBuilding,
-  faUserPlus
+  faUserPlus,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { useGetJobPostingsQuery } from '../../../../state/hrApi';
 import logActivity from '../../../../utils/activityLogger';
