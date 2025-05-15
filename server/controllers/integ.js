@@ -283,6 +283,138 @@ export const external = async (req, res) => {
     });
   }
 };
+export const employeeLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email and password are required" 
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+
+    // Check if user has 'employee' role
+    if (user.role !== 'employee') {
+      return res.status(403).json({ 
+        success: false,
+        message: "Access denied. Only employees can use this login endpoint." 
+      });
+    }
+
+    // Check if account is locked
+    if (user.accountLocked) {
+      if (user.lockExpiration && user.lockExpiration > new Date()) {
+        return res.status(403).json({
+          success: false,
+          message: "Account is temporarily locked. Please try again later."
+        });
+      } else if (user.lockExpiration && user.lockExpiration <= new Date()) {
+        // Unlock account if lock period has expired
+        user.accountLocked = false;
+        user.lockExpiration = null;
+        await user.save();
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: "Account is locked. Please contact an administrator."
+        });
+      }
+    }
+
+    // Check if account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is deactivated. Please contact an administrator."
+      });
+    }
+
+    // Compare password
+    const isPasswordMatch = await bcryptjs.compare(password, user.password);
+    if (!isPasswordMatch) {
+      // Check for failed login tracking (optional)
+      // Implement failed login tracking logic here if needed
+      
+      return res.status(401).json({ 
+        success: false,
+        message: "Incorrect password" 
+      });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        role: user.role, 
+        department: user.department 
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    // Send Webhook Notification
+    const webhookUrl = process.env.WEBHOOK_URL;
+    if (webhookUrl) {
+      const webhookPayload = {
+        eventType: "employee_logged_in",
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          department: user.department,
+        },
+      };
+
+      try {
+        await axios.post(webhookUrl, webhookPayload, {
+          headers: {
+            "x-event-type": "employee_logged_in",
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Employee login webhook sent successfully.");
+      } catch (webhookError) {
+        console.error("Webhook failed:", webhookError.response?.data || webhookError.message);
+      }
+    }
+
+    // Successful login response
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        position: user.position,
+        employeeId: user.employeeId
+      },
+    });
+
+  } catch (error) {
+    console.error("Employee Login Error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal Server Error",
+      error: error.message 
+    });
+  }
+};
 
 export const updateProfileImage = async (req, res) => {
   try {

@@ -10,7 +10,8 @@ import {
     updateProfileImage,
     changePasswordSimple,
     externaltest,
-    getHRUsers
+    getHRUsers,
+    employeeLogin
  } from '../controllers/integ.js'
 import { authenticateAdmin } from '../middleware/authMiddleware.js';
 import { sendEmployeeComplaint } from '../middleware/employeecomplain.js';
@@ -59,6 +60,7 @@ const router = express.Router()
 router.get('/user/:department',authenticateAdmin,getUsersByDepartment)
 
 router.post('/external-login/:department',authenticateAdmin, external);
+router.post('/employeelogin',authenticateAdmin, employeeLogin);
 router.put('/external-login/:username', authenticateAdmin, upload.single('profileImage'), updateProfileImage);
 
 //test ,checkUserTermsAcceptance 
